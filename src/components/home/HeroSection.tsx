@@ -22,38 +22,17 @@ export default function HeroSection() {
           <div className="space-y-8">
             <div>
               <h1 className="text-4xl lg:text-6xl font-bold text-[#118B50] leading-tight mb-6">
-                {t('title')}
-                <span className="block text-[#5DB996]">{t('subtitle')}</span>
+                {t("title")}
+                <span className="block text-[#5DB996]">{t("subtitle")}</span>
               </h1>
 
               <p className="text-lg lg:text-xl text-gray-600 leading-relaxed max-w-xl">
-                {t('description')}
+                {t("description")}
               </p>
             </div>
-
+            
             {/* Key Features */}
             <div className="grid sm:grid-cols-2 gap-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-[#118B50] rounded-lg flex items-center justify-center">
-                  <svg
-                    className="w-4 h-4 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </div>
-                <span className="text-gray-700 font-medium">
-                  {t('features.verified')}
-                </span>
-              </div>
-
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-[#5DB996] rounded-lg flex items-center justify-center">
                   <svg
@@ -71,27 +50,8 @@ export default function HeroSection() {
                   </svg>
                 </div>
                 <span className="text-gray-700 font-medium">
-                  {t('features.network')}
+                  {t("features.network")}
                 </span>
-              </div>
-
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-[#E3F0AF] rounded-lg flex items-center justify-center">
-                  <svg
-                    className="w-4 h-4 text-[#118B50]"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
-                </div>
-                <span className="text-gray-700 font-medium">{t('features.matching')}</span>
               </div>
 
               <div className="flex items-center space-x-3">
@@ -110,7 +70,9 @@ export default function HeroSection() {
                     />
                   </svg>
                 </div>
-                <span className="text-gray-700 font-medium">{t('features.growth')}</span>
+                <span className="text-gray-700 font-medium">
+                  {t("features.growth")}
+                </span>
               </div>
             </div>
 
@@ -122,7 +84,7 @@ export default function HeroSection() {
                                shadow-lg hover:shadow-xl transform hover:scale-105
                                border-2 border-transparent hover:border-[#E3F0AF]"
               >
-                {t('cta.get_started')}
+                {t("cta.get_started")}
               </button>
             </div>
           </div>
@@ -144,7 +106,7 @@ export default function HeroSection() {
 
                   {/* Professional overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#118B50]/20 via-transparent to-transparent"></div>
-                  
+
                   {/* "Alusta täna" button positioned on image - ONLY visible on desktop */}
                   <div className="hidden lg:block absolute bottom-6 left-1/2 transform -translate-x-1/2">
                     <button
@@ -154,7 +116,7 @@ export default function HeroSection() {
                                  border-2 border-transparent hover:border-[#E3F0AF]
                                  backdrop-blur-sm"
                     >
-                      {t('cta.get_started')}
+                      {t("cta.get_started")}
                     </button>
                   </div>
                 </div>
