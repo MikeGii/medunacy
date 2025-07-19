@@ -19,12 +19,6 @@ export default function TeamSection() {
       specialization: t('doctors.doctor2.specialization'),
       description: t('doctors.doctor2.description'),
       image: '/images/doctor2.jpg'
-    },
-    {
-      name: t('doctors.doctor3.name'),
-      specialization: t('doctors.doctor3.specialization'),
-      description: t('doctors.doctor3.description'),
-      image: '/images/doctor3.jpg'
     }
   ];
 
@@ -42,7 +36,7 @@ export default function TeamSection() {
         </div>
 
         {/* Doctors Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {doctors.map((doctor, index) => (
             <div
               key={index}

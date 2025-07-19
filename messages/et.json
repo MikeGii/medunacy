@@ -8,9 +8,7 @@
     "subtitle": "Meditsiinitalente",
     "description": "Medunacy on Eesti juhtiv platvorm meditsiinispetsialistidele ja välismaalastele, kes otsivad karjäärivõimalusi tervishoiusektoris ning juhiseid meditsiinimaailma sisenemiseks.",
     "features": {
-      "verified": "Kinnitatud võimalused",
       "network": "Ekspertide võrgustik",
-      "matching": "Kiire sobivus",
       "growth": "Karjäärikasv"
     },
     "cta": {
@@ -65,13 +63,30 @@
         "name": "Dr. Andres Kask",
         "specialization": "Perearstiteaduse spetsialist",
         "description": "Töötab perearstina alates 2015. aastast. Jagab kogemusi üldarstiteaduse valdkonnas ja patsiendikommunikatsioonis."
-      },
-      "doctor3": {
-        "name": "Dr. Elena Smirnova",
-        "specialization": "Neuroloog",
-        "description": "Välismaalasest arst, kes on edukalt integreeritud Eesti meditsiinisüsteemi. Aitab teisi välisarste kohanemisprotsessis."
       }
     },
     "bottom_text": "Meie eesmärk on aidata igal uuel meditsiinitöötajal leida oma koht Eesti tervisehoiusüsteemis."
+  },
+  "faq": {
+    "title": "Korduma kippuvad küsimused",
+    "subtitle": "Siin leiad vastused kõige sagedamini esitatud küsimustele meie teenuste kohta.",
+    "questions": {
+      "q1": {
+        "question": "Kuidas saan alustada oma teekonda läbi Medunacy?",
+        "answer": "Selleks tee omale kasutajakonto meie keskkonnas ja nii lihtne see ongi."
+      },
+      "q2": {
+        "question": "Kas Medunacy keskkonna kasutamine garanteerib mulle töö?",
+        "answer": "Ei, Medunacy nõustajad ei garanteeri sulle töö Eesti tervisehoiusektoris, kuid on suuresti abiks, et saaksid luua kõik eeldused töö alustamiseks."
+      },
+      "q3": {
+        "question": "Kas kõik see on tasuta?",
+        "answer": "Medunacy keskkonnaga liitumine on tasuta, kuid kõik teenused ei ole tasuta, sest ka meie arstid ja nõustajad on pidanud oma elu jooksul läbima erinevaid väljakutseid ja personaalne lähenemine nõuab aega ja pühendumust."
+      },
+      "q4": {
+        "question": "Soovin samuti aidata teistel alustada oma karjääri tervisehoiuteenuse valdkonnas.",
+        "answer": "Mida suurem on kogukond ja meie tiim seda paremat teenust suudame pakkuda. Anna meile oma soovist teada ja võtame Sinuga ühendust."
+      }
+    }
   }
 }

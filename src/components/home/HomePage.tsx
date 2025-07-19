@@ -3,6 +3,7 @@ import Header from '../layout/Header';
 import HeroSection from './HeroSection';
 import ServicesSection from './ServicesSection';
 import TeamSection from './TeamSection';
+import FAQSection from './FAQSection';
 
 export default function HomePage() {
   return (
@@ -11,6 +12,7 @@ export default function HomePage() {
       <HeroSection />
       <ServicesSection />
       <TeamSection />
+      <FAQSection />
       
       {/* Future content sections will go here */}
       <main className="bg-white">
