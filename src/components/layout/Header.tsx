@@ -43,29 +43,7 @@ export default function Header() {
               {/* Language Switcher - normal behavior for desktop */}
               <LanguageSwitcher />
               
-              {/* Navigation */}
-              {pathname.includes('/meist') ? (
-                <Link 
-                  href={baseUrl}
-                  className="px-6 py-2.5 text-[#118B50] hover:text-white bg-[#E3F0AF] hover:bg-[#5DB996] 
-                           font-semibold rounded-full transition-all duration-300 ease-in-out
-                           border-2 border-[#5DB996] hover:border-[#118B50] 
-                           shadow-md hover:shadow-lg transform hover:scale-105"
-                >
-                  {t('home')}
-                </Link>
-              ) : (
-                <Link 
-                  href={`${baseUrl}/meist`}
-                  className="px-6 py-2.5 text-[#118B50] hover:text-white bg-[#E3F0AF] hover:bg-[#5DB996] 
-                           font-semibold rounded-full transition-all duration-300 ease-in-out
-                           border-2 border-[#5DB996] hover:border-[#118B50] 
-                           shadow-md hover:shadow-lg transform hover:scale-105"
-                >
-                  {t('about')}
-                </Link>
-              )}
-              
+              {/* Navigation */}           
               <button className="px-6 py-2.5 text-white bg-[#118B50] hover:bg-[#5DB996] 
                                font-semibold rounded-full transition-all duration-300 ease-in-out
                                border-2 border-[#118B50] hover:border-[#E3F0AF]
@@ -127,31 +105,7 @@ export default function Header() {
               </div>
 
               {/* Navigation Links */}
-              <nav className="space-y-4">
-                {pathname.includes('/meist') ? (
-                  <Link 
-                    href={baseUrl}
-                    onClick={closeMobileMenu}
-                    className="block w-full px-6 py-3 text-center text-[#118B50] hover:text-white 
-                             bg-[#E3F0AF] hover:bg-[#5DB996] font-semibold rounded-full 
-                             transition-all duration-300 ease-in-out border-2 border-[#5DB996] 
-                             hover:border-[#118B50] shadow-md hover:shadow-lg"
-                  >
-                    {t('home')}
-                  </Link>
-                ) : (
-                  <Link 
-                    href={`${baseUrl}/meist`}
-                    onClick={closeMobileMenu}
-                    className="block w-full px-6 py-3 text-center text-[#118B50] hover:text-white 
-                             bg-[#E3F0AF] hover:bg-[#5DB996] font-semibold rounded-full 
-                             transition-all duration-300 ease-in-out border-2 border-[#5DB996] 
-                             hover:border-[#118B50] shadow-md hover:shadow-lg"
-                  >
-                    {t('about')}
-                  </Link>
-                )}
-                
+              <nav className="space-y-4">                
                 <button 
                   onClick={closeMobileMenu}
                   className="block w-full px-6 py-3 text-center text-white bg-[#118B50] 
