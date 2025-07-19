@@ -8,9 +8,7 @@
     "subtitle": "Meditsiinitalente",
     "description": "Medunacy on Eesti juhtiv platvorm meditsiinispetsialistidele ja välismaalastele, kes otsivad karjäärivõimalusi tervishoiusektoris ning juhiseid meditsiinimaailma sisenemiseks.",
     "features": {
-      "verified": "Kinnitatud võimalused",
       "network": "Ekspertide võrgustik",
-      "matching": "Kiire sobivus",
       "growth": "Karjäärikasv"
     },
     "cta": {
@@ -65,11 +63,6 @@
         "name": "Dr. Andres Kask",
         "specialization": "Perearstiteaduse spetsialist",
         "description": "Töötab perearstina alates 2015. aastast. Jagab kogemusi üldarstiteaduse valdkonnas ja patsiendikommunikatsioonis."
-      },
-      "doctor3": {
-        "name": "Dr. Elena Smirnova",
-        "specialization": "Neuroloog",
-        "description": "Välismaalasest arst, kes on edukalt integreeritud Eesti meditsiinisüsteemi. Aitab teisi välisarste kohanemisprotsessis."
       }
     },
     "bottom_text": "Meie eesmärk on aidata igal uuel meditsiinitöötajal leida oma koht Eesti tervisehoiusüsteemis."
