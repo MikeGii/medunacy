@@ -1,8 +1,14 @@
+// src/components/layout/LanguageSwitcher.tsx
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
 
-export default function LanguageSwitcher() {
+interface LanguageSwitcherProps {
+  onLanguageChange?: () => void;
+  preventClose?: boolean;
+}
+
+export default function LanguageSwitcher({ onLanguageChange, preventClose = false }: LanguageSwitcherProps) {
   const pathname = usePathname();
   const router = useRouter();
   
@@ -16,6 +22,11 @@ export default function LanguageSwitcher() {
     // Add new locale
     const newPath = `/${newLocale}${pathWithoutLocale}`;
     router.push(newPath);
+    
+    // Only call the callback if we're NOT preventing close (for mobile menu)
+    if (onLanguageChange && !preventClose) {
+      onLanguageChange();
+    }
   };
 
   return (

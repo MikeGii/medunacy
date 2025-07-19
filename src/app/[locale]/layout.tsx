@@ -1,3 +1,4 @@
+// src/app/[locale]/layout.tsx
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { Geist, Geist_Mono } from "next/font/google";
@@ -15,11 +16,13 @@ const geistMono = Geist_Mono({
 
 export default async function LocaleLayout({
   children,
-  params: { locale }
+  params
 }: {
   children: React.ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
+  // Await the params as required by Next.js 15
+  const { locale } = await params;
   const messages = await getMessages();
 
   return (

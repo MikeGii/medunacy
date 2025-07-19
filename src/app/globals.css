@@ -1,3 +1,4 @@
+/* src/app/globals.css */
 @import "tailwindcss";
 
 :root {
@@ -22,8 +23,41 @@
   --color-medical-dark: #118B50;
 }
 
+/* Custom gradient for radial fades */
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-stops));
+}
+
+/* Hide Next.js development elements more aggressively */
+#__next-build-watcher,
+.__next-dev-overlay-backdrop,
+[data-nextjs-dialog-overlay],
+[data-nextjs-toast],
+[data-nextjs-scroll-focus-boundary],
+.__next-dev-overlay,
+#__next-route-announcer {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Hide any iframe that might be the development bar */
+iframe[src*="/_next/static/chunks/"] {
+  display: none !important;
+}
+
 body {
   background: var(--medical-cream);
   color: var(--medical-dark-green);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+div[style*="position: fixed"][style*="bottom: 0"][style*="left: 0"] {
+  display: none !important;
+}
+
+/* Hide development indicators */
+[data-nextjs-scroll-focus-boundary] {
+  display: none !important;
 }
