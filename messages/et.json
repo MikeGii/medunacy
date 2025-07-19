@@ -1,0 +1,10 @@
+{
+  "navigation": {
+    "home": "Pealeht",
+    "about": "Meist",
+    "login": "Logi sisse"
+  },
+  "common": {
+    "logo_alt": "Medunacy Logo"
+  }
+}

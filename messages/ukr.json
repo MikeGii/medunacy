@@ -1,0 +1,10 @@
+{
+  "navigation": {
+    "home": "Головна",
+    "about": "Про нас",
+    "login": "Увійти"
+  },
+  "common": {
+    "logo_alt": "Логотип Medunacy"
+  }
+}
