@@ -1,8 +1,13 @@
+/* src/app/globals.css */
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #FBF6E9;
+  --foreground: #118B50;
+  --medical-cream: #FBF6E9;
+  --medical-light-green: #E3F0AF;
+  --medical-medium-green: #5DB996;
+  --medical-dark-green: #118B50;
 }
 
 @theme inline {
@@ -10,17 +15,49 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  /* Custom medical colors */
+  --color-medical-cream: #FBF6E9;
+  --color-medical-light: #E3F0AF;
+  --color-medical-medium: #5DB996;
+  --color-medical-dark: #118B50;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Custom gradient for radial fades */
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-stops));
+}
+
+/* Hide Next.js development elements more aggressively */
+#__next-build-watcher,
+.__next-dev-overlay-backdrop,
+[data-nextjs-dialog-overlay],
+[data-nextjs-toast],
+[data-nextjs-scroll-focus-boundary],
+.__next-dev-overlay,
+#__next-route-announcer {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Hide any iframe that might be the development bar */
+iframe[src*="/_next/static/chunks/"] {
+  display: none !important;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--medical-cream);
+  color: var(--medical-dark-green);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+div[style*="position: fixed"][style*="bottom: 0"][style*="left: 0"] {
+  display: none !important;
+}
+
+/* Hide development indicators */
+[data-nextjs-scroll-focus-boundary] {
+  display: none !important;
 }

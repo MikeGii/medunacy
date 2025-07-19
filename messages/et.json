@@ -1,0 +1,77 @@
+{
+  "navigation": {
+    "home": "Pealeht",
+    "login": "Logi sisse"
+  },
+  "hero": {
+    "title": "Ühendame",
+    "subtitle": "Meditsiinitalente",
+    "description": "Medunacy on Eesti juhtiv platvorm meditsiinispetsialistidele ja välismaalastele, kes otsivad karjäärivõimalusi tervishoiusektoris ning juhiseid meditsiinimaailma sisenemiseks.",
+    "features": {
+      "verified": "Kinnitatud võimalused",
+      "network": "Ekspertide võrgustik",
+      "matching": "Kiire sobivus",
+      "growth": "Karjäärikasv"
+    },
+    "cta": {
+      "get_started": "Alusta täna",
+      "learn_more": "Loe edasi"
+    }
+  },
+  "common": {
+    "logo_alt": "Medunacy Logo"
+  },
+  "services": {
+    "title": "Mida me pakume",
+    "subtitle": "Toetame sind igal sammul meditsiinikarjääri rajamisel ja Eesti tervisehoiusektorisse sisenemisel.",
+    "team_info": "Meie tiimis on juba Eestis töötavad arstid, kes oskavad nõustada sind igal sammul.",
+    "student_guidance": {
+      "title": "Tudengijuhendamine",
+      "description": "Oled veel tudeng ja soovid varakult nõu, kuidas valmistuda eksamiteks ning tervisehoiusektorisse sisenemiseks? Pakume personaalset nõustamist ja strateegilist planeerimist."
+    },
+    "graduate_support": {
+      "title": "Lõpetanute toetus",
+      "description": "Oled juba lõpetanud ülikooli, kuid ei tea, kuidas edasi toimida? Aitame sul leida õige tee ja planeerida järgmised sammud meditsiinikarjääris."
+    },
+    "documentation": {
+      "title": "Dokumentide korrastamine",
+      "description": "Vajad abi dokumentide korrastamisel, et siseneda Eesti tervisehoiusektorisse? Juhendame sind läbi kogu bürokraatliku protsessi."
+    },
+    "training": {
+      "title": "Koolitused ja kursused",
+      "description": "Soovid informatsiooni parimate lisakoolituste ja keelekursuste kohta? Tutvustame kvaliteetseid õppevõimalusi ja aitame valida sobivad programmid."
+    },
+    "exam_prep": {
+      "title": "Eksamiks valmistumine",
+      "description": "Tahad valmistuda eksamiteks ja sertifitseerimistestideks? Pakume struktureeritud õppematerjale ja personaalset ettevalmistust."
+    },
+    "personal_consulting": {
+      "title": "Personaalne nõustamine",
+      "description": "Vajad personaalset nõustamist ja abi, kuidas käituda ja mida teada tervisehoiusektori osas? Pakume individuaalset lähenemist ja ekspertide nõuandeid."
+    },
+    "get_started": "Alusta koostööd"
+  },
+  "team": {
+    "title": "Kes me oleme?",
+    "subtitle": "Meie tiim koosneb kogenud arstidest, kes töötavad juba edukalt Eesti tervisehoiusüsteemis ja on valmis jagama oma kogemusi.",
+    "verified_doctor": "Kinnitatud arst",
+    "doctors": {
+      "doctor1": {
+        "name": "Dr. Maria Tamm",
+        "specialization": "Kardioloog",
+        "description": "10+ aastat kogemust Eesti haiglates. Spetsialiseerunud südame-veresoonkonna haigustele ja aitab uusi arste kardioogia valdkonnas."
+      },
+      "doctor2": {
+        "name": "Dr. Andres Kask",
+        "specialization": "Perearstiteaduse spetsialist",
+        "description": "Töötab perearstina alates 2015. aastast. Jagab kogemusi üldarstiteaduse valdkonnas ja patsiendikommunikatsioonis."
+      },
+      "doctor3": {
+        "name": "Dr. Elena Smirnova",
+        "specialization": "Neuroloog",
+        "description": "Välismaalasest arst, kes on edukalt integreeritud Eesti meditsiinisüsteemi. Aitab teisi välisarste kohanemisprotsessis."
+      }
+    },
+    "bottom_text": "Meie eesmärk on aidata igal uuel meditsiinitöötajal leida oma koht Eesti tervisehoiusüsteemis."
+  }
+}
