@@ -79,14 +79,14 @@ export default function TeamSection() {
           <div className="absolute top-20 left-10 animate-float">
             <div className="w-8 h-8 md:w-12 md:h-12 text-[#118B50] opacity-30">
               <svg fill="currentColor" viewBox="0 0 24 24">
-                <path d="M19 8h-2v3h-3v2h3v3h2v-3h3v-2h-3V8zM4 8h2v8H4V8zm4-2h8v12H8V6z"/>
+                <path d="M19 8h-2v3h-3v2h3v3h2v-3h3v-2h-3V8zM4 8h2v8H4V8zm4-2h8v12H8V6z" />
               </svg>
             </div>
           </div>
           <div className="absolute bottom-32 right-16 animate-float-delayed">
             <div className="w-6 h-6 md:w-10 md:h-10 text-[#5DB996] opacity-40">
               <svg fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
               </svg>
             </div>
           </div>
@@ -149,8 +149,10 @@ export default function TeamSection() {
                 <div className="relative mb-6 md:mb-8">
                   <div className="relative w-24 h-24 md:w-32 md:h-32 mx-auto">
                     {/* Outer glow ring */}
-                    <div className={`absolute inset-0 rounded-full bg-gradient-to-r ${doctor.gradient} opacity-20 blur-md`} />
-                    
+                    <div
+                      className={`absolute inset-0 rounded-full bg-gradient-to-r ${doctor.gradient} opacity-20 blur-md`}
+                    />
+
                     {/* Main image container */}
                     <div className="relative w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-sm p-1 border border-white/50">
                       <div className="w-full h-full rounded-full overflow-hidden">
@@ -166,7 +168,7 @@ export default function TeamSection() {
 
                     {/* Animated rings */}
                     <div className="absolute inset-0 rounded-full border-2 border-[#5DB996]/30 animate-pulse" />
-                    <div 
+                    <div
                       className="absolute inset-[-6px] rounded-full border border-[#118B50]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                       style={{ animationDelay: "0.5s" }}
                     />
@@ -180,11 +182,16 @@ export default function TeamSection() {
                       {doctor.name}
                     </h3>
                     <div className="flex items-center justify-center space-x-2 mb-3">
-                      <div className={`w-1.5 h-1.5 ${doctor.accentColor} rounded-full animate-pulse`} />
+                      <div
+                        className={`w-1.5 h-1.5 ${doctor.accentColor} rounded-full animate-pulse`}
+                      />
                       <p className="text-base md:text-lg font-semibold text-[#5DB996]">
                         {doctor.specialization}
                       </p>
-                      <div className={`w-1.5 h-1.5 ${doctor.accentColor} rounded-full animate-pulse`} style={{ animationDelay: "0.5s" }} />
+                      <div
+                        className={`w-1.5 h-1.5 ${doctor.accentColor} rounded-full animate-pulse`}
+                        style={{ animationDelay: "0.5s" }}
+                      />
                     </div>
                   </div>
 
@@ -192,10 +199,14 @@ export default function TeamSection() {
                     <p className="text-gray-600 leading-relaxed text-sm md:text-base font-light">
                       {doctor.description}
                     </p>
-                    
+
                     {/* Decorative quote marks */}
-                    <div className="absolute -top-1 -left-1 text-[#E3F0AF] text-xl md:text-2xl opacity-50 font-serif">"</div>
-                    <div className="absolute -bottom-1 -right-1 text-[#E3F0AF] text-xl md:text-2xl opacity-50 font-serif">"</div>
+                    <div className="absolute -top-1 -left-1 text-[#E3F0AF] text-xl md:text-2xl opacity-50 font-serif">
+                      &ldquo;
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 text-[#E3F0AF] text-xl md:text-2xl opacity-50 font-serif">
+                      &rdquo;
+                    </div>
                   </div>
 
                   {/* Hover indicator */}
@@ -226,7 +237,7 @@ export default function TeamSection() {
               <p className="text-lg md:text-xl text-gray-700 leading-relaxed font-light">
                 {t("bottom_text")}
               </p>
-              
+
               {/* Mission statement decoration */}
               <div className="flex items-center justify-center mt-4 space-x-4">
                 <div className="h-px bg-gradient-to-r from-transparent via-[#5DB996]/50 to-transparent flex-1" />
@@ -240,7 +251,9 @@ export default function TeamSection() {
         {/* Future Team Members Placeholder - Hidden but ready for expansion */}
         <div className="hidden mt-16 text-center">
           <div className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-[#E3F0AF]/30 to-[#5DB996]/30 rounded-full border border-[#5DB996]/30">
-            <span className="text-[#118B50] font-medium">More team members coming soon</span>
+            <span className="text-[#118B50] font-medium">
+              More team members coming soon
+            </span>
             <div className="w-4 h-4 bg-[#118B50] rounded-full animate-pulse" />
           </div>
         </div>

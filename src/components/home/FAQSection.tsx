@@ -31,9 +31,9 @@ export default function FAQSection() {
   }, []);
 
   const toggleItem = (index: number) => {
-    setOpenItems(prev =>
+    setOpenItems((prev) =>
       prev.includes(index)
-        ? prev.filter(item => item !== index)
+        ? prev.filter((item) => item !== index)
         : [...prev, index]
     );
   };
@@ -95,14 +95,14 @@ export default function FAQSection() {
           <div className="absolute top-32 right-20 animate-float">
             <div className="w-8 h-8 md:w-12 md:h-12 text-[#5DB996] opacity-40">
               <svg fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />
               </svg>
             </div>
           </div>
           <div className="absolute bottom-40 left-16 animate-float-delayed">
             <div className="w-6 h-6 md:w-10 md:h-10 text-[#118B50] opacity-30">
               <svg fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </svg>
             </div>
           </div>
@@ -133,7 +133,7 @@ export default function FAQSection() {
         <div className="space-y-4 md:space-y-6">
           {faqItems.map((item, index) => {
             const isOpen = openItems.includes(index);
-            
+
             return (
               <div
                 key={index}
@@ -141,7 +141,11 @@ export default function FAQSection() {
                            border border-white/50 hover:border-[#5DB996]/50 
                            shadow-lg hover:shadow-xl transition-all duration-500 overflow-hidden
                            ${isOpen ? "ring-2 ring-[#5DB996]/30" : ""}
-                           ${isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"}`}
+                           ${
+                             isVisible
+                               ? "translate-y-0 opacity-100"
+                               : "translate-y-10 opacity-0"
+                           }`}
                 style={{
                   animationDelay: `${index * 0.1}s`,
                   transitionDelay: `${index * 0.1}s`,
@@ -167,7 +171,7 @@ export default function FAQSection() {
                           {index + 1}
                         </span>
                       </div>
-                      
+
                       {/* Question Text */}
                       <h3 className="text-lg md:text-xl font-semibold text-[#118B50] leading-tight pr-4">
                         {item.question}
@@ -176,7 +180,11 @@ export default function FAQSection() {
 
                     {/* Expand/Collapse Icon */}
                     <div className="flex-shrink-0 ml-4">
-                      <div className={`w-6 h-6 md:w-8 md:h-8 bg-gradient-to-r from-[#E3F0AF] to-[#5DB996] rounded-full flex items-center justify-center transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}>
+                      <div
+                        className={`w-6 h-6 md:w-8 md:h-8 bg-gradient-to-r from-[#E3F0AF] to-[#5DB996] rounded-full flex items-center justify-center transition-transform duration-300 ${
+                          isOpen ? "rotate-180" : ""
+                        }`}
+                      >
                         <svg
                           className="w-4 h-4 md:w-5 md:h-5 text-[#118B50]"
                           fill="none"
@@ -214,9 +222,11 @@ export default function FAQSection() {
                       <p className="text-gray-600 leading-relaxed text-sm md:text-base font-light">
                         {item.answer}
                       </p>
-                      
+
                       {/* Subtle decorative quote */}
-                      <div className="absolute -left-6 top-0 text-[#E3F0AF] text-2xl opacity-30 font-serif">"</div>
+                      <div className="absolute -left-6 top-0 text-[#E3F0AF] text-2xl opacity-30 font-serif">
+                        &ldquo;
+                      </div>
                     </div>
                   </div>
                 </div>
