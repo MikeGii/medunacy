@@ -2,6 +2,8 @@
   "navigation": {
     "home": "Pealeht",
     "dashboard": "Töölaud",
+    "forum": "Foorum",
+    "profile": "Profiil",
     "login": "Logi sisse",
     "register": "Registreeru",
     "sign_out": "Logi välja",
@@ -157,5 +159,32 @@
     "quick_actions": "Kiired toimingud",
     "forum": "Foorum",
     "my_data": "Minu andmed"
+  },
+  "profile": {
+    "title": "Minu profiil",
+    "subtitle": "Tere, {name}! Siin saad hallata oma profiili andmeid.",
+    "form": {
+      "title": "Minu andmed",
+      "subtitle": "Täida oma profiili andmed, et teised saaksid sind paremini tundma õppida",
+      "university": "Ülikool/Kool",
+      "university_placeholder": "Näiteks: Tartu Ülikool",
+      "university_finished": "Olen lõpetanud õpingud",
+      "specialization": "Eriala/Suund",
+      "specialization_placeholder": "Näiteks: Üldmeditsiin, Hambaarst, Õde",
+      "workplace": "Töökoht",
+      "workplace_placeholder": "Näiteks: Tartu Ülikooli Kliinikum",
+      "languages": "Keeled",
+      "languages_placeholder": "Vali keeled...",
+      "personal_description": "Lühikirjeldus",
+      "personal_description_placeholder": "Räägi enda kohta lühidalt... (kuni 1000 tähemärki)",
+      "save": "Salvesta andmed",
+      "saving": "Salvestamine...",
+      "cancel": "Tühista"
+    },
+    "messages": {
+      "save_success": "Andmed edukalt salvestatud!",
+      "save_error": "Viga andmete salvestamisel",
+      "loading": "Andmete laadimine..."
+    }
   }
 }

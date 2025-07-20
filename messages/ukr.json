@@ -2,6 +2,8 @@
   "navigation": {
     "home": "Головна",
     "dashboard": "Робочий стіл",
+    "forum": "Форум",
+    "profile": "Профіль",
     "login": "Увійти",
     "register": "Зареєструватися",
     "sign_out": "Вийти",
@@ -158,5 +160,32 @@
     "quick_actions": "Швидкі дії",
     "forum": "Форум",
     "my_data": "Мої дані"
+  },
+  "profile": {
+    "title": "Мій профіль",
+    "subtitle": "Привіт, {name}! Тут ви можете керувати даними свого профілю.",
+    "form": {
+      "title": "Мої дані",
+      "subtitle": "Заповніть дані свого профілю, щоб інші могли краще вас пізнати",
+      "university": "Університет/Школа",
+      "university_placeholder": "Наприклад: Тартуський університет",
+      "university_finished": "Я закінчив навчання",
+      "specialization": "Спеціальність/Напрямок",
+      "specialization_placeholder": "Наприклад: Загальна медицина, Стоматолог, Медсестра",
+      "workplace": "Місце роботи",
+      "workplace_placeholder": "Наприклад: Клініка Тартуського університету",
+      "languages": "Мови",
+      "languages_placeholder": "Оберіть мови...",
+      "personal_description": "Короткий опис",
+      "personal_description_placeholder": "Розкажіть про себе коротко... (до 1000 символів)",
+      "save": "Зберегти дані",
+      "saving": "Збереження...",
+      "cancel": "Скасувати"
+    },
+    "messages": {
+      "save_success": "Дані успішно збережено!",
+      "save_error": "Помилка при збереженні даних",
+      "loading": "Завантаження даних..."
+    }
   }
 }
