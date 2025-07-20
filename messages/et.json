@@ -2,6 +2,8 @@
   "navigation": {
     "home": "Pealeht",
     "dashboard": "Töölaud",
+    "forum": "Foorum",
+    "profile": "Profiil",
     "login": "Logi sisse",
     "register": "Registreeru",
     "sign_out": "Logi välja",
@@ -157,5 +159,9 @@
     "quick_actions": "Kiired toimingud",
     "forum": "Foorum",
     "my_data": "Minu andmed"
+  },
+  "profile": {
+    "title": "Minu profiil",
+    "subtitle": "Tere, {name}! Siin saad hallata oma profiili andmeid."
   }
 }

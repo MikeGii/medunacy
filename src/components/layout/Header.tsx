@@ -65,8 +65,8 @@ export default function Header() {
                     <Link
                       href={baseUrl}
                       className="flex items-center space-x-2 px-4 py-2 text-[#118B50] hover:text-[#5DB996] 
-                     bg-white/50 hover:bg-white/70 rounded-full transition-all duration-300 
-                     border border-[#118B50]/20 hover:border-[#5DB996]/30"
+         bg-white/50 hover:bg-white/70 rounded-full transition-all duration-300 
+         border border-[#118B50]/20 hover:border-[#5DB996]/30"
                     >
                       <svg
                         className="w-4 h-4"
@@ -87,8 +87,8 @@ export default function Header() {
                     <Link
                       href={`${baseUrl}/dashboard`}
                       className="flex items-center space-x-2 px-4 py-2 text-[#118B50] hover:text-[#5DB996] 
-                     bg-white/50 hover:bg-white/70 rounded-full transition-all duration-300 
-                     border border-[#118B50]/20 hover:border-[#5DB996]/30"
+         bg-white/50 hover:bg-white/70 rounded-full transition-all duration-300 
+         border border-[#118B50]/20 hover:border-[#5DB996]/30"
                     >
                       <svg
                         className="w-4 h-4"
@@ -176,70 +176,66 @@ export default function Header() {
 
                             {/* Menu Items */}
                             <div className="py-2">
-                              {/* ADD: Dashboard Quick Actions for desktop dropdown */}
-                              {pathname.includes("/dashboard") && (
-                                <>
-                                  <div className="px-4 py-2 border-b border-gray-100">
-                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                      {dashboardT("quick_actions")}
-                                    </p>
-                                  </div>
+                              {/* Quick Actions Section */}
+                              <div className="px-4 py-2 border-b border-gray-100">
+                                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                  {dashboardT("quick_actions")}
+                                </p>
+                              </div>
 
-                                  {/* Forum Link */}
-                                  <Link
-                                    href={`${baseUrl}/forum`}
-                                    onClick={closeMobileMenu}
-                                    className="flex items-center space-x-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 group"
+                              {/* Forum Link */}
+                              <Link
+                                href={`${baseUrl}/forum`}
+                                onClick={closeMobileMenu}
+                                className="flex items-center space-x-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 group"
+                              >
+                                <div className="w-5 h-5 text-[#118B50] group-hover:text-[#5DB996]">
+                                  <svg
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
                                   >
-                                    <div className="w-5 h-5 text-[#118B50] group-hover:text-[#5DB996]">
-                                      <svg
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-6a2 2 0 012-2h8z"
-                                        />
-                                      </svg>
-                                    </div>
-                                    <span className="text-sm font-medium text-gray-700 group-hover:text-[#118B50]">
-                                      {dashboardT("forum")}
-                                    </span>
-                                  </Link>
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-6a2 2 0 012-2h8z"
+                                    />
+                                  </svg>
+                                </div>
+                                <span className="text-sm font-medium text-gray-700 group-hover:text-[#118B50]">
+                                  {dashboardT("forum")}
+                                </span>
+                              </Link>
 
-                                  {/* Profile Link */}
-                                  <Link
-                                    href={`${baseUrl}/profile`}
-                                    onClick={closeMobileMenu}
-                                    className="flex items-center space-x-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 group"
+                              {/* Profile Link */}
+                              <Link
+                                href={`${baseUrl}/profile`}
+                                onClick={closeMobileMenu}
+                                className="flex items-center space-x-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 group"
+                              >
+                                <div className="w-5 h-5 text-[#118B50] group-hover:text-[#5DB996]">
+                                  <svg
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
                                   >
-                                    <div className="w-5 h-5 text-[#118B50] group-hover:text-[#5DB996]">
-                                      <svg
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                        />
-                                      </svg>
-                                    </div>
-                                    <span className="text-sm font-medium text-gray-700 group-hover:text-[#118B50]">
-                                      {dashboardT("my_data")}
-                                    </span>
-                                  </Link>
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                    />
+                                  </svg>
+                                </div>
+                                <span className="text-sm font-medium text-gray-700 group-hover:text-[#118B50]">
+                                  {dashboardT("my_data")}
+                                </span>
+                              </Link>
 
-                                  <div className="border-t border-gray-100"></div>
-                                </>
-                              )}
+                              <div className="border-t border-gray-100"></div>
 
-                              {/* Sign Out Button - existing code */}
+                              {/* Sign Out Button */}
                               <button
                                 onClick={() => {
                                   handleSignOut();
@@ -362,8 +358,8 @@ export default function Header() {
                     href={baseUrl}
                     onClick={closeMobileMenu}
                     className="flex items-center space-x-3 w-full px-6 py-3 text-[#118B50] hover:text-[#5DB996] 
-                             bg-white/50 hover:bg-white/70 rounded-full transition-all duration-300 
-                             border border-[#118B50]/20 hover:border-[#5DB996]/30"
+                 bg-white/50 hover:bg-white/70 rounded-full transition-all duration-300 
+                 border border-[#118B50]/20 hover:border-[#5DB996]/30"
                   >
                     <svg
                       className="w-5 h-5"
@@ -385,8 +381,8 @@ export default function Header() {
                     href={`${baseUrl}/dashboard`}
                     onClick={closeMobileMenu}
                     className="flex items-center space-x-3 w-full px-6 py-3 text-[#118B50] hover:text-[#5DB996] 
-                             bg-white/50 hover:bg-white/70 rounded-full transition-all duration-300 
-                             border border-[#118B50]/20 hover:border-[#5DB996]/30"
+                 bg-white/50 hover:bg-white/70 rounded-full transition-all duration-300 
+                 border border-[#118B50]/20 hover:border-[#5DB996]/30"
                   >
                     <svg
                       className="w-5 h-5"
@@ -407,8 +403,8 @@ export default function Header() {
               </div>
             )}
 
-            {/* ADD: Dashboard Quick Actions for logged in users */}
-            {user && pathname.includes("/dashboard") && (
+            {/* Quick Actions for ALL pages - Forum and Profile links */}
+            {user && (
               <div className="space-y-3">
                 <div className="px-3 py-2">
                   <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">
@@ -421,8 +417,8 @@ export default function Header() {
                   href={`${baseUrl}/forum`}
                   onClick={closeMobileMenu}
                   className="flex items-center space-x-3 w-full px-6 py-3 text-[#118B50] hover:text-[#5DB996] 
-                       bg-white/30 hover:bg-white/50 rounded-full transition-all duration-300 
-                       border border-[#118B50]/10 hover:border-[#5DB996]/20"
+           bg-white/30 hover:bg-white/50 rounded-full transition-all duration-300 
+           border border-[#118B50]/10 hover:border-[#5DB996]/20"
                 >
                   <svg
                     className="w-5 h-5"
@@ -445,8 +441,8 @@ export default function Header() {
                   href={`${baseUrl}/profile`}
                   onClick={closeMobileMenu}
                   className="flex items-center space-x-3 w-full px-6 py-3 text-[#118B50] hover:text-[#5DB996] 
-                       bg-white/30 hover:bg-white/50 rounded-full transition-all duration-300 
-                       border border-[#118B50]/10 hover:border-[#5DB996]/20"
+           bg-white/30 hover:bg-white/50 rounded-full transition-all duration-300 
+           border border-[#118B50]/10 hover:border-[#5DB996]/20"
                 >
                   <svg
                     className="w-5 h-5"
