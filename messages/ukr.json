@@ -3,7 +3,8 @@
     "home": "Головна",
     "login": "Увійти",
     "register": "Зареєструватися",
-    "sign_out": "Вийти"
+    "sign_out": "Вийти",
+    "member": "Учасник Medunacy"
   },
   "auth": {
     "register": {
