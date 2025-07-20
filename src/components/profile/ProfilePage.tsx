@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Header from '../layout/Header';
 import ProfileHero from './ProfileHero';
+import ProfileForm from './ProfileForm';
 import { AuthModalProvider } from '@/contexts/AuthModalContext';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -46,7 +47,7 @@ export default function ProfilePage() {
         {/* Main Profile Content */}
         <main>
           <ProfileHero />
-          {/* Future profile sections will be added here */}
+          <ProfileForm />
         </main>
       </div>
     </AuthModalProvider>
