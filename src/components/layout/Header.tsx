@@ -12,6 +12,7 @@ import LoginModal from "../auth/LoginModal";
 import RegisterModal from "../auth/RegisterModal";
 import { useAuthModal } from "@/hooks/useAuthModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslations as useAuthTranslations } from "next-intl";
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -27,6 +28,7 @@ export default function Header() {
     switchToRegister,
     close,
   } = useAuthModal();
+  const tAuth = useAuthTranslations("auth.welcome");
 
   // Extract current locale from pathname
   const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
@@ -67,7 +69,7 @@ export default function Header() {
               {user ? (
                 <div className="flex items-center space-x-3">
                   <span className="text-sm text-gray-600">
-                    {t("auth.welcome.text")},{" "}
+                    {tAuth("text")},{" "}
                     {user.user_metadata?.first_name || user.email}
                   </span>
                   <button
