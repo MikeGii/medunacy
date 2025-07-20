@@ -3,7 +3,8 @@
     "home": "Pealeht",
     "login": "Logi sisse",
     "register": "Registreeru",
-    "sign_out": "Logi välja"
+    "sign_out": "Logi välja",
+    "member": "Medunacy liige"
   },
   "auth": {
     "register": {
