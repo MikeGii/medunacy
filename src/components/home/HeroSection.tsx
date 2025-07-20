@@ -10,7 +10,30 @@ export default function HeroSection() {
   const t = useTranslations("hero");
   const { user } = useAuth();
   const { openRegister } = useAuthModal();
-  const tWelcome = useTranslations("auth.welcome");
+
+  // Get user's full name for personalized greeting
+  const firstName = user?.user_metadata?.first_name;
+  const lastName = user?.user_metadata?.last_name;
+  const fullName =
+    firstName && lastName ? `${firstName} ${lastName}` : firstName;
+
+  // Create personalized greeting based on locale
+  const getPersonalizedGreeting = () => {
+    if (!user || !fullName) return null;
+
+    // Get current locale from URL or default to Estonian
+    const currentLocale = window.location.pathname.startsWith("/ukr")
+      ? "ukr"
+      : "et";
+
+    if (currentLocale === "ukr") {
+      return `Привіт ${fullName}!`;
+    } else {
+      return `Tere ${fullName}!`;
+    }
+  };
+
+  const personalizedGreeting = getPersonalizedGreeting();
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA] py-12 lg:py-20">
@@ -86,11 +109,13 @@ export default function HeroSection() {
               <button
                 onClick={user ? undefined : openRegister}
                 className="px-8 py-4 bg-[#118B50] hover:bg-[#0F7A43] text-white font-semibold 
-             rounded-xl transition-all duration-300 ease-in-out
-             shadow-lg hover:shadow-xl transform hover:scale-105
-             border-2 border-transparent hover:border-[#E3F0AF]"
+       rounded-xl transition-all duration-300 ease-in-out
+       shadow-lg hover:shadow-xl transform hover:scale-105
+       border-2 border-transparent hover:border-[#E3F0AF]"
               >
-                {user ? tWelcome("back") : t("cta.get_started")}
+                {user && personalizedGreeting
+                  ? personalizedGreeting
+                  : t("cta.get_started")}
               </button>
             </div>
           </div>
@@ -118,12 +143,14 @@ export default function HeroSection() {
                     <button
                       onClick={user ? undefined : openRegister}
                       className="px-8 py-4 bg-[#118B50] hover:bg-[#0F7A43] text-white font-semibold 
-             rounded-xl transition-all duration-300 ease-in-out
-             shadow-lg hover:shadow-xl transform hover:scale-105
-             border-2 border-transparent hover:border-[#E3F0AF]
-             backdrop-blur-sm"
+       rounded-xl transition-all duration-300 ease-in-out
+       shadow-lg hover:shadow-xl transform hover:scale-105
+       border-2 border-transparent hover:border-[#E3F0AF]
+       backdrop-blur-sm"
                     >
-                      {user ? tWelcome("back") : t("cta.get_started")}
+                      {user && personalizedGreeting
+                        ? personalizedGreeting
+                        : t("cta.get_started")}
                     </button>
                   </div>
                 </div>

@@ -12,7 +12,7 @@ import LoginModal from "../auth/LoginModal";
 import RegisterModal from "../auth/RegisterModal";
 import { useAuthModal } from "@/hooks/useAuthModal";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTranslations as useAuthTranslations } from "next-intl";
+import BurgerMenu from "./BurgerMenu";
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -28,7 +28,6 @@ export default function Header() {
     switchToRegister,
     close,
   } = useAuthModal();
-  const tAuth = useAuthTranslations("auth.welcome");
 
   // Extract current locale from pathname
   const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
@@ -41,6 +40,9 @@ export default function Header() {
     await signOut();
     closeMobileMenu();
   };
+
+  // Get user's first name for display
+  const firstName = user?.user_metadata?.first_name;
 
   return (
     <>
@@ -61,25 +63,39 @@ export default function Header() {
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-3">
+            <div className="hidden md:flex items-center space-x-6">
               {/* Language Switcher */}
               <LanguageSwitcher />
 
-              {/* Auth Buttons */}
+              {/* Auth Buttons or User Menu */}
               {user ? (
-                <div className="flex items-center space-x-3">
-                  <span className="text-sm text-gray-600">
-                    {tAuth("text")},{" "}
-                    {user.user_metadata?.first_name || user.email}
+                <div className="flex items-center space-x-6">
+                  <span className="text-lg font-bold text-[#118B50]">
+                    {firstName || user.email}
                   </span>
+                  {/* Desktop Burger Menu for logged-in users */}
                   <button
-                    onClick={handleSignOut}
-                    className="px-6 py-2.5 text-[#118B50] bg-white hover:bg-[#FBF6E9] 
-             font-semibold rounded-full transition-all duration-300 ease-in-out
-             border-2 border-[#118B50] hover:border-[#5DB996]
-             shadow-md hover:shadow-lg transform hover:scale-105"
+                    onClick={toggleMobileMenu}
+                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-[#E3F0AF] hover:bg-[#5DB996] transition-colors duration-200"
+                    aria-label="Toggle user menu"
                   >
-                    {t("sign_out")}
+                    <div className="flex flex-col justify-center items-center w-6 h-6">
+                      <span
+                        className={`block w-5 h-0.5 bg-[#118B50] transition-all duration-300 ${
+                          isMobileMenuOpen ? "rotate-45 translate-y-1" : ""
+                        }`}
+                      />
+                      <span
+                        className={`block w-5 h-0.5 bg-[#118B50] mt-1 transition-all duration-300 ${
+                          isMobileMenuOpen ? "opacity-0" : ""
+                        }`}
+                      />
+                      <span
+                        className={`block w-5 h-0.5 bg-[#118B50] mt-1 transition-all duration-300 ${
+                          isMobileMenuOpen ? "-rotate-45 -translate-y-1" : ""
+                        }`}
+                      />
+                    </div>
                   </button>
                 </div>
               ) : (
@@ -87,18 +103,18 @@ export default function Header() {
                   <button
                     onClick={openLogin}
                     className="px-4 py-2.5 text-[#118B50] bg-white hover:bg-[#FBF6E9] 
-                               font-semibold rounded-full transition-all duration-300 ease-in-out
-                               border-2 border-[#118B50] hover:border-[#5DB996]
-                               shadow-md hover:shadow-lg transform hover:scale-105"
+                   font-semibold rounded-full transition-all duration-300 ease-in-out
+                   border-2 border-[#118B50] hover:border-[#5DB996]
+                   shadow-md hover:shadow-lg transform hover:scale-105"
                   >
                     {t("login")}
                   </button>
                   <button
                     onClick={openRegister}
                     className="px-4 py-2.5 text-white bg-[#118B50] hover:bg-[#5DB996] 
-             font-semibold rounded-full transition-all duration-300 ease-in-out
-             border-2 border-[#118B50] hover:border-[#E3F0AF]
-             shadow-md hover:shadow-lg transform hover:scale-105"
+       font-semibold rounded-full transition-all duration-300 ease-in-out
+       border-2 border-[#118B50] hover:border-[#E3F0AF]
+       shadow-md hover:shadow-lg transform hover:scale-105"
                   >
                     {t("register")}
                   </button>
@@ -134,8 +150,13 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
+      {/* Burger Menu Component - Only for logged-in users */}
+      {user && (
+        <BurgerMenu isOpen={isMobileMenuOpen} onClose={closeMobileMenu} />
+      )}
+
+      {/* Mobile Menu for non-logged users */}
+      {!user && isMobileMenuOpen && (
         <div
           className="md:hidden fixed inset-0 z-40 bg-black bg-opacity-50"
           onClick={closeMobileMenu}
@@ -162,49 +183,31 @@ export default function Header() {
               </div>
 
               {/* Auth Buttons */}
-              {user ? (
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <p className="text-sm text-gray-600 mb-4">
-                      Welcome, {user.user_metadata?.first_name || user.email}
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleSignOut}
-                    className="block w-full px-6 py-3 text-center text-[#118B50] bg-white hover:bg-[#FBF6E9] 
-                               font-semibold rounded-full transition-all duration-300 ease-in-out 
-                               border-2 border-[#118B50] hover:border-[#5DB996] shadow-md hover:shadow-lg"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <button
-                    onClick={() => {
-                      openLogin();
-                      closeMobileMenu();
-                    }}
-                    className="block w-full px-6 py-3 text-center text-[#118B50] bg-white hover:bg-[#FBF6E9] 
-                               font-semibold rounded-full transition-all duration-300 ease-in-out 
-                               border-2 border-[#118B50] hover:border-[#5DB996] shadow-md hover:shadow-lg"
-                  >
-                    {t("login")}
-                  </button>
-                  <button
-                    onClick={() => {
-                      openRegister();
-                      closeMobileMenu();
-                    }}
-                    className="block w-full px-6 py-3 text-center text-white bg-[#118B50] 
-             hover:bg-[#5DB996] font-semibold rounded-full transition-all 
-             duration-300 ease-in-out border-2 border-[#118B50] 
-             hover:border-[#E3F0AF] shadow-md hover:shadow-lg"
-                  >
-                    {t("register")}
-                  </button>
-                </div>
-              )}
+              <div className="space-y-4">
+                <button
+                  onClick={() => {
+                    openLogin();
+                    closeMobileMenu();
+                  }}
+                  className="block w-full px-6 py-3 text-center text-[#118B50] bg-white hover:bg-[#FBF6E9] 
+                       font-semibold rounded-full transition-all duration-300 ease-in-out 
+                       border-2 border-[#118B50] hover:border-[#5DB996] shadow-md hover:shadow-lg"
+                >
+                  {t("login")}
+                </button>
+                <button
+                  onClick={() => {
+                    openRegister();
+                    closeMobileMenu();
+                  }}
+                  className="block w-full px-6 py-3 text-center text-white bg-[#118B50] 
+                       hover:bg-[#5DB996] font-semibold rounded-full transition-all 
+                       duration-300 ease-in-out border-2 border-[#118B50] 
+                       hover:border-[#E3F0AF] shadow-md hover:shadow-lg"
+                >
+                  {t("register")}
+                </button>
+              </div>
             </div>
           </div>
         </div>

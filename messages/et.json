@@ -79,7 +79,8 @@
     },
     "cta": {
       "get_started": "Alusta täna",
-      "learn_more": "Loe edasi"
+      "learn_more": "Loe edasi",
+      "welcome_back": "Tere tulemast tagasi"
     }
   },
   "common": {
