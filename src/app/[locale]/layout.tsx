@@ -1,17 +1,21 @@
 // src/app/[locale]/layout.tsx
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";;
 import "../globals.css";
+import type { Metadata } from "next";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+export const metadata: Metadata = {
+  title: "Medunacy",
+  icons: {
+    icon: '/favicon.png',
+  },
+};
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
   subsets: ["latin"],
+  variable: "--font-inter",
+  display: 'swap',
 });
 
 export default async function LocaleLayout({
@@ -28,7 +32,7 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} antialiased`}
         style={{ backgroundColor: '#FBF6E9' }}
       >
         <NextIntlClientProvider messages={messages}>

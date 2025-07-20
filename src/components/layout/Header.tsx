@@ -1,20 +1,20 @@
 // src/components/layout/Header.tsx
-'use client';
+"use client";
 
-import Image from 'next/image';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { useState } from 'react';
-import LanguageSwitcher from './LanguageSwitcher';
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useState } from "react";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const t = useTranslations('navigation');
-  
+  const t = useTranslations("navigation");
+
   // Extract current locale from pathname
-  const currentLocale = pathname.startsWith('/ukr') ? 'ukr' : 'et';
+  const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
   const baseUrl = `/${currentLocale}`;
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -24,34 +24,36 @@ export default function Header() {
     <>
       <header className="sticky top-0 z-50 bg-gradient-to-r from-white to-[#FBF6E9] border-b-2 border-[#E3F0AF] shadow-lg backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-18 py-3">
+          <div className="flex justify-between items-center h-20 py-4">
+            {" "}
+            {/* Changed from h-18 py-3 to h-20 py-4 */}
             {/* Logo */}
             <div className="flex-shrink-0">
               <Link href={baseUrl} className="group">
                 <Image
                   src="/images/header_logo.png"
                   alt="Medunacy Logo"
-                  width={180}
-                  height={45}
-                  className="h-12 w-auto cursor-pointer transition-transform group-hover:scale-105"
+                  width={240}
+                  height={55}
+                  className="h-16 w-auto cursor-pointer transition-transform group-hover:scale-105"
                 />
               </Link>
             </div>
-
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-3">
               {/* Language Switcher - normal behavior for desktop */}
               <LanguageSwitcher />
-              
-              {/* Navigation */}           
-              <button className="px-6 py-2.5 text-white bg-[#118B50] hover:bg-[#5DB996] 
+
+              {/* Navigation */}
+              <button
+                className="px-6 py-2.5 text-white bg-[#118B50] hover:bg-[#5DB996] 
                                font-semibold rounded-full transition-all duration-300 ease-in-out
                                border-2 border-[#118B50] hover:border-[#E3F0AF]
-                               shadow-md hover:shadow-lg transform hover:scale-105">
-                {t('login')}
+                               shadow-md hover:shadow-lg transform hover:scale-105"
+              >
+                {t("login")}
               </button>
             </div>
-
             {/* Mobile Burger Menu Button */}
             <button
               onClick={toggleMobileMenu}
@@ -61,17 +63,17 @@ export default function Header() {
               <div className="flex flex-col justify-center items-center w-6 h-6">
                 <span
                   className={`block w-5 h-0.5 bg-[#118B50] transition-all duration-300 ${
-                    isMobileMenuOpen ? 'rotate-45 translate-y-1' : ''
+                    isMobileMenuOpen ? "rotate-45 translate-y-1" : ""
                   }`}
                 />
                 <span
                   className={`block w-5 h-0.5 bg-[#118B50] mt-1 transition-all duration-300 ${
-                    isMobileMenuOpen ? 'opacity-0' : ''
+                    isMobileMenuOpen ? "opacity-0" : ""
                   }`}
                 />
                 <span
                   className={`block w-5 h-0.5 bg-[#118B50] mt-1 transition-all duration-300 ${
-                    isMobileMenuOpen ? '-rotate-45 -translate-y-1' : ''
+                    isMobileMenuOpen ? "-rotate-45 -translate-y-1" : ""
                   }`}
                 />
               </div>
@@ -82,8 +84,11 @@ export default function Header() {
 
       {/* Mobile Menu Overlay - Outside header container */}
       {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-black bg-opacity-50" onClick={closeMobileMenu}>
-          <div 
+        <div
+          className="md:hidden fixed inset-0 z-40 bg-black bg-opacity-50"
+          onClick={closeMobileMenu}
+        >
+          <div
             className="absolute top-0 right-0 w-80 max-w-[85vw] h-full bg-gradient-to-b from-[#FBF6E9] to-white shadow-2xl transform transition-transform duration-300 ease-in-out"
             onClick={(e) => e.stopPropagation()}
           >
@@ -105,15 +110,15 @@ export default function Header() {
               </div>
 
               {/* Navigation Links */}
-              <nav className="space-y-4">                
-                <button 
+              <nav className="space-y-4">
+                <button
                   onClick={closeMobileMenu}
                   className="block w-full px-6 py-3 text-center text-white bg-[#118B50] 
                            hover:bg-[#5DB996] font-semibold rounded-full transition-all 
                            duration-300 ease-in-out border-2 border-[#118B50] 
                            hover:border-[#E3F0AF] shadow-md hover:shadow-lg"
                 >
-                  {t('login')}
+                  {t("login")}
                 </button>
               </nav>
             </div>

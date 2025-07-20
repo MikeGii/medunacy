@@ -52,17 +52,11 @@
   "team": {
     "title": "Kes me oleme?",
     "subtitle": "Meie tiim koosneb kogenud arstidest, kes töötavad juba edukalt Eesti tervisehoiusüsteemis ja on valmis jagama oma kogemusi.",
-    "verified_doctor": "Kinnitatud arst",
     "doctors": {
       "doctor1": {
-        "name": "Dr. Maria Tamm",
-        "specialization": "Kardioloog",
-        "description": "10+ aastat kogemust Eesti haiglates. Spetsialiseerunud südame-veresoonkonna haigustele ja aitab uusi arste kardioogia valdkonnas."
-      },
-      "doctor2": {
-        "name": "Dr. Andres Kask",
-        "specialization": "Perearstiteaduse spetsialist",
-        "description": "Töötab perearstina alates 2015. aastast. Jagab kogemusi üldarstiteaduse valdkonnas ja patsiendikommunikatsioonis."
+        "name": "Dr. Kateryna Rosenko",
+        "specialization": "Arst-konsultant",
+        "description": "2022. aastal kolisin Ukrainast Eestisse. Kogemusi vastsündinute intensiivravis ja töötanud Tallinna Lastehaigla operatsiooniblokis. Täna töötab Keilas Elora õendusabi osakonnas arst-konsultandina. Lõpetanud Bogomoletsi nimelise Rahvusliku Meditsiiniülikooli Ukrainas, Kiievis."
       }
     },
     "bottom_text": "Meie eesmärk on aidata igal uuel meditsiinitöötajal leida oma koht Eesti tervisehoiusüsteemis."
