@@ -1,6 +1,7 @@
 {
   "navigation": {
     "home": "Pealeht",
+    "dashboard": "Töölaud",
     "login": "Logi sisse",
     "register": "Registreeru",
     "sign_out": "Logi välja",
@@ -150,5 +151,11 @@
         "answer": "Mida suurem on kogukond ja meie tiim seda paremat teenust suudame pakkuda. Anna meile oma soovist teada ja võtame Sinuga ühendust."
       }
     }
+  },
+  "dashboard": {
+    "welcome": "Siin on sinu töölaud,",
+    "quick_actions": "Kiired toimingud",
+    "forum": "Foorum",
+    "my_data": "Minu andmed"
   }
 }
