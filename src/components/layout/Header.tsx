@@ -7,11 +7,26 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import LanguageSwitcher from "./LanguageSwitcher";
+import AuthModal from "../auth/AuthModal";
+import LoginModal from "../auth/LoginModal";
+import RegisterModal from "../auth/RegisterModal";
+import { useAuthModal } from "@/hooks/useAuthModal";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const t = useTranslations("navigation");
+  const { user, signOut } = useAuth();
+  const {
+    isOpen,
+    currentModal,
+    openLogin,
+    openRegister,
+    switchToLogin,
+    switchToRegister,
+    close,
+  } = useAuthModal();
 
   // Extract current locale from pathname
   const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
@@ -20,13 +35,16 @@ export default function Header() {
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
+  const handleSignOut = async () => {
+    await signOut();
+    closeMobileMenu();
+  };
+
   return (
     <>
       <header className="sticky top-0 z-50 bg-gradient-to-r from-white to-[#FBF6E9] border-b-2 border-[#E3F0AF] shadow-lg backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20 py-4">
-            {" "}
-            {/* Changed from h-18 py-3 to h-20 py-4 */}
             {/* Logo */}
             <div className="flex-shrink-0">
               <Link href={baseUrl} className="group">
@@ -39,21 +57,53 @@ export default function Header() {
                 />
               </Link>
             </div>
+
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-3">
-              {/* Language Switcher - normal behavior for desktop */}
+              {/* Language Switcher */}
               <LanguageSwitcher />
 
-              {/* Navigation */}
-              <button
-                className="px-6 py-2.5 text-white bg-[#118B50] hover:bg-[#5DB996] 
+              {/* Auth Buttons */}
+              {user ? (
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-gray-600">
+                    {t("auth.welcome.text")},{" "}
+                    {user.user_metadata?.first_name || user.email}
+                  </span>
+                  <button
+                    onClick={handleSignOut}
+                    className="px-6 py-2.5 text-[#118B50] bg-white hover:bg-[#FBF6E9] 
+             font-semibold rounded-full transition-all duration-300 ease-in-out
+             border-2 border-[#118B50] hover:border-[#5DB996]
+             shadow-md hover:shadow-lg transform hover:scale-105"
+                  >
+                    {t("sign_out")}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={openLogin}
+                    className="px-4 py-2.5 text-[#118B50] bg-white hover:bg-[#FBF6E9] 
                                font-semibold rounded-full transition-all duration-300 ease-in-out
-                               border-2 border-[#118B50] hover:border-[#E3F0AF]
+                               border-2 border-[#118B50] hover:border-[#5DB996]
                                shadow-md hover:shadow-lg transform hover:scale-105"
-              >
-                {t("login")}
-              </button>
+                  >
+                    {t("login")}
+                  </button>
+                  <button
+                    onClick={openRegister}
+                    className="px-4 py-2.5 text-white bg-[#118B50] hover:bg-[#5DB996] 
+             font-semibold rounded-full transition-all duration-300 ease-in-out
+             border-2 border-[#118B50] hover:border-[#E3F0AF]
+             shadow-md hover:shadow-lg transform hover:scale-105"
+                  >
+                    {t("register")}
+                  </button>
+                </div>
+              )}
             </div>
+
             {/* Mobile Burger Menu Button */}
             <button
               onClick={toggleMobileMenu}
@@ -82,7 +132,7 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Mobile Menu Overlay - Outside header container */}
+      {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div
           className="md:hidden fixed inset-0 z-40 bg-black bg-opacity-50"
@@ -104,27 +154,68 @@ export default function Header() {
 
             {/* Menu Content */}
             <div className="px-6 py-4 space-y-6">
-              {/* Language Switcher - prevent close for mobile */}
+              {/* Language Switcher */}
               <div className="flex justify-center">
                 <LanguageSwitcher preventClose={true} />
               </div>
 
-              {/* Navigation Links */}
-              <nav className="space-y-4">
-                <button
-                  onClick={closeMobileMenu}
-                  className="block w-full px-6 py-3 text-center text-white bg-[#118B50] 
-                           hover:bg-[#5DB996] font-semibold rounded-full transition-all 
-                           duration-300 ease-in-out border-2 border-[#118B50] 
-                           hover:border-[#E3F0AF] shadow-md hover:shadow-lg"
-                >
-                  {t("login")}
-                </button>
-              </nav>
+              {/* Auth Buttons */}
+              {user ? (
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <p className="text-sm text-gray-600 mb-4">
+                      Welcome, {user.user_metadata?.first_name || user.email}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleSignOut}
+                    className="block w-full px-6 py-3 text-center text-[#118B50] bg-white hover:bg-[#FBF6E9] 
+                               font-semibold rounded-full transition-all duration-300 ease-in-out 
+                               border-2 border-[#118B50] hover:border-[#5DB996] shadow-md hover:shadow-lg"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <button
+                    onClick={() => {
+                      openLogin();
+                      closeMobileMenu();
+                    }}
+                    className="block w-full px-6 py-3 text-center text-[#118B50] bg-white hover:bg-[#FBF6E9] 
+                               font-semibold rounded-full transition-all duration-300 ease-in-out 
+                               border-2 border-[#118B50] hover:border-[#5DB996] shadow-md hover:shadow-lg"
+                  >
+                    {t("login")}
+                  </button>
+                  <button
+                    onClick={() => {
+                      openRegister();
+                      closeMobileMenu();
+                    }}
+                    className="block w-full px-6 py-3 text-center text-white bg-[#118B50] 
+             hover:bg-[#5DB996] font-semibold rounded-full transition-all 
+             duration-300 ease-in-out border-2 border-[#118B50] 
+             hover:border-[#E3F0AF] shadow-md hover:shadow-lg"
+                  >
+                    {t("register")}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
+
+      {/* Authentication Modals */}
+      <AuthModal isOpen={isOpen} onClose={close}>
+        {currentModal === "login" ? (
+          <LoginModal onSwitchToRegister={switchToRegister} onClose={close} />
+        ) : (
+          <RegisterModal onSwitchToLogin={switchToLogin} onClose={close} />
+        )}
+      </AuthModal>
     </>
   );
 }

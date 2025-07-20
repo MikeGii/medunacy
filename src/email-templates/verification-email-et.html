@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinnita oma Medunacy konto</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #FBF6E9;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #118B50 0%, #5DB996 100%);
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .logo {
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .header-subtitle {
+            color: #E3F0AF;
+            font-size: 16px;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 24px;
+            font-weight: bold;
+            color: #118B50;
+            margin-bottom: 20px;
+        }
+        .message {
+            font-size: 16px;
+            margin-bottom: 30px;
+            color: #555;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #118B50 0%, #5DB996 100%);
+            color: white;
+            text-decoration: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(17, 139, 80, 0.3);
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(17, 139, 80, 0.4);
+        }
+        .alternative-link {
+            background: #F8F9FA;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #5DB996;
+        }
+        .alternative-link p {
+            margin: 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .alternative-link code {
+            background: #E9ECEF;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            word-break: break-all;
+        }
+        .footer {
+            background: #F8F9FA;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #E9ECEF;
+        }
+        .footer-text {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .medical-icon {
+            display: inline-block;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .medical-icon::before {
+            content: "⚕";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="medical-icon"></div>
+            <div class="logo">Medunacy</div>
+            <div class="header-subtitle">Ühendame meditsiinitalente</div>
+        </div>
+        
+        <div class="content">
+            <h1 class="greeting">Tere tulemast Medunacy!</h1>
+            
+            <p class="message">
+                Täname, et liitusid meie meditsiinispetsialistide kogukonnaga. Et alustada Medunacy kasutamist, palun kinnita oma e-posti aadress.
+            </p>
+            
+            <div style="text-align: center;">
+                <a href="{{ .ConfirmationURL }}" class="cta-button">
+                    Kinnita e-posti aadress
+                </a>
+            </div>
+            
+            <p class="message">
+                See kinnituslinge kehtib <strong>24 tundi</strong>. Kui sa ei kinnitanud oma kontot selle aja jooksul, palun registreeru uuesti.
+            </p>
+            
+            <div class="alternative-link">
+                <p><strong>Probleem lingiga?</strong></p>
+                <p>Kopeeri ja kleebi see link oma brauseri aadressiribale:</p>
+                <code>{{ .ConfirmationURL }}</code>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p class="footer-text">
+                Kui sa ei registreerunud Medunacy kontot, võid selle e-kirja ignoreerida.
+            </p>
+            <p class="footer-text">
+                <strong>Medunacy</strong> - Eesti juhtiv platvorm meditsiinispetsialistidele
+            </p>
+        </div>
+    </div>
+</body>
+</html>

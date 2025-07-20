@@ -1,11 +1,16 @@
 // src/components/home/HeroSection.tsx
 "use client";
 
+import { useAuthModal } from "@/hooks/useAuthModal";
+import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 
 export default function HeroSection() {
   const t = useTranslations("hero");
+  const { user } = useAuth();
+  const { openRegister } = useAuthModal();
+  const tWelcome = useTranslations("auth.welcome");
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA] py-12 lg:py-20">
@@ -30,7 +35,7 @@ export default function HeroSection() {
                 {t("description")}
               </p>
             </div>
-            
+
             {/* Key Features */}
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="flex items-center space-x-3">
@@ -79,12 +84,13 @@ export default function HeroSection() {
             {/* CTA Button - Only shown on mobile */}
             <div className="lg:hidden flex flex-col sm:flex-row gap-4">
               <button
+                onClick={user ? undefined : openRegister}
                 className="px-8 py-4 bg-[#118B50] hover:bg-[#0F7A43] text-white font-semibold 
-                               rounded-xl transition-all duration-300 ease-in-out
-                               shadow-lg hover:shadow-xl transform hover:scale-105
-                               border-2 border-transparent hover:border-[#E3F0AF]"
+             rounded-xl transition-all duration-300 ease-in-out
+             shadow-lg hover:shadow-xl transform hover:scale-105
+             border-2 border-transparent hover:border-[#E3F0AF]"
               >
-                {t("cta.get_started")}
+                {user ? tWelcome("back") : t("cta.get_started")}
               </button>
             </div>
           </div>
@@ -110,13 +116,14 @@ export default function HeroSection() {
                   {/* "Alusta täna" button positioned on image - ONLY visible on desktop */}
                   <div className="hidden lg:block absolute bottom-6 left-1/2 transform -translate-x-1/2">
                     <button
+                      onClick={user ? undefined : openRegister}
                       className="px-8 py-4 bg-[#118B50] hover:bg-[#0F7A43] text-white font-semibold 
-                                 rounded-xl transition-all duration-300 ease-in-out
-                                 shadow-lg hover:shadow-xl transform hover:scale-105
-                                 border-2 border-transparent hover:border-[#E3F0AF]
-                                 backdrop-blur-sm"
+             rounded-xl transition-all duration-300 ease-in-out
+             shadow-lg hover:shadow-xl transform hover:scale-105
+             border-2 border-transparent hover:border-[#E3F0AF]
+             backdrop-blur-sm"
                     >
-                      {t("cta.get_started")}
+                      {user ? tWelcome("back") : t("cta.get_started")}
                     </button>
                   </div>
                 </div>
