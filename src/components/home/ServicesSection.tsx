@@ -2,15 +2,43 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAuthModal } from "@/contexts/AuthModalContext";
 
 export default function ServicesSection() {
   const t = useTranslations("services");
+  const [isVisible, setIsVisible] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const { user } = useAuth();
+  const { openLogin } = useAuthModal();
+
+  // Animation trigger
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
+
+  // Mouse parallax effect (disabled on mobile for performance)
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (window.innerWidth >= 768) {
+        // Only on tablet and up
+        setMousePosition({
+          x: (e.clientX / window.innerWidth) * 100,
+          y: (e.clientY / window.innerHeight) * 100,
+        });
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
 
   const services = [
     {
       icon: (
         <svg
-          className="w-8 h-8"
+          className="w-6 h-6 md:w-8 md:h-8"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -25,12 +53,12 @@ export default function ServicesSection() {
       ),
       title: t("student_guidance.title"),
       description: t("student_guidance.description"),
-      color: "bg-[#118B50]",
+      gradient: "from-[#118B50] to-[#5DB996]",
     },
     {
       icon: (
         <svg
-          className="w-8 h-8"
+          className="w-6 h-6 md:w-8 md:h-8"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -45,12 +73,12 @@ export default function ServicesSection() {
       ),
       title: t("graduate_support.title"),
       description: t("graduate_support.description"),
-      color: "bg-[#5DB996]",
+      gradient: "from-[#5DB996] to-[#E3F0AF]",
     },
     {
       icon: (
         <svg
-          className="w-8 h-8"
+          className="w-6 h-6 md:w-8 md:h-8"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -65,12 +93,12 @@ export default function ServicesSection() {
       ),
       title: t("documentation.title"),
       description: t("documentation.description"),
-      color: "bg-[#E3F0AF] text-[#118B50]",
+      gradient: "from-[#E3F0AF] to-[#118B50]",
     },
     {
       icon: (
         <svg
-          className="w-8 h-8"
+          className="w-6 h-6 md:w-8 md:h-8"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -85,12 +113,12 @@ export default function ServicesSection() {
       ),
       title: t("training.title"),
       description: t("training.description"),
-      color: "bg-[#118B50]",
+      gradient: "from-[#118B50] to-[#5DB996]",
     },
     {
       icon: (
         <svg
-          className="w-8 h-8"
+          className="w-6 h-6 md:w-8 md:h-8"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -105,12 +133,12 @@ export default function ServicesSection() {
       ),
       title: t("exam_prep.title"),
       description: t("exam_prep.description"),
-      color: "bg-[#5DB996]",
+      gradient: "from-[#5DB996] to-[#E3F0AF]",
     },
     {
       icon: (
         <svg
-          className="w-8 h-8"
+          className="w-6 h-6 md:w-8 md:h-8"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -125,57 +153,134 @@ export default function ServicesSection() {
       ),
       title: t("personal_consulting.title"),
       description: t("personal_consulting.description"),
-      color: "bg-[#E3F0AF] text-[#118B50]",
+      gradient: "from-[#E3F0AF] to-[#118B50]",
     },
   ];
 
   return (
-    <section className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="relative overflow-hidden py-12 md:py-20">
+      {/* Enhanced Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white via-[#FBF6E9] to-white">
+        {/* Animated background patterns - subtle */}
+        <div className="absolute inset-0 opacity-10 md:opacity-20">
+          <div
+            className="absolute w-64 h-64 md:w-96 md:h-96 rounded-full bg-gradient-to-r from-[#E3F0AF] to-[#5DB996] blur-3xl"
+            style={{
+              top: `${30 + mousePosition.y * 0.02}%`,
+              left: `${80 + mousePosition.x * 0.01}%`,
+              transform: "translate(-50%, -50%)",
+            }}
+          />
+          <div
+            className="absolute w-48 h-48 md:w-80 md:h-80 rounded-full bg-gradient-to-l from-[#118B50] to-[#5DB996] blur-2xl"
+            style={{
+              bottom: `${20 + mousePosition.y * 0.015}%`,
+              left: `${10 + mousePosition.x * 0.01}%`,
+              transform: "translate(-50%, 50%)",
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-4xl lg:text-5xl font-bold text-[#118B50] mb-6">
-            {t("title")}
+        <div
+          className={`text-center mb-12 md:mb-16 transform transition-all duration-1000 ease-out ${
+            isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
+          }`}
+        >
+          <h2 className="text-3xl sm:text-4xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 md:mb-6">
+            <span
+              className="bg-gradient-to-r from-[#118B50] to-[#5DB996] bg-clip-text text-transparent 
+                           drop-shadow-sm animate-gradient-shift"
+            >
+              {t("title")}
+            </span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed font-light">
             {t("subtitle")} {t("team_info")}
           </p>
         </div>
 
         {/* Services Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {services.map((service, index) => (
             <div
               key={index}
-              className="group relative bg-gradient-to-br from-gray-50 to-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100"
+              className={`group relative bg-white/40 backdrop-blur-md rounded-2xl md:rounded-3xl p-6 md:p-8 
+                         border border-white/50 hover:border-[#5DB996]/50 
+                         shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 
+                         overflow-hidden ${
+                           isVisible
+                             ? "translate-y-0 opacity-100"
+                             : "translate-y-10 opacity-0"
+                         }`}
+              style={{
+                animationDelay: `${index * 0.1}s`,
+                transitionDelay: `${index * 0.1}s`,
+              }}
             >
+              {/* Gradient overlay on hover */}
+              <div
+                className={`absolute inset-0 bg-gradient-to-br ${service.gradient} opacity-0 
+                             group-hover:opacity-5 transition-opacity duration-500 rounded-2xl md:rounded-3xl`}
+              ></div>
+
               {/* Icon */}
               <div
-                className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl ${service.color} text-white mb-6 group-hover:scale-110 transition-transform duration-300`}
+                className={`relative inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 
+                           rounded-xl md:rounded-2xl bg-gradient-to-br ${service.gradient} text-white mb-4 md:mb-6 
+                           group-hover:scale-110 transition-transform duration-300 shadow-lg`}
               >
                 {service.icon}
               </div>
 
               {/* Content */}
-              <h3 className="text-xl font-bold text-[#118B50] mb-4 leading-tight">
-                {service.title}
-              </h3>
-              <p className="text-gray-600 leading-relaxed mb-6">
-                {service.description}
-              </p>
+              <div className="relative">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-[#118B50] mb-3 md:mb-4 leading-tight">
+                  {service.title}
+                </h3>
+                <p className="text-sm md:text-base text-gray-600 leading-relaxed mb-4 md:mb-6">
+                  {service.description}
+                </p>
 
-              {/* Decorative element */}
-              <div className="absolute top-4 right-4 w-20 h-20 bg-gradient-to-br from-[#E3F0AF]/20 to-[#5DB996]/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                {/* Subtle hover indicator */}
+                <div
+                  className="w-12 h-1 bg-gradient-to-r from-[#118B50] to-[#5DB996] rounded-full 
+                              transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"
+                ></div>
+              </div>
             </div>
           ))}
         </div>
 
         {/* Bottom CTA */}
-        <div className="text-center mt-16">
-          <button className="px-8 py-4 bg-[#118B50] hover:bg-[#0F7A43] text-white font-semibold rounded-xl transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-transparent hover:border-[#E3F0AF]">
-            {t("get_started")}
-          </button>
-        </div>
+        {!user && (
+          <div
+            className={`text-center mt-12 md:mt-16 transform transition-all duration-1000 ease-out ${
+              isVisible
+                ? "translate-y-0 opacity-100"
+                : "translate-y-10 opacity-0"
+            }`}
+            style={{ animationDelay: "0.8s" }}
+          >
+            <button
+              onClick={openLogin}
+              className="group relative px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-[#118B50] to-[#5DB996] 
+       text-white font-semibold rounded-xl md:rounded-2xl overflow-hidden
+       shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300
+       border border-white/20 hover:border-white/40"
+            >
+              {/* Button shimmer effect */}
+              <div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
+            -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"
+              ></div>
+
+              <span className="relative z-10">{t("get_started")}</span>
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );
