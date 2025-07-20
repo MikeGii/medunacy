@@ -23,6 +23,11 @@ export function useAuthActions() {
     setLoading(true);
     try {
       // Sign up with Supabase Auth
+      const siteUrl =
+        typeof window !== "undefined"
+          ? window.location.origin
+          : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
