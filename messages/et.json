@@ -1,7 +1,73 @@
 {
   "navigation": {
     "home": "Pealeht",
-    "login": "Logi sisse"
+    "login": "Logi sisse",
+    "register": "Registreeru",
+    "sign_out": "Logi välja"
+  },
+  "auth": {
+    "register": {
+      "title": "Loo konto",
+      "subtitle": "Liitu Medunacy kogukonnaga",
+      "form": {
+        "first_name": "Eesnimi",
+        "last_name": "Perekonnanimi",
+        "email": "E-posti aadress",
+        "phone": "Telefon",
+        "password": "Parool",
+        "confirm_password": "Kinnita parool",
+        "required": "nõutav",
+        "optional": "valikuline"
+      },
+      "placeholders": {
+        "first_name": "Mari",
+        "last_name": "Maasikas",
+        "email": "mari@example.com",
+        "phone": "+372 1234 5678",
+        "password": "••••••••"
+      },
+      "button": {
+        "creating": "Loon kontot...",
+        "create": "Loo konto"
+      },
+      "messages": {
+        "success_title": "Registreerimine õnnestus!",
+        "success_description": "Saatsime kinnituslingi sinu e-posti aadressile. Palun kontrolli oma postkasti (ka rämpsposti kausta) ja kliki lingil, et konto aktiveerida.",
+        "success_note": "Teate sulgemiseni jääb veel",
+        "success_seconds": "sekundit",
+        "password_mismatch": "Paroolid ei ühti",
+        "password_short": "Parool peab olema vähemalt 6 tähemärki",
+        "unexpected_error": "Tekkis ootamatu viga"
+      },
+      "login_link": {
+        "text": "Kas sul on juba konto?",
+        "link": "Logi sisse"
+      }
+    },
+    "login": {
+      "title": "Logi sisse",
+      "subtitle": "Tere tulemast tagasi!",
+      "form": {
+        "email": "E-posti aadress",
+        "password": "Parool"
+      },
+      "placeholders": {
+        "email": "sinu@email.ee",
+        "password": "••••••••"
+      },
+      "button": {
+        "signing_in": "Login sisse...",
+        "sign_in": "Logi sisse"
+      },
+      "register_link": {
+        "text": "Pole veel kontot?",
+        "link": "Registreeru"
+      }
+    },
+    "welcome": {
+      "text": "Tere tulemast",
+      "back": "Tere tulemast tagasi!"
+    }
   },
   "hero": {
     "title": "Ühendame",

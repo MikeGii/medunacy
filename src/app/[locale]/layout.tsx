@@ -4,6 +4,7 @@ import { getMessages } from 'next-intl/server';
 import { Inter } from "next/font/google";;
 import "../globals.css";
 import type { Metadata } from "next";
+import { AuthProvider } from '@/contexts/AuthContext';
 
 export const metadata: Metadata = {
   title: "Medunacy",
@@ -36,7 +37,9 @@ export default async function LocaleLayout({
         style={{ backgroundColor: '#FBF6E9' }}
       >
         <NextIntlClientProvider messages={messages}>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </NextIntlClientProvider>
       </body>
     </html>
