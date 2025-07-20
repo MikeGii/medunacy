@@ -1,3 +1,4 @@
+// src/app/layout.tsx - Update the metadata
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -13,8 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Medunacy - Estonian Medical Student Leads",
-  description: "Connecting Estonian medical students with opportunities",
+  title: "Medunacy",
+  icons: {
+    icon: '/favicon.png',
+  },
 };
 
 export default function RootLayout({

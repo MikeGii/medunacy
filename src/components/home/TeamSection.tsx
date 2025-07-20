@@ -1,25 +1,19 @@
 // src/components/home/TeamSection.tsx
-'use client';
+"use client";
 
-import Image from 'next/image';
-import { useTranslations } from 'next-intl';
+import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 export default function TeamSection() {
-  const t = useTranslations('team');
+  const t = useTranslations("team");
 
   const doctors = [
     {
-      name: t('doctors.doctor1.name'),
-      specialization: t('doctors.doctor1.specialization'),
-      description: t('doctors.doctor1.description'),
-      image: '/images/doctor1.jpg' // You'll need to add these images
+      name: t("doctors.doctor1.name"),
+      specialization: t("doctors.doctor1.specialization"),
+      description: t("doctors.doctor1.description"),
+      image: "/images/doctor1.jpg",
     },
-    {
-      name: t('doctors.doctor2.name'),
-      specialization: t('doctors.doctor2.specialization'),
-      description: t('doctors.doctor2.description'),
-      image: '/images/doctor2.jpg'
-    }
   ];
 
   return (
@@ -28,15 +22,17 @@ export default function TeamSection() {
         {/* Section Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl lg:text-5xl font-bold text-[#118B50] mb-6">
-            {t('title')}
+            {t("title")}
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            {t('subtitle')}
+            {t("subtitle")}
           </p>
         </div>
 
         {/* Doctors Grid */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid gap-8 max-w-md mx-auto">
+          {" "}
+          {/* Changed from grid md:grid-cols-2 gap-8 max-w-4xl mx-auto */}
           {doctors.map((doctor, index) => (
             <div
               key={index}
@@ -53,13 +49,6 @@ export default function TeamSection() {
                       height={128}
                       className="w-full h-full object-cover"
                     />
-                  </div>
-                </div>
-                
-                {/* Professional badge */}
-                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
-                  <div className="bg-[#118B50] text-white px-3 py-1 rounded-full text-xs font-medium">
-                    {t('verified_doctor')}
                   </div>
                 </div>
               </div>
@@ -86,7 +75,7 @@ export default function TeamSection() {
         {/* Bottom Text */}
         <div className="text-center mt-12">
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            {t('bottom_text')}
+            {t("bottom_text")}
           </p>
         </div>
       </div>
