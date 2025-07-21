@@ -244,13 +244,13 @@ export default function MobileMenu({
         {user ? (
           <div className="space-y-4 pt-6 border-t border-gray-100">
             <button
-              onClick={() => {
-                onSignOut();
-                onClose();
+              onClick={async () => {
+                onClose(); // Close menu first
+                await onSignOut(); // Wait for signout to complete
               }}
               className="block w-full px-6 py-3 text-center text-[#118B50] bg-white hover:bg-[#FBF6E9] 
-                       font-semibold rounded-full transition-all duration-300 ease-in-out 
-                       border-2 border-[#118B50] hover:border-[#5DB996] shadow-md hover:shadow-lg"
+           font-semibold rounded-full transition-all duration-300 ease-in-out 
+           border-2 border-[#118B50] hover:border-[#5DB996] shadow-md hover:shadow-lg"
             >
               {t("sign_out")}
             </button>

@@ -12,11 +12,11 @@ interface DesktopUserMenuProps {
   onClose: () => void;
 }
 
-export default function DesktopUserMenu({ 
-  baseUrl, 
-  firstName, 
-  onSignOut, 
-  onClose 
+export default function DesktopUserMenu({
+  baseUrl,
+  firstName,
+  onSignOut,
+  onClose,
 }: DesktopUserMenuProps) {
   const t = useTranslations("navigation");
   const dashboardT = useTranslations("dashboard");
@@ -109,7 +109,7 @@ export default function DesktopUserMenu({
             </Link>
 
             {/* Healthcare Tools Section - for doctors and admins */}
-            {(user.role === 'doctor' || user.role === 'admin') && (
+            {(user.role === "doctor" || user.role === "admin") && (
               <>
                 <div className="border-t border-gray-100 mt-2">
                   <div className="px-4 py-2">
@@ -117,14 +117,18 @@ export default function DesktopUserMenu({
                       {dashboardT("healthcare_tools")}
                     </p>
                   </div>
-                  
+
                   <Link
                     href={`${baseUrl}/users`}
                     onClick={onClose}
                     className="flex items-center space-x-3 w-full px-4 py-3 text-left hover:bg-green-50 transition-colors duration-200 group"
                   >
                     <div className="w-5 h-5 text-[#5DB996] group-hover:text-[#118B50]">
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -142,7 +146,7 @@ export default function DesktopUserMenu({
             )}
 
             {/* Admin Tools Section - for admins only */}
-            {user.role === 'admin' && (
+            {user.role === "admin" && (
               <>
                 <div className="border-t border-gray-100 mt-2">
                   <div className="px-4 py-2">
@@ -150,14 +154,18 @@ export default function DesktopUserMenu({
                       {dashboardT("admin_tools")}
                     </p>
                   </div>
-                  
+
                   <Link
                     href={`${baseUrl}/roles`}
                     onClick={onClose}
                     className="flex items-center space-x-3 w-full px-4 py-3 text-left hover:bg-amber-50 transition-colors duration-200 group"
                   >
                     <div className="w-5 h-5 text-amber-600 group-hover:text-amber-700">
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -178,9 +186,9 @@ export default function DesktopUserMenu({
 
             {/* Sign Out Button */}
             <button
-              onClick={() => {
-                onSignOut();
-                onClose();
+              onClick={async () => {
+                onClose(); // Close menu first
+                await onSignOut(); // Wait for signout to complete
               }}
               className="flex items-center space-x-3 w-full px-4 py-3 text-left hover:bg-red-50 transition-colors duration-200 group"
             >
