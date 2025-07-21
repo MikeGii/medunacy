@@ -1,6 +1,7 @@
+// src/contexts/AuthContext.tsx - Fixed version
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { useRouter, usePathname } from "next/navigation";
@@ -13,51 +14,72 @@ interface AuthContextType {
   user: UserWithRole | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  isInitialized: boolean; // Add this to track initialization
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   signOut: async () => {},
+  isInitialized: false,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserWithRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
-  // src/contexts/AuthContext.tsx - Replace the entire useEffect section
+  // Memoize the user fetch function to prevent recreating it
+  const fetchUserData = useCallback(async (userId: string) => {
+    try {
+      const { data: userData, error } = await supabase
+        .from("users")
+        .select("role, preferred_language")
+        .eq("user_id", userId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching user role:", error.message);
+        return { role: "user" as const, preferred_language: null };
+      }
+
+      return {
+        role: (userData?.role || "user") as UserWithRole["role"],
+        preferred_language: userData?.preferred_language,
+      };
+    } catch (error) {
+      console.error("Error in fetchUserData:", error);
+      return { role: "user" as const, preferred_language: null };
+    }
+  }, []);
+
+  // Initialize auth state
   useEffect(() => {
     let mounted = true;
 
-    // Get initial session
-    const getSession = async () => {
+    const initializeAuth = async () => {
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+        // Get initial session
+        const { data: { session }, error } = await supabase.auth.getSession();
 
         if (!mounted) return;
 
-        if (session?.user) {
-          // Fetch user role from the users table
-          const { data: userData, error } = await supabase
-            .from("users")
-            .select("role, preferred_language")
-            .eq("user_id", session.user.id)
-            .single();
+        if (error) {
+          console.error("Error getting session:", error);
+          setUser(null);
+          return;
+        }
 
+        if (session?.user) {
+          const userData = await fetchUserData(session.user.id);
+          
           if (!mounted) return;
 
-          if (error) {
-            console.error("Error fetching user role:", error.message);
-          }
-
-          // Combine session user with role
           const userWithRole: UserWithRole = {
             ...session.user,
-            role: userData?.role || "user",
+            role: userData.role,
           };
 
           setUser(userWithRole);
@@ -65,120 +87,118 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
         }
       } catch (error) {
-        console.error("Error in getSession:", error);
+        console.error("Error in initializeAuth:", error);
         if (mounted) {
           setUser(null);
         }
       } finally {
         if (mounted) {
           setLoading(false);
+          setIsInitialized(true);
         }
       }
     };
 
-    getSession();
+    initializeAuth();
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
 
-      try {
-        if (session?.user) {
-          // Fetch user role from the users table
-          const { data: userData, error } = await supabase
-            .from("users")
-            .select("role, preferred_language")
-            .eq("user_id", session.user.id)
-            .single();
+        // Skip if we're still initializing to prevent loops
+        if (!isInitialized && event !== 'INITIAL_SESSION') return;
 
-          if (!mounted) return;
+        console.log("Auth event:", event);
 
-          if (error) {
-            console.error("Error fetching user role:", error.message);
-          }
+        try {
+          if (session?.user) {
+            const userData = await fetchUserData(session.user.id);
+            
+            if (!mounted) return;
 
-          // Combine session user with role
-          const userWithRole: UserWithRole = {
-            ...session.user,
-            role: userData?.role || "user",
-          };
+            const userWithRole: UserWithRole = {
+              ...session.user,
+              role: userData.role,
+            };
 
-          setUser(userWithRole);
+            setUser(userWithRole);
 
-          // Handle language switching after successful login
-          if (event === "SIGNED_IN" && userData?.preferred_language) {
-            const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
-            const preferredLocale = userData.preferred_language as string;
-
-            // If user's preferred language doesn't match current locale, redirect
-            if (preferredLocale !== currentLocale) {
-              const pathWithoutLocale =
-                pathname.replace(/^\/(et|ukr)/, "") || "/";
-              const newPath = `/${preferredLocale}${pathWithoutLocale}`;
-
-              // Use setTimeout to avoid conflicts with other redirects
-              setTimeout(() => {
-                if (mounted) {
-                  router.push(newPath);
-                }
-              }, 100);
+            // Handle language redirect only on SIGNED_IN event
+            if (event === "SIGNED_IN" && userData.preferred_language) {
+              const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
+              
+              if (userData.preferred_language !== currentLocale) {
+                const pathWithoutLocale = pathname.replace(/^\/(et|ukr)/, "") || "/dashboard";
+                const newPath = `/${userData.preferred_language}${pathWithoutLocale}`;
+                
+                // Delay redirect to avoid race conditions
+                setTimeout(() => {
+                  if (mounted) {
+                    router.push(newPath);
+                  }
+                }, 500);
+              }
+            }
+          } else {
+            if (mounted) {
+              setUser(null);
             }
           }
-        } else {
+        } catch (error) {
+          console.error("Error in auth state change:", error);
           if (mounted) {
             setUser(null);
           }
         }
-      } catch (error) {
-        console.error("Error in auth state change:", error);
-        if (mounted) {
-          setUser(null);
-        }
-      } finally {
-        if (mounted) {
+
+        // Set loading to false after processing
+        if (mounted && event !== 'INITIAL_SESSION') {
           setLoading(false);
         }
       }
-    });
+    );
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []); // Remove pathname dependency to prevent infinite loops
+  }, [isInitialized, fetchUserData, pathname, router]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
-      // Clear user state immediately
+      setLoading(true);
+      
+      // Clear user state first
       setUser(null);
 
       // Sign out from Supabase
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Error signing out:", error);
+      }
 
-      // Wait a moment for auth state to propagate
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Clear any cached data
+      if (typeof window !== 'undefined') {
+        // Clear any localStorage items if you have any
+        localStorage.removeItem('supabase.auth.token');
+        sessionStorage.clear();
+      }
 
-      // Get current locale and redirect
+      // Redirect to home
       const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
       router.push(`/${currentLocale}`);
-
-      // Force a page refresh to ensure clean state
-      setTimeout(() => {
-        window.location.href = `/${currentLocale}`;
-      }, 200);
+      
     } catch (error) {
-      console.error("Error signing out:", error);
-      // Still redirect even if there's an error
-      const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
-      window.location.href = `/${currentLocale}`;
+      console.error("Error in signOut:", error);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [pathname, router]);
 
-  // ADD THIS RETURN STATEMENT - this was missing!
   return (
-    <AuthContext.Provider value={{ user, loading, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signOut, isInitialized }}>
       {children}
     </AuthContext.Provider>
   );
