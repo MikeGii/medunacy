@@ -1,8 +1,10 @@
+// src/components/auth/LoginModal.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useAuthActions } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface LoginModalProps {
   onSwitchToRegister: () => void;
@@ -17,6 +19,7 @@ export default function LoginModal({
 }: LoginModalProps) {
   const t = useTranslations("auth.login");
   const { signIn, loading } = useAuthActions();
+  const { user } = useAuth(); // Add this to watch auth state
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -25,6 +28,17 @@ export default function LoginModal({
     type: "success" | "error";
     text: string;
   } | null>(null);
+
+  // Close modal when user becomes authenticated
+  useEffect(() => {
+    if (user) {
+      // Add a small delay to ensure auth state is stable
+      const timer = setTimeout(() => {
+        onClose();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [user, onClose]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -40,10 +54,11 @@ export default function LoginModal({
     const result = await signIn(formData.email, formData.password);
 
     if (result.success) {
-      // Don't close modal immediately - let the auth state change handle the redirect
-      setTimeout(() => {
-        onClose(); // Close modal after a short delay
-      }, 500);
+      // Don't close modal immediately - let the useEffect handle it
+      setMessage({
+        type: "success",
+        text: "Signing in successfully...",
+      });
     } else {
       setMessage({
         type: "error",
@@ -52,6 +67,7 @@ export default function LoginModal({
     }
   };
 
+  // Rest of the component remains the same...
   return (
     <div className="p-8">
       <div className="text-center mb-8">
@@ -60,8 +76,20 @@ export default function LoginModal({
       </div>
 
       {message && (
-        <div className="mb-6 p-4 rounded-lg bg-red-50 text-red-700 border border-red-200">
-          {message.text}
+        <div
+          className={`mb-6 p-4 rounded-lg ${
+            message.type === "success"
+              ? "bg-green-50 text-green-700 border border-green-200"
+              : "bg-red-50 text-red-700 border border-red-200"
+          }`}
+        >
+          {message.type === "success" && (
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full"></div>
+              <span>{message.text}</span>
+            </div>
+          )}
+          {message.type === "error" && message.text}
         </div>
       )}
 
@@ -82,6 +110,7 @@ export default function LoginModal({
             onChange={handleChange}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all"
             placeholder={t("placeholders.email")}
+            disabled={loading}
           />
         </div>
 
@@ -101,6 +130,7 @@ export default function LoginModal({
             onChange={handleChange}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all"
             placeholder={t("placeholders.password")}
+            disabled={loading}
           />
         </div>
 
@@ -117,6 +147,7 @@ export default function LoginModal({
         <button
           onClick={onSwitchToForgotPassword}
           className="text-sm text-[#118B50] hover:underline"
+          disabled={loading}
         >
           {t("forgot_password_link")}
         </button>
@@ -128,6 +159,7 @@ export default function LoginModal({
           <button
             onClick={onSwitchToRegister}
             className="text-[#118B50] hover:underline font-medium"
+            disabled={loading}
           >
             {t("register_link.link")}
           </button>
