@@ -30,67 +30,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Get initial session
     const getSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
 
-      if (session?.user) {
-        // Fetch user role from the users table
-        const { data: userData, error } = await supabase
-          .from("users")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .single();
+        if (session?.user) {
+          // Fetch user role from the users table
+          const { data: userData, error } = await supabase
+            .from("users")
+            .select("role")
+            .eq("user_id", session.user.id)
+            .single();
 
-        if (error) {
-          console.error("Error fetching user role:", error);
+          if (error) {
+            console.error("Error fetching user role:", error.message);
+          }
+
+          // Combine session user with role
+          const userWithRole: UserWithRole = {
+            ...session.user,
+            role: userData?.role || "user",
+          };
+
+          setUser(userWithRole);
+        } else {
+          setUser(null);
         }
-
-        // Combine session user with role
-        const userWithRole: UserWithRole = {
-          ...session.user,
-          role: userData?.role || "user",
-        };
-
-        setUser(userWithRole);
-      } else {
-        setUser(null);
+      } catch (error) {
+        console.error("Error in getSession:", error);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     getSession();
 
     // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        // Fetch user role from the users table
-        const { data: userData, error } = await supabase
-          .from("users")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .single();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        try {
+          if (session?.user) {
+            // Fetch user role from the users table
+            const { data: userData, error } = await supabase
+              .from("users")
+              .select("role")
+              .eq("user_id", session.user.id)
+              .single();
 
-        if (error) {
-          console.error("Error fetching user role:", error);
+            if (error) {
+              console.error("Error fetching user role:", error.message);
+            }
+
+            // Combine session user with role
+            const userWithRole: UserWithRole = {
+              ...session.user,
+              role: userData?.role || "user",
+            };
+
+            setUser(userWithRole);
+          } else {
+            setUser(null);
+          }
+        } catch (error) {
+          console.error("Error in auth state change:", error);
+        } finally {
+          setLoading(false);
         }
-
-        // Combine session user with role
-        const userWithRole: UserWithRole = {
-          ...session.user,
-          role: userData?.role || "user",
-        };
-
-        setUser(userWithRole);
-      } else {
-        setUser(null);
       }
-
-      setLoading(false);
-    });
+    );
 
     return () => subscription.unsubscribe();
   }, []);

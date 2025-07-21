@@ -194,7 +194,7 @@
     "title": "Minu profiil",
     "subtitle": "Tere, {name}! Siin saad hallata oma profiili andmeid.",
     "tabs": {
-      "professional": "Professionaalsed andmed",
+      "professional": "Lisainformatsioon",
       "personal": "Isikuandmed"
     },
     "personal": {
@@ -239,7 +239,11 @@
       "personal_description_placeholder": "Räägi enda kohta lühidalt... (kuni 1000 tähemärki)",
       "save": "Salvesta andmed",
       "saving": "Salvestamine...",
-      "cancel": "Tühista"
+      "cancel": "Tühista",
+      "first_name": "Eesnimi",
+      "last_name": "Perekonnanimi",
+      "email": "E-posti aadress",
+      "phone": "Telefon"
     },
     "messages": {
       "save_success": "Andmed edukalt salvestatud!",
@@ -248,6 +252,25 @@
       "university_required": "Ülikool/Kool on kohustuslik väli",
       "specialization_required": "Eriala/Suund on kohustuslik väli",
       "languages_required": "Vähemalt üks keel peab olema valitud"
+    }
+  },
+  "users": {
+    "page_title": "Kasutajad",
+    "table_title": "Siin näed registreeritud kasutajaid ja nende andmeid",
+    "table": {
+      "first_name": "Eesnimi",
+      "last_name": "Perekonnanimi",
+      "email": "E-post",
+      "phone": "Telefon",
+      "view_details": "Vaata detaile",
+      "no_users": "Kasutajaid ei leitud",
+      "loading": "Laadin kasutajaid..."
+    },
+    "modal": {
+      "title": "Kasutaja andmed",
+      "personal_info": "Isikuandmed",
+      "professional_info": "Lisainformatsioon",
+      "close": "Sulge"
     }
   }
 }
