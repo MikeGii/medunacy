@@ -272,5 +272,27 @@
       "professional_info": "Lisainformatsioon",
       "close": "Sulge"
     }
+  },
+  "forum": {
+    "page_title": "Foorum",
+    "page_subtitle": "Kogukonna arutelud ja teadmiste jagamine",
+    "loading": "Laadin foorumit...",
+    "categories": {
+      "all": "Kõik kategooriad",
+      "title": "Kategooriad",
+      "no_posts": "Selles kategoorias pole veel postitusi"
+    },
+    "posts": {
+      "create": "Uus postitus",
+      "no_posts": "Postitusi ei leitud",
+      "loading": "Laadin postitusi...",
+      "by": "Autor",
+      "comments": "kommentaari",
+      "likes": "meeldimist"
+    },
+    "search": {
+      "placeholder": "Otsi postitusi...",
+      "button": "Otsi"
+    }
   }
 }
