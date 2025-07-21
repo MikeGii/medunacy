@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Fetch user role from the users table
           const { data: userData, error } = await supabase
             .from("users")
-            .select("role")
+            .select("role, preferred_language")
             .eq("user_id", session.user.id)
             .single();
 
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Fetch user role from the users table
           const { data: userData, error } = await supabase
             .from("users")
-            .select("role")
+            .select("role, preferred_language")
             .eq("user_id", session.user.id)
             .single();
 
@@ -90,6 +90,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           };
 
           setUser(userWithRole);
+
+          // Handle language switching after successful login
+          if (event === "SIGNED_IN" && userData?.preferred_language) {
+            const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
+            const preferredLocale = userData.preferred_language as string;
+
+            // If user's preferred language doesn't match current locale, redirect
+            if (preferredLocale !== currentLocale) {
+              const pathWithoutLocale =
+                pathname.replace(/^\/(et|ukr)/, "") || "/";
+              const newPath = `/${preferredLocale}${pathWithoutLocale}`;
+
+              // Use setTimeout to avoid conflicts with other redirects
+              setTimeout(() => {
+                router.push(newPath);
+              }, 100);
+            }
+          }
         } else {
           setUser(null);
         }

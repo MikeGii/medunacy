@@ -4,10 +4,14 @@
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function ProfileData() {
   const t = useTranslations("profile.personal");
   const { personalData, loading, updatePersonalData } = useUserProfile();
+  const router = useRouter();
+  const pathname = usePathname();
+  const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -47,6 +51,9 @@ export default function ProfileData() {
       return;
     }
 
+    const languageChanged = personalData?.language !== formData.language;
+    const newLanguage = formData.language;
+
     setIsSubmitting(true);
 
     const success = await updatePersonalData({
@@ -58,6 +65,21 @@ export default function ProfileData() {
 
     if (success) {
       setMessage({ type: "success", text: t("messages.save_success") });
+
+      // If language changed, redirect to new language
+      if (languageChanged) {
+        const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
+
+        if (newLanguage !== currentLocale) {
+          const pathWithoutLocale = pathname.replace(/^\/(et|ukr)/, "") || "/";
+          const newPath = `/${newLanguage}${pathWithoutLocale}`;
+
+          // Show success message briefly, then redirect
+          setTimeout(() => {
+            router.push(newPath);
+          }, 1000); // Give user time to see the success message
+        }
+      }
     } else {
       setMessage({ type: "error", text: t("messages.save_error") });
     }
@@ -95,7 +117,46 @@ export default function ProfileData() {
               : "bg-red-50 text-red-700 border border-red-200"
           }`}
         >
-          {message.text}
+          <div className="flex items-center space-x-2">
+            {message.type === "success" ? (
+              <svg
+                className="w-5 h-5 text-green-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="w-5 h-5 text-red-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"
+                />
+              </svg>
+            )}
+            <span>{message.text}</span>
+            {message.type === "success" &&
+              personalData?.language !== formData.language && (
+                <span className="text-sm opacity-75">
+                  {currentLocale === "ukr"
+                    ? " - Перенаправлення..."
+                    : " - Suunan ümber..."}
+                </span>
+              )}
+          </div>
         </div>
       )}
 
