@@ -140,18 +140,20 @@ export default function ForumCommentsList({ postId }: ForumCommentsListProps) {
 
     if (confirm("Are you sure you want to delete this comment?")) {
       try {
-        const { error } = await supabase
-          .from("forum_comments")
-          .update({ is_deleted: true })
-          .eq("id", commentId);
+        const { data, error } = await supabase.rpc("soft_delete_comment", {
+          comment_id: commentId,
+        });
 
         if (error) {
-          console.error("Delete error:", error);
           alert(`Failed to delete comment: ${error.message}`);
           return;
         }
 
-        // Refresh comments
+        if (data && !data.success) {
+          alert(`Failed to delete comment: ${data.error}`);
+          return;
+        }
+
         await fetchComments();
       } catch (error) {
         console.error("Error deleting comment:", error);
