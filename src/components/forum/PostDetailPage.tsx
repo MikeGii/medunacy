@@ -1,3 +1,4 @@
+// src/components/forum/PostDetailPage.tsx
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
@@ -46,16 +47,16 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
     redirectOnUnauthorized: true,
   });
 
-  // Add these lines:
   const router = useRouter();
   const pathname = usePathname();
-
   const t = useTranslations("forum.post_detail");
   const [post, setPost] = useState<PostDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
   const currentLocale = pathname.includes("/ukr") ? "ukr" : "et";
+  const dateLocale = currentLocale === "ukr" ? uk : et;
 
+  // Rest of the component code remains exactly the same...
   const fetchPost = useCallback(async () => {
     if (!user || !postId) return;
 
