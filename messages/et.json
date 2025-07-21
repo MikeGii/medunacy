@@ -210,7 +210,9 @@
         "phone": "Telefon",
         "email_note": "E-posti aadressi ei saa muuta turvalisuse kaalutlustel",
         "save": "Salvesta andmed",
-        "saving": "Salvestamine..."
+        "saving": "Salvestamine...",
+        "language": "Eelistatud keel",
+        "language_note": "See keel kasutatakse teatiste ja süsteemisõnumite jaoks"
       },
       "placeholders": {
         "first_name": "Mari",

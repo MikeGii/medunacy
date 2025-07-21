@@ -8,14 +8,15 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 export default function ProfileData() {
   const t = useTranslations("profile.personal");
   const { personalData, loading, updatePersonalData } = useUserProfile();
-  
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     phone: "",
+    language: "et",
   });
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
@@ -24,12 +25,14 @@ export default function ProfileData() {
 
   // Load data into form when personalData is available
   useEffect(() => {
-    if (personalData) {
+    if (personalData && !loading) {
       setFormData(personalData);
     }
-  }, [personalData]);
+  }, [personalData, loading]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -50,6 +53,7 @@ export default function ProfileData() {
       firstName: formData.firstName,
       lastName: formData.lastName,
       phone: formData.phone,
+      language: formData.language,
     });
 
     if (success) {
@@ -177,6 +181,29 @@ export default function ProfileData() {
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all"
             placeholder={t("placeholders.phone")}
           />
+        </div>
+
+        {/* Language Preference */}
+        <div>
+          <label
+            htmlFor="language"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
+            {t("form.language")} <span className="text-red-500">*</span>
+          </label>
+          <select
+            id="language"
+            name="language"
+            value={formData.language || "et"}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all"
+          >
+            <option value="et">Eesti keel</option>
+            <option value="ukr">Українська</option>
+          </select>
+          <p className="mt-1 text-sm text-gray-500">
+            {t("form.language_note")}
+          </p>
         </div>
 
         {/* Submit Button */}
