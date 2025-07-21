@@ -23,6 +23,7 @@
         "required": "nõutav",
         "optional": "valikuline"
       },
+
       "placeholders": {
         "first_name": "Mari",
         "last_name": "Maasikas",
@@ -63,6 +64,7 @@
         "signing_in": "Login sisse...",
         "sign_in": "Logi sisse"
       },
+      "forgot_password_link": "Unustasid parooli?",
       "register_link": {
         "text": "Pole veel kontot?",
         "link": "Registreeru"
@@ -71,6 +73,29 @@
     "welcome": {
       "text": "Tere tulemast",
       "back": "Tere tulemast tagasi!"
+    },
+    "forgot_password": {
+      "title": "Unustasid parooli?",
+      "subtitle": "Sisesta oma e-posti aadress ja saadame sulle parooli lähtestamise lingi",
+      "form": {
+        "email": "E-posti aadress"
+      },
+      "placeholders": {
+        "email": "sinu@email.ee"
+      },
+      "button": {
+        "sending": "Saadan linki...",
+        "send": "Saada lähtestamise link"
+      },
+      "messages": {
+        "success": "Parooli lähtestamise link on saadetud sinu e-posti aadressile. Kontrolli oma postkasti (ka rämpsposti kausta).",
+        "error": "Viga lingi saatmisel. Palun kontrolli e-posti aadressi.",
+        "user_not_found": "Selle e-posti aadressiga kasutajat ei leitud."
+      },
+      "back_to_login": {
+        "text": "Mäletad parooli?",
+        "link": "Tagasi sisselogimisele"
+      }
     }
   },
   "hero": {
@@ -165,7 +190,7 @@
     "subtitle": "Tere, {name}! Siin saad hallata oma profiili andmeid.",
     "form": {
       "title": "Minu andmed",
-      "subtitle": "Täida oma profiili andmed, et teised saaksid sind paremini tundma õppida",
+      "subtitle": "Täida oma profiili andmed, et juhendajad ja nõustajad saaksid parema ülevaate sinu oskuste ja seni läbitud teekonna kohta. Need andmed on nähtavad ainult Medunacy arstidele",
       "university": "Ülikool/Kool",
       "university_placeholder": "Näiteks: Tartu Ülikool",
       "university_finished": "Olen lõpetanud õpingud",
