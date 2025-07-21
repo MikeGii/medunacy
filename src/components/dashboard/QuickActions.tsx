@@ -5,14 +5,14 @@ import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useProfileCompletion } from "@/hooks/useProfileCompletion";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import NotificationBadge from "../ui/NotificationBadge";
 
 export default function QuickActions() {
   const t = useTranslations("dashboard");
   const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(false);
-  const { isComplete, isLoading } = useProfileCompletion();
+  const { profileCompletion, loading } = useUserProfile();
 
   useEffect(() => {
     setIsVisible(true);
@@ -67,7 +67,7 @@ export default function QuickActions() {
       href: `${baseUrl}/profile`,
       gradient: "from-[#5DB996] to-[#E3F0AF]",
       bgGradient: "from-[#5DB996]/10 to-[#E3F0AF]/10",
-      showNotification: !isLoading && !isComplete, // Show notification if profile is incomplete
+      showNotification: !loading && !profileCompletion.isComplete,
     },
   ];
 
