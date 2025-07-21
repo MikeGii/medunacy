@@ -40,7 +40,10 @@ export default function LoginModal({
     const result = await signIn(formData.email, formData.password);
 
     if (result.success) {
-      onClose(); // Close modal on successful login
+      // Don't close modal immediately - let the auth state change handle the redirect
+      setTimeout(() => {
+        onClose(); // Close modal after a short delay
+      }, 500);
     } else {
       setMessage({
         type: "error",
