@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { getUserData, upsertUserData } from "@/lib/userdata";
-import type { UserData, UserDataUpdate, LanguageSkill } from "@/types/userdata";
+import type { UserData } from "@/types/userdata";
 
 interface PersonalData {
   firstName: string;

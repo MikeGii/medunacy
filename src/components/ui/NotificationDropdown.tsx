@@ -7,6 +7,19 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { formatDistanceToNow } from "date-fns";
 import { et, uk } from "date-fns/locale";
 
+// Define the notification interface locally to avoid conflicts with browser Notification API
+interface AppNotification {
+  id: string;
+  type: "post_comment" | "post_like" | "comment_like" | "new_post";
+  title: string;
+  message: string;
+  related_post_id: string | null;
+  related_comment_id: string | null;
+  triggered_by_user_id: string | null;
+  is_read: boolean;
+  created_at: string;
+}
+
 interface NotificationDropdownProps {
   onClose: () => void;
 }
@@ -32,7 +45,7 @@ export default function NotificationDropdown({
   }, [onClose]);
 
   // Handle notification click
-  const handleNotificationClick = async (notification: any) => {
+  const handleNotificationClick = async (notification: AppNotification) => {
     // Mark as read
     if (!notification.is_read) {
       await markAsRead(notification.id);
@@ -153,7 +166,7 @@ export default function NotificationDropdown({
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
-                {notifications.map((notification) => (
+                {notifications.map((notification: AppNotification) => (
                   <div
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthModal } from "@/contexts/AuthModalContext";
-import NotificationBell from "../../ui/NotificationBell";
 
 interface MobileMenuProps {
   isOpen: boolean;
