@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 interface RegisterData {
   firstName: string;
@@ -9,6 +9,7 @@ interface RegisterData {
   email: string;
   phone: string;
   password: string;
+  language: string;
 }
 
 interface AuthResult {
@@ -30,51 +31,59 @@ export function useAuthActions() {
           data: {
             first_name: data.firstName,
             last_name: data.lastName,
-            phone: data.phone
+            phone: data.phone,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`
-        }
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
 
       if (authError) throw authError;
 
       if (authData.user) {
         // Insert into custom users table
-        const { error: dbError } = await supabase
-          .from('users')
-          .insert({
-            user_id: authData.user.id,
-            first_name: data.firstName,
-            last_name: data.lastName,
-            email: data.email,
-            phone: data.phone,
-            is_verified: false
-          });
+        const { error: dbError } = await supabase.from("users").insert({
+          user_id: authData.user.id,
+          first_name: data.firstName,
+          last_name: data.lastName,
+          email: data.email,
+          phone: data.phone,
+          preferred_language: data.language,
+          is_verified: false,
+        });
 
         if (dbError) throw dbError;
       }
 
-      return { success: true, message: 'Registration successful! Please check your email to verify your account.' };
+      return {
+        success: true,
+        message:
+          "Registration successful! Please check your email to verify your account.",
+      };
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      const errorMessage =
+        error instanceof Error ? error.message : "An unexpected error occurred";
       return { success: false, message: errorMessage };
     } finally {
       setLoading(false);
     }
   };
 
-  const signIn = async (email: string, password: string): Promise<AuthResult> => {
+  const signIn = async (
+    email: string,
+    password: string
+  ): Promise<AuthResult> => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
-        password
+        password,
       });
 
       if (error) throw error;
-      return { success: true, message: 'Signed in successfully!' };
+      return { success: true, message: "Signed in successfully!" };
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      const errorMessage =
+        error instanceof Error ? error.message : "An unexpected error occurred";
       return { success: false, message: errorMessage };
     } finally {
       setLoading(false);
@@ -84,6 +93,6 @@ export function useAuthActions() {
   return {
     register,
     signIn,
-    loading
+    loading,
   };
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useAuthActions } from "@/hooks/useAuth";
+import { usePathname } from "next/navigation";
 
 interface RegisterModalProps {
   onSwitchToLogin: () => void;
@@ -16,6 +17,7 @@ interface RegisterFormData {
   phone: string;
   password: string;
   confirmPassword: string;
+  language: string;
 }
 
 export default function RegisterModal({
@@ -24,6 +26,8 @@ export default function RegisterModal({
 }: RegisterModalProps) {
   const t = useTranslations("auth.register");
   const { register, loading } = useAuthActions();
+  const pathname = usePathname();
+  const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
   const [formData, setFormData] = useState<RegisterFormData>({
     firstName: "",
     lastName: "",
@@ -31,6 +35,7 @@ export default function RegisterModal({
     phone: "",
     password: "",
     confirmPassword: "",
+    language: currentLocale,
   });
   const [message, setMessage] = useState<{
     type: "success" | "error";
@@ -53,7 +58,9 @@ export default function RegisterModal({
     }
   }, [message, countdown, onClose]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -81,6 +88,7 @@ export default function RegisterModal({
       email: formData.email,
       phone: formData.phone,
       password: formData.password,
+      language: formData.language,
     });
 
     if (result.success) {
@@ -93,6 +101,7 @@ export default function RegisterModal({
         phone: "",
         password: "",
         confirmPassword: "",
+        language: currentLocale,
       });
     } else {
       setMessage({ type: "error", text: result.message });
@@ -282,6 +291,27 @@ export default function RegisterModal({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all text-sm"
               placeholder={t("placeholders.phone")}
             />
+          </div>
+
+          {/* Language Selection */}
+          <div>
+            <label
+              htmlFor="language"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              {t("form.language")} *
+            </label>
+            <select
+              id="language"
+              name="language"
+              required
+              value={formData.language}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all text-sm"
+            >
+              <option value="et">Eesti keel</option>
+              <option value="ukr">Українська</option>
+            </select>
           </div>
 
           <div>
