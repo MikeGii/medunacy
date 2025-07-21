@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,14 +14,25 @@ interface ForumCommentsListProps {
 export default function ForumCommentsList({ postId }: ForumCommentsListProps) {
   const t = useTranslations("forum.post_detail.comments");
   const { user } = useAuth();
-  const [comments, setComments] = useState<any[]>([]);
+
+  interface Comment {
+    id: string;
+    content: string;
+    created_at: string;
+    user: {
+      id: string;
+      first_name: string;
+      last_name: string;
+      role: string;
+    };
+    likes_count: number;
+    user_has_liked: boolean;
+  }
+
+  const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchComments();
-  }, [postId, user]);
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -89,7 +100,11 @@ export default function ForumCommentsList({ postId }: ForumCommentsListProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [postId, user]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
 
   const handleLike = async (commentId: string) => {
     if (!user) return;

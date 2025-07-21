@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,23 +12,40 @@ interface ForumPostListProps {
   searchQuery?: string;
 }
 
+interface Post {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  user: {
+    first_name: string;
+    last_name: string;
+    role: string;
+  };
+  category: {
+    id: string;
+    name: string;
+  };
+  _count: {
+    comments: number;
+    likes: number;
+  };
+  user_has_liked: boolean;
+}
+
 export default function ForumPostList({
   selectedCategory,
   searchQuery,
 }: ForumPostListProps) {
   const t = useTranslations("forum.posts");
   const { user } = useAuth();
-  const [posts, setPosts] = useState<any[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
   const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
 
-  useEffect(() => {
-    fetchPosts();
-  }, [selectedCategory, searchQuery, user]);
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -133,7 +150,11 @@ export default function ForumPostList({
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory, searchQuery, user]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   const handlePostClick = (postId: string) => {
     router.push(`/${currentLocale}/forum/${postId}`);

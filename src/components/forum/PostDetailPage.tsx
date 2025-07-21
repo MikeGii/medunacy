@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { supabase } from "@/lib/supabase";
@@ -61,7 +61,7 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
     }
   }, [isAuthorized, user, postId]);
 
-  const fetchPost = async () => {
+  const fetchPost = useCallback(async () => {
     try {
       // Fetch post details
       const { data: postData, error: postError } = await supabase
@@ -138,7 +138,7 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [postId, user]);
 
   const handleLike = async () => {
     if (!user || !post) return;
