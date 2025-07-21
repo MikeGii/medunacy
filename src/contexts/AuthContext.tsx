@@ -27,13 +27,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // src/contexts/AuthContext.tsx - Replace the entire useEffect section
   useEffect(() => {
+    let mounted = true;
+
     // Get initial session
     const getSession = async () => {
       try {
         const {
           data: { session },
         } = await supabase.auth.getSession();
+
+        if (!mounted) return;
 
         if (session?.user) {
           // Fetch user role from the users table
@@ -42,6 +47,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .select("role, preferred_language")
             .eq("user_id", session.user.id)
             .single();
+
+          if (!mounted) return;
 
           if (error) {
             console.error("Error fetching user role:", error.message);
@@ -59,8 +66,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error("Error in getSession:", error);
+        if (mounted) {
+          setUser(null);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -70,6 +82,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+
       try {
         if (session?.user) {
           // Fetch user role from the users table
@@ -78,6 +92,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .select("role, preferred_language")
             .eq("user_id", session.user.id)
             .single();
+
+          if (!mounted) return;
 
           if (error) {
             console.error("Error fetching user role:", error.message);
@@ -104,22 +120,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
               // Use setTimeout to avoid conflicts with other redirects
               setTimeout(() => {
-                router.push(newPath);
+                if (mounted) {
+                  router.push(newPath);
+                }
               }, 100);
             }
           }
         } else {
-          setUser(null);
+          if (mounted) {
+            setUser(null);
+          }
         }
       } catch (error) {
         console.error("Error in auth state change:", error);
+        if (mounted) {
+          setUser(null);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []); // Remove pathname dependency to prevent infinite loops
 
   const signOut = async () => {
     try {
