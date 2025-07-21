@@ -1,8 +1,9 @@
-// src/hooks/useAuth.ts - Optimized version
+// src/hooks/useAuth.ts - Optimized version with multilingual support
 "use client";
 
 import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { useTranslations } from "next-intl";
 
 interface RegisterData {
   firstName: string;
@@ -17,6 +18,7 @@ interface AuthResult {
   success: boolean;
   message: string;
   userId?: string;
+  errorCode?: string; // Add error code for translation
 }
 
 // Cache for ongoing requests to prevent duplicate calls
@@ -25,6 +27,7 @@ const authRequestCache = new Map<string, Promise<AuthResult>>();
 export function useAuthActions() {
   const [loading, setLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const t = useTranslations("auth.common");
 
   // Cleanup function for component unmount
   const cleanup = useCallback(() => {
@@ -55,7 +58,11 @@ export function useAuthActions() {
         // Validate email format one more time
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(data.email)) {
-          return { success: false, message: "Invalid email format" };
+          return { 
+            success: false, 
+            message: t("invalid_email_format"),
+            errorCode: "invalid_email_format"
+          };
         }
 
         // Check if email already exists (prevents Supabase error)
@@ -72,7 +79,8 @@ export function useAuthActions() {
         if (existingUser) {
           return { 
             success: false, 
-            message: "This email is already registered. Please sign in instead." 
+            message: t("email_already_registered"),
+            errorCode: "email_already_registered"
           };
         }
 
@@ -95,17 +103,29 @@ export function useAuthActions() {
           
           // Handle specific Supabase errors
           if (authError.message.includes("Password should be")) {
-            return { success: false, message: "Password must be at least 6 characters long" };
+            return { 
+              success: false, 
+              message: t("password_too_short"),
+              errorCode: "password_too_short"
+            };
           }
           if (authError.message.includes("Invalid email")) {
-            return { success: false, message: "Please enter a valid email address" };
+            return { 
+              success: false, 
+              message: t("invalid_email_format"),
+              errorCode: "invalid_email_format"
+            };
           }
           
           throw authError;
         }
 
         if (!authData.user) {
-          return { success: false, message: "Registration failed. Please try again." };
+          return { 
+            success: false, 
+            message: t("registration_failed"),
+            errorCode: "registration_failed"
+          };
         }
 
         // Insert into custom users table with retry logic
@@ -158,10 +178,18 @@ export function useAuthActions() {
         // Clean up the user if database insert failed
         if (error instanceof Error && error.message.includes("users_email_key")) {
           // Email already exists in database
-          return { success: false, message: "This email is already registered" };
+          return { 
+            success: false, 
+            message: t("email_already_registered"),
+            errorCode: "email_already_registered"
+          };
         }
         
-        return { success: false, message: errorMessage };
+        return { 
+          success: false, 
+          message: errorMessage,
+          errorCode: "unexpected_error"
+        };
       } finally {
         setLoading(false);
         // Remove from cache after completion
@@ -174,7 +202,7 @@ export function useAuthActions() {
     authRequestCache.set(cacheKey, request);
     
     return request;
-  }, []);
+  }, [t]);
 
   const signIn = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     // Create cache key
@@ -196,7 +224,11 @@ export function useAuthActions() {
       try {
         // Basic validation
         if (!email || !password) {
-          return { success: false, message: "Email and password are required" };
+          return { 
+            success: false, 
+            message: t("email_password_required"),
+            errorCode: "email_password_required"
+          };
         }
 
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -209,18 +241,24 @@ export function useAuthActions() {
           
           // Handle specific error cases
           if (error.message.includes("Invalid login credentials")) {
-            return { success: false, message: "Invalid email or password" };
+            return { 
+              success: false, 
+              message: "Invalid email or password", // This will be handled by the modal
+              errorCode: "invalid_credentials"
+            };
           }
           if (error.message.includes("Email not confirmed")) {
             return { 
               success: false, 
-              message: "Please verify your email before signing in. Check your inbox for the verification link." 
+              message: "Please verify your email before signing in", // This will be handled by the modal
+              errorCode: "email_not_confirmed"
             };
           }
           if (error.message.includes("Too many requests")) {
             return { 
               success: false, 
-              message: "Too many login attempts. Please try again in a few minutes." 
+              message: t("too_many_requests"),
+              errorCode: "too_many_requests"
             };
           }
           
@@ -228,7 +266,11 @@ export function useAuthActions() {
         }
 
         if (!data.user) {
-          return { success: false, message: "Sign in failed. Please try again." };
+          return { 
+            success: false, 
+            message: "Sign in failed", // This will be handled by the modal
+            errorCode: "sign_in_failed"
+          };
         }
 
         // Update last login time (non-blocking)
@@ -251,7 +293,11 @@ export function useAuthActions() {
         console.error("Sign in error:", error);
         
         const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-        return { success: false, message: errorMessage };
+        return { 
+          success: false, 
+          message: errorMessage,
+          errorCode: "unexpected_error"
+        };
       } finally {
         setLoading(false);
         // Remove from cache
@@ -264,13 +310,23 @@ export function useAuthActions() {
     authRequestCache.set(cacheKey, request);
     
     return request;
-  }, []);
+  }, [t]);
 
   // Forgot password function (bonus optimization)
   const resetPassword = useCallback(async (email: string): Promise<AuthResult> => {
     setLoading(true);
     
     try {
+      // Basic validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return { 
+          success: false, 
+          message: t("invalid_email_format"),
+          errorCode: "invalid_email_format"
+        };
+      }
+
       const { error } = await supabase.auth.resetPasswordForEmail(
         email.toLowerCase().trim(),
         {
@@ -284,7 +340,8 @@ export function useAuthActions() {
         if (error.message.includes("User not found")) {
           return { 
             success: false, 
-            message: "No account found with this email address" 
+            message: t("no_account_found"),
+            errorCode: "no_account_found"
           };
         }
         
@@ -297,11 +354,15 @@ export function useAuthActions() {
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      return { success: false, message: errorMessage };
+      return { 
+        success: false, 
+        message: errorMessage,
+        errorCode: "unexpected_error"
+      };
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   return {
     register,

@@ -104,7 +104,13 @@
     "common": {
       "email_required": "E-posti aadress on nõutav",
       "password_required": "Parool on nõutav",
-      "no_account_found": "Selle e-posti aadressiga kontot ei leitud"
+      "no_account_found": "Selle e-posti aadressiga kontot ei leitud",
+      "invalid_email_format": "Vigane e-posti formaat",
+      "email_already_registered": "See e-posti aadress on juba registreeritud. Palun logi sisse.",
+      "password_too_short": "Parool peab olema vähemalt 6 tähemärki pikk",
+      "registration_failed": "Registreerimine ebaõnnestus. Palun proovi uuesti.",
+      "too_many_requests": "Liiga palju päringuid. Palun proovi mõne minuti pärast uuesti.",
+      "email_password_required": "E-post ja parool on kohustuslikud"
     },
     "welcome": {
       "text": "Tere tulemast",
