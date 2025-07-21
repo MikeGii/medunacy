@@ -293,6 +293,48 @@
     "search": {
       "placeholder": "Otsi postitusi...",
       "button": "Otsi"
+    },
+    "create_post": {
+      "button": "Uus postitus",
+      "modal_title": "Loo uus postitus",
+      "form": {
+        "title": "Pealkiri",
+        "title_placeholder": "Sisesta postituse pealkiri...",
+        "category": "Kategooria",
+        "category_placeholder": "Vali kategooria",
+        "content": "Sisu",
+        "content_placeholder": "Kirjuta oma postitus siia...",
+        "submit": "Avalda postitus",
+        "cancel": "Tühista",
+        "creating": "Avaldan..."
+      },
+      "category": {
+        "new": "Lisa uus kategooria",
+        "modal_title": "Lisa uus kategooria",
+        "name": "Kategooria nimi",
+        "name_placeholder": "Sisesta kategooria nimi...",
+        "create": "Loo kategooria",
+        "creating": "Loon...",
+        "cancel": "Tühista"
+      }
+    },
+    "post_detail": {
+      "loading": "Laadin postitust...",
+      "not_found": "Postitust ei leitud",
+      "back": "Tagasi foorumisse",
+      "edit": "Muuda",
+      "delete": "Kustuta",
+      "like": "Meeldib",
+      "unlike": "Eemalda meeldimine",
+      "comments": {
+        "title": "Kommentaarid",
+        "empty": "Kommentaare pole veel. Ole esimene!",
+        "add": "Lisa kommentaar",
+        "placeholder": "Kirjuta oma kommentaar...",
+        "submit": "Postita",
+        "submitting": "Postitan...",
+        "delete": "Kustuta kommentaar"
+      }
     }
   }
 }
