@@ -7,6 +7,8 @@
     "login": "Увійти",
     "register": "Зареєструватися",
     "sign_out": "Вийти",
+    "admin": "Адміністратор Medunacy",
+    "doctor": "Лікар Medunacy",
     "member": "Учасник Medunacy"
   },
   "auth": {
