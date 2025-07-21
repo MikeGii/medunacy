@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { User } from "@supabase/supabase-js";
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -58,8 +59,8 @@ export default function AuthCallback() {
                 sessionPromise,
                 timeoutPromise,
               ])) as {
-                data?: { user: any };
-                error?: any;
+                data?: { user: User };
+                error?: Error;
               };
 
               if (result.data?.user) {
@@ -107,10 +108,7 @@ export default function AuthCallback() {
       }
     };
 
-    const handleSuccessfulAuth = async (user: {
-      id: string;
-      [key: string]: any;
-    }) => {
+    const handleSuccessfulAuth = async (user: User) => {
       try {
         console.log("Handling successful authentication for user:", user.id);
 
