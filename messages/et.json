@@ -185,7 +185,10 @@
     "welcome": "Siin on sinu töölaud,",
     "quick_actions": "Kiired toimingud",
     "forum": "Foorum",
-    "my_data": "Minu andmed"
+    "my_data": "Minu andmed",
+    "healthcare_tools": "Tervisehoiutöötaja tööriistad",
+    "users": "Kasutajad",
+    "users_description": "Vaata ja halda kasutajaid"
   },
   "profile": {
     "title": "Minu profiil",
