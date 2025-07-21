@@ -172,14 +172,25 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
 
     if (confirm("Are you sure you want to delete this post?")) {
       try {
-        await supabase
-          .from("forum_posts")
-          .update({ is_deleted: true })
-          .eq("id", post.id);
+        const { data, error } = await supabase.rpc("soft_delete_post", {
+          post_id: post.id,
+        });
+
+        if (error) {
+          console.error("Delete error:", error);
+          alert(`Failed to delete post: ${error.message}`);
+          return;
+        }
+
+        if (data && !data.success) {
+          alert(`Failed to delete post: ${data.error}`);
+          return;
+        }
 
         router.push(`/${currentLocale}/forum`);
       } catch (error) {
         console.error("Error deleting post:", error);
+        alert("An unexpected error occurred while deleting the post");
       }
     }
   };
