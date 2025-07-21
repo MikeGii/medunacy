@@ -8,6 +8,7 @@ import DashboardHero from './DashboardHero';
 import QuickActions from './QuickActions';
 import { AuthModalProvider } from '@/contexts/AuthModalContext';
 import { useAuth } from '@/contexts/AuthContext';
+import HealthcareTools from './HealthcareTools';
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -48,6 +49,7 @@ export default function DashboardPage() {
         <main>
           <DashboardHero />
           <QuickActions />
+          <HealthcareTools />
         </main>
       </div>
     </AuthModalProvider>
