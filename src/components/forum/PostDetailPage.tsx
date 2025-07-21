@@ -46,23 +46,12 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
   const currentLocale = pathname.includes("/ukr") ? "ukr" : "et";
   const dateLocale = currentLocale === "ukr" ? uk : et;
 
-  useEffect(() => {
-    if (!authLoading && user) {
-      setIsAuthorized(true);
-    } else if (!authLoading && !user) {
-      setIsAuthorized(false);
-      router.push(`/${currentLocale}`);
-    }
-  }, [user, authLoading, router, currentLocale]);
-
-  useEffect(() => {
-    if (isAuthorized && user) {
-      fetchPost();
-    }
-  }, [isAuthorized, user, postId]);
-
   const fetchPost = useCallback(async () => {
+    if (!user || !postId) return;
+
     try {
+      setLoading(true);
+
       // Fetch post details
       const { data: postData, error: postError } = await supabase
         .from("forum_posts")
@@ -105,7 +94,7 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
 
       const likesCount = likesData?.length || 0;
       const userHasLiked =
-        likesData?.some((like) => like.user_id === user?.id) || false;
+        likesData?.some((like) => like.user_id === user.id) || false;
 
       // Handle potential array response from joins
       const userData = Array.isArray(postData.users)
@@ -135,10 +124,30 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
       });
     } catch (error) {
       console.error("Error fetching post:", error);
+      setPost(null);
     } finally {
       setLoading(false);
     }
   }, [postId, user]);
+
+  // Handle authentication and authorization
+  useEffect(() => {
+    if (!authLoading && user) {
+      // User is authenticated
+      setIsAuthorized(true);
+    } else if (!authLoading && !user) {
+      // Not authenticated
+      setIsAuthorized(false);
+      router.push(`/${currentLocale}`);
+    }
+  }, [user, authLoading, router, currentLocale]);
+
+  // Fetch post when authorized
+  useEffect(() => {
+    if (isAuthorized && user) {
+      fetchPost();
+    }
+  }, [isAuthorized, user, fetchPost]);
 
   const handleLike = async () => {
     if (!user || !post) return;
@@ -204,7 +213,8 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
     return badges[role as keyof typeof badges];
   };
 
-  if (authLoading || isAuthorized === null) {
+  // Show loading while checking authorization or loading post
+  if (authLoading || isAuthorized === null || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA] flex items-center justify-center">
         <div className="text-center">
@@ -215,6 +225,7 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
     );
   }
 
+  // Don't render if not authorized
   if (!isAuthorized) {
     return null;
   }
@@ -246,14 +257,7 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
             <span>{t("back")}</span>
           </button>
 
-          {loading ? (
-            <div className="bg-white/40 backdrop-blur-md rounded-2xl md:rounded-3xl border border-white/50 shadow-lg p-8">
-              <div className="flex items-center justify-center">
-                <div className="animate-spin w-8 h-8 border-4 border-[#118B50] border-t-transparent rounded-full"></div>
-                <span className="ml-3 text-[#118B50]">{t("loading")}</span>
-              </div>
-            </div>
-          ) : !post ? (
+          {!post ? (
             <div className="bg-white/40 backdrop-blur-md rounded-2xl md:rounded-3xl border border-white/50 shadow-lg p-8">
               <p className="text-center text-gray-600">{t("not_found")}</p>
             </div>
@@ -342,7 +346,6 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
 
                 {/* Post Content */}
                 <div className="prose prose-lg max-w-none">
-                  {/* For now, just display as text. We'll add markdown rendering later */}
                   <p className="text-gray-700 whitespace-pre-wrap">
                     {post.content}
                   </p>
