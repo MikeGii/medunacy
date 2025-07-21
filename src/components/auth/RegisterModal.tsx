@@ -33,11 +33,11 @@ export default function RegisterModal({
   const { register, loading } = useAuthActions();
   const pathname = usePathname();
   const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
-  
+
   // Use refs for preventing stale closures
   const isMountedRef = useRef(true);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   const [formData, setFormData] = useState<RegisterFormData>({
     firstName: "",
     lastName: "",
@@ -47,7 +47,7 @@ export default function RegisterModal({
     confirmPassword: "",
     language: currentLocale,
   });
-  
+
   const [errors, setErrors] = useState<FormErrors>({});
   const [message, setMessage] = useState<{
     type: "success" | "error";
@@ -71,7 +71,7 @@ export default function RegisterModal({
     if (message?.type === "success" && countdown !== null && countdown > 0) {
       countdownRef.current = setTimeout(() => {
         if (isMountedRef.current) {
-          setCountdown(prev => (prev !== null ? prev - 1 : null));
+          setCountdown((prev) => (prev !== null ? prev - 1 : null));
         }
       }, 1000);
     } else if (countdown === 0) {
@@ -86,181 +86,204 @@ export default function RegisterModal({
   }, [countdown, message, onClose]);
 
   // Validation function
-  const validateField = useCallback((name: string, value: string): string => {
-    switch (name) {
-      case "firstName":
-      case "lastName":
-        if (!value.trim()) {
-          return t(`form.${name === "firstName" ? "first_name" : "last_name"}`) + " is required";
-        }
-        if (value.trim().length < 2) {
-          return "Must be at least 2 characters";
-        }
-        if (!/^[a-zA-ZÀ-ÿĀ-žА-я\s\-']+$/.test(value)) {
-          return "Only letters, spaces, hyphens and apostrophes allowed";
-        }
-        return "";
-        
-      case "email":
-        if (!value.trim()) {
-          return t("form.email") + " is required";
-        }
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(value.trim())) {
-          return "Please enter a valid email address";
-        }
-        return "";
-        
-      case "phone":
-        if (value && !/^[\d\s\-\+\(\)]+$/.test(value)) {
-          return "Please enter a valid phone number";
-        }
-        return "";
-        
-      case "password":
-        if (!value) {
-          return t("form.password") + " is required";
-        }
-        if (value.length < 6) {
-          return t("messages.password_short");
-        }
-        // Check for at least one number and one letter
-        if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(value)) {
-          return "Password must contain at least one letter and one number";
-        }
-        return "";
-        
-      case "confirmPassword":
-        if (!value) {
-          return t("form.confirm_password") + " is required";
-        }
-        if (value !== formData.password) {
-          return t("messages.password_mismatch");
-        }
-        return "";
-        
-      default:
-        return "";
-    }
-  }, [formData.password, t]);
+  const validateField = useCallback(
+    (name: string, value: string): string => {
+      switch (name) {
+        case "firstName":
+        case "lastName":
+          const fieldName = t(
+            `form.${name === "firstName" ? "first_name" : "last_name"}`
+          );
+          if (!value.trim()) {
+            return t("validation.field_required", { field: fieldName });
+          }
+          if (value.trim().length < 2) {
+            return t("validation.min_length", { min: 2 });
+          }
+          if (!/^[a-zA-ZÀ-ÿĀ-žА-я\s\-']+$/.test(value)) {
+            return t("validation.invalid_characters");
+          }
+          return "";
+
+        case "email":
+          if (!value.trim()) {
+            return t("validation.field_required", { field: t("form.email") });
+          }
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(value.trim())) {
+            return t("validation.invalid_email");
+          }
+          return "";
+
+        case "phone":
+          if (value && !/^[\d\s\-\+\(\)]+$/.test(value)) {
+            return t("validation.invalid_phone");
+          }
+          return "";
+
+        case "password":
+          if (!value) {
+            return t("validation.field_required", {
+              field: t("form.password"),
+            });
+          }
+          if (value.length < 6) {
+            return t("messages.password_short");
+          }
+          if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(value)) {
+            return t("validation.password_complexity");
+          }
+          return "";
+
+        case "confirmPassword":
+          if (!value) {
+            return t("validation.field_required", {
+              field: t("form.confirm_password"),
+            });
+          }
+          if (value !== formData.password) {
+            return t("messages.password_mismatch");
+          }
+          return "";
+
+        default:
+          return "";
+      }
+    },
+    [formData.password, t]
+  );
 
   // Memoized change handler with validation
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    
-    // Update form data
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      const { name, value } = e.target;
+
+      // Update form data
+      setFormData((prev) => ({
         ...prev,
-        [name]: "",
+        [name]: value,
       }));
-    }
-    
-    // Validate on blur for better UX
-    if (name === "confirmPassword" && value) {
+
+      // Clear error when user starts typing
+      if (errors[name]) {
+        setErrors((prev) => ({
+          ...prev,
+          [name]: "",
+        }));
+      }
+
+      // Validate on blur for better UX
+      if (name === "confirmPassword" && value) {
+        const error = validateField(name, value);
+        if (error) {
+          setErrors((prev) => ({
+            ...prev,
+            [name]: error,
+          }));
+        }
+      }
+    },
+    [errors, validateField]
+  );
+
+  // Validate on blur
+  const handleBlur = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      const { name, value } = e.target;
       const error = validateField(name, value);
+
       if (error) {
-        setErrors(prev => ({
+        setErrors((prev) => ({
           ...prev,
           [name]: error,
         }));
       }
-    }
-  }, [errors, validateField]);
-
-  // Validate on blur
-  const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const error = validateField(name, value);
-    
-    if (error) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: error,
-      }));
-    }
-  }, [validateField]);
+    },
+    [validateField]
+  );
 
   // Form submission
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessage(null);
-    
-    // Validate all fields
-    const newErrors: FormErrors = {};
-    Object.keys(formData).forEach(key => {
-      if (key !== "language") {
-        const error = validateField(key, formData[key as keyof RegisterFormData]);
-        if (error) {
-          newErrors[key] = error;
-        }
-      }
-    });
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      // Focus on first error field
-      const firstErrorField = Object.keys(newErrors)[0];
-      const element = document.getElementById(firstErrorField);
-      element?.focus();
-      return;
-    }
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setMessage(null);
 
-    try {
-      const result = await register({
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
-        email: formData.email.trim().toLowerCase(),
-        phone: formData.phone.trim(),
-        password: formData.password,
-        language: formData.language,
+      // Validate all fields
+      const newErrors: FormErrors = {};
+      Object.keys(formData).forEach((key) => {
+        if (key !== "language") {
+          const error = validateField(
+            key,
+            formData[key as keyof RegisterFormData]
+          );
+          if (error) {
+            newErrors[key] = error;
+          }
+        }
       });
 
-      if (!isMountedRef.current) return;
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        setMessage({ type: "error", text: t("errors.fill_all_fields") });
+        // Focus on first error field
+        const firstErrorField = Object.keys(newErrors)[0];
+        const element = document.getElementById(firstErrorField);
+        element?.focus();
+        return;
+      }
 
-      if (result.success) {
-        setMessage({ type: "success", text: "" });
-        setCountdown(10); // Start 10-second countdown
-        
-        // Clear form
-        setFormData({
-          firstName: "",
-          lastName: "",
-          email: "",
-          phone: "",
-          password: "",
-          confirmPassword: "",
-          language: currentLocale,
+      try {
+        const result = await register({
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          email: formData.email.trim().toLowerCase(),
+          phone: formData.phone.trim(),
+          password: formData.password,
+          language: formData.language,
         });
-        setErrors({});
-      } else {
-        // Handle specific error cases
-        let errorMessage = result.message;
-        
-        if (errorMessage.includes("already registered")) {
-          errorMessage = "This email is already registered. Please sign in instead.";
-        } else if (errorMessage.includes("Invalid email")) {
-          errorMessage = "Please enter a valid email address";
+
+        if (!isMountedRef.current) return;
+
+        if (result.success) {
+          setMessage({ type: "success", text: "" });
+          setCountdown(10); // Start 10-second countdown
+
+          // Clear form
+          setFormData({
+            firstName: "",
+            lastName: "",
+            email: "",
+            phone: "",
+            password: "",
+            confirmPassword: "",
+            language: currentLocale,
+          });
+          setErrors({});
+        } else {
+          let errorMessage = result.message;
+
+          if (errorMessage.includes("already registered")) {
+            errorMessage = t("validation.email_already_exists");
+          } else if (errorMessage.includes("Invalid email")) {
+            errorMessage = t("validation.invalid_email");
+          } else if (errorMessage.includes("Registration failed")) {
+            errorMessage = t("errors.registration_failed");
+          }
+
+          setMessage({ type: "error", text: errorMessage });
         }
-        
-        setMessage({ type: "error", text: errorMessage });
+      } catch (error) {
+        console.error("Registration error:", error);
+        if (isMountedRef.current) {
+          setMessage({
+            type: "error",
+            text: t("messages.unexpected_error"),
+          });
+        }
       }
-    } catch (error) {
-      console.error("Registration error:", error);
-      if (isMountedRef.current) {
-        setMessage({ 
-          type: "error", 
-          text: t("messages.unexpected_error") 
-        });
-      }
-    }
-  }, [formData, currentLocale, register, validateField, t]);
+    },
+    [formData, currentLocale, register, validateField, t]
+  );
 
   const isDisabled = loading || message?.type === "success";
 
@@ -277,9 +300,18 @@ export default function RegisterModal({
           <div className="flex items-start space-x-4">
             <div className="flex-shrink-0">
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                        d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                <svg
+                  className="w-6 h-6 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
                 </svg>
               </div>
             </div>
@@ -294,12 +326,22 @@ export default function RegisterModal({
 
               {countdown !== null && (
                 <div className="flex items-center space-x-2 text-green-600">
-                  <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="w-4 h-4 animate-spin"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                   <span className="text-sm font-medium">
-                    {t("messages.success_note")} {countdown} {t("messages.success_seconds")}
+                    {t("messages.success_note")} {countdown}{" "}
+                    {t("messages.success_seconds")}
                   </span>
                 </div>
               )}
@@ -307,8 +349,18 @@ export default function RegisterModal({
 
             <div className="flex-shrink-0">
               <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  className="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               </div>
             </div>
@@ -320,9 +372,18 @@ export default function RegisterModal({
       {message?.type === "error" && (
         <div className="mb-6 p-4 rounded-lg bg-red-50 text-red-700 border border-red-200">
           <div className="flex items-center space-x-2">
-            <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-5 h-5 text-red-500 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <span>{message.text}</span>
           </div>
@@ -334,7 +395,10 @@ export default function RegisterModal({
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="firstName"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 {t("form.first_name")} *
               </label>
               <input
@@ -356,9 +420,12 @@ export default function RegisterModal({
                 <p className="mt-1 text-xs text-red-600">{errors.firstName}</p>
               )}
             </div>
-            
+
             <div>
-              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="lastName"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 {t("form.last_name")} *
               </label>
               <input
@@ -382,7 +449,10 @@ export default function RegisterModal({
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               {t("form.email")} *
             </label>
             <input
@@ -406,8 +476,14 @@ export default function RegisterModal({
           </div>
 
           <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-              {t("form.phone")} <span className="text-gray-500 text-xs">({t("form.optional")})</span>
+            <label
+              htmlFor="phone"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              {t("form.phone")}{" "}
+              <span className="text-gray-500 text-xs">
+                ({t("form.optional")})
+              </span>
             </label>
             <input
               type="tel"
@@ -429,7 +505,10 @@ export default function RegisterModal({
           </div>
 
           <div>
-            <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="language"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               {t("form.language")} *
             </label>
             <select
@@ -447,7 +526,10 @@ export default function RegisterModal({
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               {t("form.password")} *
             </label>
             <input
@@ -471,7 +553,10 @@ export default function RegisterModal({
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               {t("form.confirm_password")} *
             </label>
             <input
@@ -490,7 +575,9 @@ export default function RegisterModal({
               autoComplete="new-password"
             />
             {errors.confirmPassword && (
-              <p className="mt-1 text-xs text-red-600">{errors.confirmPassword}</p>
+              <p className="mt-1 text-xs text-red-600">
+                {errors.confirmPassword}
+              </p>
             )}
           </div>
 
@@ -501,9 +588,24 @@ export default function RegisterModal({
           >
             {loading ? (
               <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 {t("button.creating")}
               </span>
