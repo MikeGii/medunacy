@@ -264,7 +264,10 @@
       "phone": "Telefon",
       "view_details": "Vaata detaile",
       "no_users": "Kasutajaid ei leitud",
-      "loading": "Laadin kasutajaid..."
+      "loading": "Laadin kasutajaid...",
+      "admins": "Administraatorid",
+      "doctors": "Arstid",
+      "users": "Kasutajad"
     },
     "modal": {
       "title": "Kasutaja andmed",
