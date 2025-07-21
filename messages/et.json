@@ -188,6 +188,36 @@
   "profile": {
     "title": "Minu profiil",
     "subtitle": "Tere, {name}! Siin saad hallata oma profiili andmeid.",
+    "tabs": {
+      "professional": "Professionaalsed andmed",
+      "personal": "Isikuandmed"
+    },
+    "personal": {
+      "title": "Isikuandmed",
+      "subtitle": "Halda oma põhilisi isikuandmeid ja kontaktinfot",
+      "form": {
+        "first_name": "Eesnimi",
+        "last_name": "Perekonnanimi",
+        "email": "E-posti aadress",
+        "phone": "Telefon",
+        "email_note": "E-posti aadressi ei saa muuta turvalisuse kaalutlustel",
+        "save": "Salvesta andmed",
+        "saving": "Salvestamine..."
+      },
+      "placeholders": {
+        "first_name": "Mari",
+        "last_name": "Maasikas",
+        "email": "mari@example.com",
+        "phone": "+372 1234 5678"
+      },
+      "messages": {
+        "save_success": "Isikuandmed edukalt uuendatud!",
+        "save_error": "Viga isikuandmete salvestamisel",
+        "loading": "Andmete laadimine...",
+        "name_required": "Eesnimi ja perekonnanimi on kohustuslikud",
+        "email_required": "E-posti aadress on kohustuslik"
+      }
+    },
     "form": {
       "title": "Minu andmed",
       "subtitle": "Täida oma profiili andmed, et juhendajad ja nõustajad saaksid parema ülevaate sinu oskuste ja seni läbitud teekonna kohta. Need andmed on nähtavad ainult Medunacy arstidele",
@@ -209,7 +239,10 @@
     "messages": {
       "save_success": "Andmed edukalt salvestatud!",
       "save_error": "Viga andmete salvestamisel",
-      "loading": "Andmete laadimine..."
+      "loading": "Andmete laadimine...",
+      "university_required": "Ülikool/Kool on kohustuslik väli",
+      "specialization_required": "Eriala/Suund on kohustuslik väli",
+      "languages_required": "Vähemalt üks keel peab olema valitud"
     }
   }
 }
