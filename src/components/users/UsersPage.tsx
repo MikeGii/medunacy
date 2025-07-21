@@ -25,20 +25,38 @@ export default function UsersPage() {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!loading && user) {
-      // Check authorization after everything is loaded
-      if (user.role === "user") {
+    if (!loading) {
+      if (user) {
+        // Ensure we have the role before making authorization decisions
+        if (user.role) {
+          if (user.role === "user") {
+            setIsAuthorized(false);
+            const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
+            router.push(`/${currentLocale}`);
+          } else {
+            setIsAuthorized(true);
+          }
+        } else {
+          // Role not yet loaded, keep checking
+          const checkRole = setTimeout(() => {
+            if (user.role) {
+              setIsAuthorized(user.role !== "user");
+            } else {
+              // If still no role after timeout, treat as unauthorized
+              setIsAuthorized(false);
+              const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
+              router.push(`/${currentLocale}`);
+            }
+          }, 1000);
+
+          return () => clearTimeout(checkRole);
+        }
+      } else {
+        // Not authenticated
         setIsAuthorized(false);
         const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
         router.push(`/${currentLocale}`);
-      } else {
-        setIsAuthorized(true);
       }
-    } else if (!loading && !user) {
-      // Not authenticated
-      setIsAuthorized(false);
-      const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
-      router.push(`/${currentLocale}`);
     }
   }, [user, loading, router, pathname]);
 

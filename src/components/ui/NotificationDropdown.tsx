@@ -27,8 +27,13 @@ interface NotificationDropdownProps {
 export default function NotificationDropdown({
   onClose,
 }: NotificationDropdownProps) {
-  const { notifications, loading, markAsRead, markAllAsRead } =
-    useNotifications();
+  const {
+    notifications,
+    loading,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+  } = useNotifications();
   const router = useRouter();
   const pathname = usePathname();
   const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
@@ -57,6 +62,14 @@ export default function NotificationDropdown({
     }
 
     onClose();
+  };
+
+  const handleNotificationDelete = async (
+    e: React.MouseEvent,
+    notificationId: string
+  ) => {
+    e.stopPropagation(); // Prevent notification click when deleting
+    await deleteNotification(notificationId);
   };
 
   // Get icon for notification type
@@ -169,72 +182,89 @@ export default function NotificationDropdown({
                 {notifications.map((notification: AppNotification) => (
                   <div
                     key={notification.id}
-                    onClick={() => handleNotificationClick(notification)}
-                    className={`p-4 cursor-pointer transition-colors duration-200 hover:bg-gray-50 ${
+                    className={`relative group transition-colors duration-200 hover:bg-gray-50 ${
                       !notification.is_read
                         ? "bg-blue-50 border-l-4 border-l-blue-500"
                         : ""
                     }`}
                   >
-                    <div className="flex items-start space-x-3">
-                      {/* Icon */}
-                      <div
-                        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                          notification.type === "post_like" ||
-                          notification.type === "comment_like"
-                            ? "bg-red-100 text-red-600"
-                            : "bg-blue-100 text-blue-600"
-                        }`}
-                      >
-                        {getNotificationIcon(notification.type)}
-                      </div>
+                    {/* Main notification content - clickable */}
+                    <div
+                      onClick={() => handleNotificationClick(notification)}
+                      className="p-4 cursor-pointer"
+                    >
+                      <div className="flex items-start space-x-3">
+                        {/* Icon */}
+                        <div
+                          className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                            notification.type === "post_like" ||
+                            notification.type === "comment_like"
+                              ? "bg-red-100 text-red-600"
+                              : "bg-blue-100 text-blue-600"
+                          }`}
+                        >
+                          {getNotificationIcon(notification.type)}
+                        </div>
 
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 mb-1">
-                          {notification.title}
-                        </p>
-                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                          {notification.message}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {formatDistanceToNow(
-                            new Date(notification.created_at),
-                            {
-                              addSuffix: true,
-                              locale: dateLocale,
-                            }
-                          )}
-                        </p>
-                      </div>
+                        {/* Content */}
+                        <div className="flex-1 min-w-0 pr-8">
+                          <p className="text-sm font-medium text-gray-900 mb-1">
+                            {notification.title}
+                          </p>
+                          <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                            {notification.message}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {formatDistanceToNow(
+                              new Date(notification.created_at),
+                              {
+                                addSuffix: true,
+                                locale: dateLocale,
+                              }
+                            )}
+                          </p>
+                        </div>
 
-                      {/* Unread indicator */}
-                      {!notification.is_read && (
-                        <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full"></div>
-                      )}
+                        {/* Unread indicator */}
+                        {!notification.is_read && (
+                          <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full"></div>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Delete button - appears on hover */}
+                    <button
+                      onClick={(e) =>
+                        handleNotificationDelete(e, notification.id)
+                      }
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 
+                   w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 hover:bg-red-100 
+                   text-gray-500 hover:text-red-600"
+                      title={
+                        currentLocale === "ukr"
+                          ? "Видалити сповіщення"
+                          : "Kustuta teade"
+                      }
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
                   </div>
                 ))}
               </div>
             )}
           </div>
-
-          {/* Footer */}
-          {notifications.length > 0 && (
-            <div className="bg-gray-50 px-4 py-3 border-t">
-              <button
-                onClick={() => {
-                  router.push(`/${currentLocale}/notifications`);
-                  onClose();
-                }}
-                className="w-full text-center text-sm text-[#118B50] hover:text-[#5DB996] font-medium transition-colors"
-              >
-                {currentLocale === "ukr"
-                  ? "Переглянути всі сповіщення"
-                  : "Vaata kõiki teatisi"}
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </>
