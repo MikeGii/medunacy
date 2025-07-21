@@ -1,7 +1,7 @@
-// src/hooks/useNotifications.ts
+// src/hooks/useNotifications.ts - Optimized version
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 
@@ -17,116 +17,167 @@ interface Notification {
   created_at: string;
 }
 
+// Cache for notifications to prevent unnecessary fetches
+const notificationsCache = new Map<
+  string,
+  { data: Notification[]; timestamp: number }
+>();
+const CACHE_DURATION = 30000; // 30 seconds
+
 export function useNotifications() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const isMountedRef = useRef(true);
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch notifications
-  const fetchNotifications = useCallback(async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+  // Memoize unread count calculation
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => !n.is_read).length,
+    [notifications]
+  );
 
-    try {
-      const { data, error } = await supabase
-        .from("notifications")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(20);
-
-      if (error) throw error;
-
-      setNotifications(data || []);
-      setUnreadCount((data || []).filter((n) => !n.is_read).length);
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  // Mark notification as read
-  const markAsRead = async (notificationId: string) => {
-    if (!user) return;
-
-    try {
-      const { error } = await supabase
-        .from("notifications")
-        .update({ is_read: true })
-        .eq("id", notificationId)
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-
-      // Update local state
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
-    }
-  };
-
-  const deleteNotification = async (notificationId: string) => {
-    if (!user) {
-      console.error("No user found for deletion");
-      return;
-    }
-
-    console.log(
-      "Attempting to delete notification:",
-      notificationId,
-      "for user:",
-      user.id
-    );
-
-    try {
-      const { data, error } = await supabase
-        .from("notifications")
-        .delete()
-        .eq("id", notificationId)
-        .eq("user_id", user.id)
-        .select(); // Add select() to see what was deleted
-
-      console.log("Delete result:", { data, error });
-
-      if (error) {
-        console.error("Database delete error:", error);
-        throw error;
-      }
-
-      if (!data || data.length === 0) {
-        console.warn(
-          "No notification was deleted - might not exist or user mismatch"
-        );
+  // Fetch notifications with caching
+  const fetchNotifications = useCallback(
+    async (forceRefresh = false) => {
+      if (!user || !isMountedRef.current) {
+        setLoading(false);
         return;
       }
 
-      console.log("Successfully deleted notification from database");
+      const cacheKey = user.id;
+      const cached = notificationsCache.get(cacheKey);
 
-      // Update local state
-      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+      // Use cache if valid and not forcing refresh
+      if (
+        !forceRefresh &&
+        cached &&
+        Date.now() - cached.timestamp < CACHE_DURATION
+      ) {
+        setNotifications(cached.data);
+        setLoading(false);
+        return;
+      }
 
-      // Update unread count if the deleted notification was unread
+      try {
+        const { data, error } = await supabase
+          .from("notifications")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(20);
+
+        if (error) throw error;
+
+        if (isMountedRef.current) {
+          const notificationData = data || [];
+          setNotifications(notificationData);
+
+          // Update cache
+          notificationsCache.set(cacheKey, {
+            data: notificationData,
+            timestamp: Date.now(),
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+      } finally {
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
+      }
+    },
+    [user]
+  );
+
+  // Optimized mark as read
+  const markAsRead = useCallback(
+    async (notificationId: string) => {
+      if (!user) return;
+
+      // Optimistic update
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
+      );
+
+      try {
+        const { error } = await supabase
+          .from("notifications")
+          .update({ is_read: true })
+          .eq("id", notificationId)
+          .eq("user_id", user.id);
+
+        if (error) {
+          // Revert on error
+          setNotifications((prev) =>
+            prev.map((n) =>
+              n.id === notificationId ? { ...n, is_read: false } : n
+            )
+          );
+          throw error;
+        }
+
+        // Invalidate cache
+        notificationsCache.delete(user.id);
+      } catch (error) {
+        console.error("Error marking notification as read:", error);
+      }
+    },
+    [user]
+  );
+
+  // Optimized delete notification
+  const deleteNotification = useCallback(
+    async (notificationId: string) => {
+      if (!user) return;
+
+      // Store notification for potential restore
       const deletedNotification = notifications.find(
         (n) => n.id === notificationId
       );
-      if (deletedNotification && !deletedNotification.is_read) {
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-      }
-    } catch (error) {
-      console.error("Error deleting notification:", error);
-    }
-  };
 
-  // Mark all notifications as read
-  const markAllAsRead = async () => {
+      // Optimistic update
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+
+      try {
+        const { error } = await supabase
+          .from("notifications")
+          .delete()
+          .eq("id", notificationId)
+          .eq("user_id", user.id);
+
+        if (error) {
+          // Restore on error
+          if (deletedNotification) {
+            setNotifications((prev) =>
+              [...prev, deletedNotification].sort(
+                (a, b) =>
+                  new Date(b.created_at).getTime() -
+                  new Date(a.created_at).getTime()
+              )
+            );
+          }
+          throw error;
+        }
+
+        // Invalidate cache
+        notificationsCache.delete(user.id);
+      } catch (error) {
+        console.error("Error deleting notification:", error);
+      }
+    },
+    [user, notifications]
+  );
+
+  // Optimized mark all as read
+  const markAllAsRead = useCallback(async () => {
     if (!user) return;
+
+    const unreadNotifications = notifications.filter((n) => !n.is_read);
+    if (unreadNotifications.length === 0) return;
+
+    // Optimistic update
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
 
     try {
       const { error } = await supabase
@@ -135,25 +186,36 @@ export function useNotifications() {
         .eq("user_id", user.id)
         .eq("is_read", false);
 
-      if (error) throw error;
+      if (error) {
+        // Revert on error
+        setNotifications((prev) =>
+          prev.map((n) => {
+            const wasUnread = unreadNotifications.some((un) => un.id === n.id);
+            return wasUnread ? { ...n, is_read: false } : n;
+          })
+        );
+        throw error;
+      }
 
-      // Update local state
-      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-      setUnreadCount(0);
+      // Invalidate cache
+      notificationsCache.delete(user.id);
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
     }
-  };
+  }, [user, notifications]);
 
-  // Set up real-time subscription
+  // Set up real-time subscription with debouncing
   useEffect(() => {
+    isMountedRef.current = true;
+
+    // Initial fetch
     fetchNotifications();
 
     if (!user) return;
 
     // Subscribe to new notifications
     const subscription = supabase
-      .channel("notifications")
+      .channel(`notifications:${user.id}`)
       .on(
         "postgres_changes",
         {
@@ -163,15 +225,33 @@ export function useNotifications() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          const newNotification = payload.new as Notification;
-          setNotifications((prev) => [newNotification, ...prev]);
-          setUnreadCount((prev) => prev + 1);
+          if (isMountedRef.current) {
+            const newNotification = payload.new as Notification;
+            setNotifications((prev) => [newNotification, ...prev]);
+
+            // Invalidate cache on new notification
+            notificationsCache.delete(user.id);
+          }
         }
       )
       .subscribe();
 
     return () => {
+      isMountedRef.current = false;
       subscription.unsubscribe();
+
+      // Clear any pending timeouts
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+
+      // Clean up old cache entries
+      const now = Date.now();
+      notificationsCache.forEach((value, key) => {
+        if (now - value.timestamp > CACHE_DURATION * 2) {
+          notificationsCache.delete(key);
+        }
+      });
     };
   }, [user, fetchNotifications]);
 
@@ -182,6 +262,9 @@ export function useNotifications() {
     markAsRead,
     markAllAsRead,
     deleteNotification,
-    refreshNotifications: fetchNotifications,
+    refreshNotifications: useCallback(
+      () => fetchNotifications(true),
+      [fetchNotifications]
+    ),
   };
 }
