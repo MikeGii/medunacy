@@ -364,6 +364,11 @@
       "role_updated": "Roll edukalt uuendatud!",
       "role_update_error": "Viga rolli uuendamisel",
       "cannot_change_own_role": "Sa ei saa muuta oma rolli"
+    },
+    "search": {
+      "placeholder": "Otsi nime või e-posti järgi...",
+      "results": "Leitud {count} kasutajat",
+      "no_results": "Kasutajaid ei leitud"
     }
   }
 }
