@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useState } from "react";
 import Header from "../layout/Header";
 import UsersTable from "./UsersTable";
 import UserDetailsModal from "./UserDetailsModal";
 import { AuthModalProvider } from "@/contexts/AuthModalContext";
-import { useAuth } from "@/contexts/AuthContext";
 import { useAuthorization } from "@/hooks/useAuthorization";
 
 interface UserData {

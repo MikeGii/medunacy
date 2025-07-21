@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
 import Header from "../layout/Header";
 import ProfileHero from "./ProfileHero";
 import ProfileTabs from "./ProfileTabs/ProfileTabs";
 import { AuthModalProvider } from "@/contexts/AuthModalContext";
-import { useAuth } from "@/contexts/AuthContext";
 import { useAuthorization } from "@/hooks/useAuthorization";
 
 export default function ProfilePage() {

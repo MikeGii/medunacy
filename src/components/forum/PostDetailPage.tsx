@@ -10,6 +10,7 @@ import { AuthModalProvider } from "@/contexts/AuthModalContext";
 import { formatDistanceToNow } from "date-fns";
 import { et, uk } from "date-fns/locale";
 import ForumCommentsList from "./ForumCommentsList";
+import { useAuthorization } from "@/hooks/useAuthorization";
 
 interface PostDetailPageProps {
   postId: string;
@@ -35,16 +36,25 @@ interface PostDetail {
 }
 
 export default function PostDetailPage({ postId }: PostDetailPageProps) {
-  const { user, loading: authLoading } = useAuth();
+  const {
+    isAuthorized,
+    isLoading: authLoading,
+    user,
+  } = useAuthorization({
+    requireAuth: true,
+    allowedRoles: ["user", "doctor", "admin"],
+    redirectOnUnauthorized: true,
+  });
+
+  // Add these lines:
   const router = useRouter();
   const pathname = usePathname();
+
   const t = useTranslations("forum.post_detail");
   const [post, setPost] = useState<PostDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   const currentLocale = pathname.includes("/ukr") ? "ukr" : "et";
-  const dateLocale = currentLocale === "ukr" ? uk : et;
 
   const fetchPost = useCallback(async () => {
     if (!user || !postId) return;
@@ -130,18 +140,6 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
     }
   }, [postId, user]);
 
-  // Handle authentication and authorization
-  useEffect(() => {
-    if (!authLoading && user) {
-      // User is authenticated
-      setIsAuthorized(true);
-    } else if (!authLoading && !user) {
-      // Not authenticated
-      setIsAuthorized(false);
-      router.push(`/${currentLocale}`);
-    }
-  }, [user, authLoading, router, currentLocale]);
-
   // Fetch post when authorized
   useEffect(() => {
     if (isAuthorized && user) {
@@ -214,7 +212,7 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
   };
 
   // Show loading while checking authorization or loading post
-  if (authLoading || isAuthorized === null || loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA] flex items-center justify-center">
         <div className="text-center">
