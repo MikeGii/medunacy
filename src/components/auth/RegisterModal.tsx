@@ -1,6 +1,7 @@
+// src/components/auth/RegisterModal.tsx - Optimized version
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useAuthActions } from "@/hooks/useAuth";
 import { usePathname } from "next/navigation";
@@ -20,6 +21,10 @@ interface RegisterFormData {
   language: string;
 }
 
+interface FormErrors {
+  [key: string]: string;
+}
+
 export default function RegisterModal({
   onSwitchToLogin,
   onClose,
@@ -28,6 +33,11 @@ export default function RegisterModal({
   const { register, loading } = useAuthActions();
   const pathname = usePathname();
   const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
+
+  // Use refs for preventing stale closures
+  const isMountedRef = useRef(true);
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
+
   const [formData, setFormData] = useState<RegisterFormData>({
     firstName: "",
     lastName: "",
@@ -37,89 +47,257 @@ export default function RegisterModal({
     confirmPassword: "",
     language: currentLocale,
   });
+
+  const [errors, setErrors] = useState<FormErrors>({});
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
 
+  // Cleanup effect
   useEffect(() => {
-    if (message?.type === "success") {
-      if (countdown === null) {
-        setCountdown(5); // Start 5-second countdown
-      } else if (countdown > 0) {
-        const timer = setTimeout(() => {
-          setCountdown(countdown - 1);
-        }, 1000);
-        return () => clearTimeout(timer);
-      } else if (countdown === 0) {
-        onClose(); // Close modal when countdown reaches 0
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (countdownRef.current) {
+        clearTimeout(countdownRef.current);
       }
-    }
-  }, [message, countdown, onClose]);
+    };
+  }, []);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessage(null);
-
-    // Validation
-    if (formData.password !== formData.confirmPassword) {
-      setMessage({ type: "error", text: t("messages.password_mismatch") });
-      return;
+  // Handle success countdown
+  useEffect(() => {
+    if (message?.type === "success" && countdown !== null && countdown > 0) {
+      countdownRef.current = setTimeout(() => {
+        if (isMountedRef.current) {
+          setCountdown((prev) => (prev !== null ? prev - 1 : null));
+        }
+      }, 1000);
+    } else if (countdown === 0) {
+      onClose();
     }
 
-    if (formData.password.length < 6) {
-      setMessage({ type: "error", text: t("messages.password_short") });
-      return;
-    }
+    return () => {
+      if (countdownRef.current) {
+        clearTimeout(countdownRef.current);
+      }
+    };
+  }, [countdown, message, onClose]);
 
-    const result = await register({
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email,
-      phone: formData.phone,
-      password: formData.password,
-      language: formData.language,
-    });
+  // Validation function
+  const validateField = useCallback(
+    (name: string, value: string): string => {
+      switch (name) {
+        case "firstName":
+        case "lastName":
+          const fieldName = t(
+            `form.${name === "firstName" ? "first_name" : "last_name"}`
+          );
+          if (!value.trim()) {
+            return t("validation.field_required", { field: fieldName });
+          }
+          if (value.trim().length < 2) {
+            return t("validation.min_length", { min: 2 });
+          }
+          if (!/^[a-zA-ZÀ-ÿĀ-žА-я\s\-']+$/.test(value)) {
+            return t("validation.invalid_characters");
+          }
+          return "";
 
-    if (result.success) {
-      setMessage({ type: "success", text: "" }); // Empty text, we'll use custom success component
-      // Clear form
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        password: "",
-        confirmPassword: "",
-        language: currentLocale,
+        case "email":
+          if (!value.trim()) {
+            return t("validation.field_required", { field: t("form.email") });
+          }
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(value.trim())) {
+            return t("validation.invalid_email");
+          }
+          return "";
+
+        case "phone":
+          if (value && !/^[\d\s\-\+\(\)]+$/.test(value)) {
+            return t("validation.invalid_phone");
+          }
+          return "";
+
+        case "password":
+          if (!value) {
+            return t("validation.field_required", {
+              field: t("form.password"),
+            });
+          }
+          if (value.length < 6) {
+            return t("messages.password_short");
+          }
+          if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(value)) {
+            return t("validation.password_complexity");
+          }
+          return "";
+
+        case "confirmPassword":
+          if (!value) {
+            return t("validation.field_required", {
+              field: t("form.confirm_password"),
+            });
+          }
+          if (value !== formData.password) {
+            return t("messages.password_mismatch");
+          }
+          return "";
+
+        default:
+          return "";
+      }
+    },
+    [formData.password, t]
+  );
+
+  // Memoized change handler with validation
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      const { name, value } = e.target;
+
+      // Update form data
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+
+      // Clear error when user starts typing
+      if (errors[name]) {
+        setErrors((prev) => ({
+          ...prev,
+          [name]: "",
+        }));
+      }
+
+      // Validate on blur for better UX
+      if (name === "confirmPassword" && value) {
+        const error = validateField(name, value);
+        if (error) {
+          setErrors((prev) => ({
+            ...prev,
+            [name]: error,
+          }));
+        }
+      }
+    },
+    [errors, validateField]
+  );
+
+  // Validate on blur
+  const handleBlur = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      const { name, value } = e.target;
+      const error = validateField(name, value);
+
+      if (error) {
+        setErrors((prev) => ({
+          ...prev,
+          [name]: error,
+        }));
+      }
+    },
+    [validateField]
+  );
+
+  // Form submission
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setMessage(null);
+
+      // Validate all fields
+      const newErrors: FormErrors = {};
+      Object.keys(formData).forEach((key) => {
+        if (key !== "language") {
+          const error = validateField(
+            key,
+            formData[key as keyof RegisterFormData]
+          );
+          if (error) {
+            newErrors[key] = error;
+          }
+        }
       });
-    } else {
-      setMessage({ type: "error", text: result.message });
-    }
-  };
+
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        setMessage({ type: "error", text: t("errors.fill_all_fields") });
+        // Focus on first error field
+        const firstErrorField = Object.keys(newErrors)[0];
+        const element = document.getElementById(firstErrorField);
+        element?.focus();
+        return;
+      }
+
+      try {
+        const result = await register({
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          email: formData.email.trim().toLowerCase(),
+          phone: formData.phone.trim(),
+          password: formData.password,
+          language: formData.language,
+        });
+
+        if (!isMountedRef.current) return;
+
+        if (result.success) {
+          setMessage({ type: "success", text: "" });
+          setCountdown(10); // Start 10-second countdown
+
+          // Clear form
+          setFormData({
+            firstName: "",
+            lastName: "",
+            email: "",
+            phone: "",
+            password: "",
+            confirmPassword: "",
+            language: currentLocale,
+          });
+          setErrors({});
+        } else {
+          let errorMessage = result.message;
+
+          if (errorMessage.includes("already registered")) {
+            errorMessage = t("validation.email_already_exists");
+          } else if (errorMessage.includes("Invalid email")) {
+            errorMessage = t("validation.invalid_email");
+          } else if (errorMessage.includes("Registration failed")) {
+            errorMessage = t("errors.registration_failed");
+          }
+
+          setMessage({ type: "error", text: errorMessage });
+        }
+      } catch (error) {
+        console.error("Registration error:", error);
+        if (isMountedRef.current) {
+          setMessage({
+            type: "error",
+            text: t("messages.unexpected_error"),
+          });
+        }
+      }
+    },
+    [formData, currentLocale, register, validateField, t]
+  );
+
+  const isDisabled = loading || message?.type === "success";
 
   return (
-    <div className="p-8">
-      <div className="text-center mb-8">
+    <div className="p-8 max-h-[90vh] overflow-y-auto">
+      <div className="text-center mb-6">
         <h2 className="text-3xl font-bold text-[#118B50] mb-2">{t("title")}</h2>
         <p className="text-gray-600">{t("subtitle")}</p>
       </div>
 
-      {/* Enhanced Success Message */}
+      {/* Success Message */}
       {message?.type === "success" && (
         <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 shadow-lg">
           <div className="flex items-start space-x-4">
-            {/* Email Icon */}
             <div className="flex-shrink-0">
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                 <svg
@@ -146,7 +324,6 @@ export default function RegisterModal({
                 {t("messages.success_description")}
               </p>
 
-              {/* Countdown Timer */}
               {countdown !== null && (
                 <div className="flex items-center space-x-2 text-green-600">
                   <svg
@@ -170,7 +347,6 @@ export default function RegisterModal({
               )}
             </div>
 
-            {/* Checkmark Icon */}
             <div className="flex-shrink-0">
               <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                 <svg
@@ -197,7 +373,7 @@ export default function RegisterModal({
         <div className="mb-6 p-4 rounded-lg bg-red-50 text-red-700 border border-red-200">
           <div className="flex items-center space-x-2">
             <svg
-              className="w-5 h-5 text-red-500"
+              className="w-5 h-5 text-red-500 flex-shrink-0"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -206,7 +382,7 @@ export default function RegisterModal({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
             <span>{message.text}</span>
@@ -214,9 +390,9 @@ export default function RegisterModal({
         </div>
       )}
 
-      {/* Registration Form - Hide when success message is showing */}
+      {/* Registration Form */}
       {message?.type !== "success" && (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label
@@ -232,10 +408,19 @@ export default function RegisterModal({
                 required
                 value={formData.firstName}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all text-sm"
+                onBlur={handleBlur}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all text-sm ${
+                  errors.firstName ? "border-red-500" : "border-gray-300"
+                }`}
                 placeholder={t("placeholders.first_name")}
+                disabled={isDisabled}
+                autoFocus
               />
+              {errors.firstName && (
+                <p className="mt-1 text-xs text-red-600">{errors.firstName}</p>
+              )}
             </div>
+
             <div>
               <label
                 htmlFor="lastName"
@@ -250,9 +435,16 @@ export default function RegisterModal({
                 required
                 value={formData.lastName}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all text-sm"
+                onBlur={handleBlur}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all text-sm ${
+                  errors.lastName ? "border-red-500" : "border-gray-300"
+                }`}
                 placeholder={t("placeholders.last_name")}
+                disabled={isDisabled}
               />
+              {errors.lastName && (
+                <p className="mt-1 text-xs text-red-600">{errors.lastName}</p>
+              )}
             </div>
           </div>
 
@@ -270,9 +462,17 @@ export default function RegisterModal({
               required
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all text-sm"
+              onBlur={handleBlur}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all text-sm ${
+                errors.email ? "border-red-500" : "border-gray-300"
+              }`}
               placeholder={t("placeholders.email")}
+              disabled={isDisabled}
+              autoComplete="email"
             />
+            {errors.email && (
+              <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+            )}
           </div>
 
           <div>
@@ -280,7 +480,10 @@ export default function RegisterModal({
               htmlFor="phone"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              {t("form.phone")}
+              {t("form.phone")}{" "}
+              <span className="text-gray-500 text-xs">
+                ({t("form.optional")})
+              </span>
             </label>
             <input
               type="tel"
@@ -288,12 +491,19 @@ export default function RegisterModal({
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all text-sm"
+              onBlur={handleBlur}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all text-sm ${
+                errors.phone ? "border-red-500" : "border-gray-300"
+              }`}
               placeholder={t("placeholders.phone")}
+              disabled={isDisabled}
+              autoComplete="tel"
             />
+            {errors.phone && (
+              <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
+            )}
           </div>
 
-          {/* Language Selection */}
           <div>
             <label
               htmlFor="language"
@@ -308,6 +518,7 @@ export default function RegisterModal({
               value={formData.language}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all text-sm"
+              disabled={isDisabled}
             >
               <option value="et">Eesti keel</option>
               <option value="ukr">Українська</option>
@@ -328,9 +539,17 @@ export default function RegisterModal({
               required
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all text-sm"
+              onBlur={handleBlur}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all text-sm ${
+                errors.password ? "border-red-500" : "border-gray-300"
+              }`}
               placeholder={t("placeholders.password")}
+              disabled={isDisabled}
+              autoComplete="new-password"
             />
+            {errors.password && (
+              <p className="mt-1 text-xs text-red-600">{errors.password}</p>
+            )}
           </div>
 
           <div>
@@ -347,29 +566,65 @@ export default function RegisterModal({
               required
               value={formData.confirmPassword}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all text-sm"
+              onBlur={handleBlur}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent transition-all text-sm ${
+                errors.confirmPassword ? "border-red-500" : "border-gray-300"
+              }`}
               placeholder={t("placeholders.password")}
+              disabled={isDisabled}
+              autoComplete="new-password"
             />
+            {errors.confirmPassword && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.confirmPassword}
+              </p>
+            )}
           </div>
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-[#118B50] hover:bg-[#0F7A43] text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+            disabled={isDisabled}
+            className="w-full bg-[#118B50] hover:bg-[#0F7A43] text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#118B50] mt-6"
           >
-            {loading ? t("button.creating") : t("button.create")}
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                {t("button.creating")}
+              </span>
+            ) : (
+              t("button.create")
+            )}
           </button>
         </form>
       )}
 
-      {/* Login Link - Only show when not in success state */}
+      {/* Login Link */}
       {message?.type !== "success" && (
         <div className="mt-6 text-center">
           <p className="text-gray-600 text-sm">
             {t("login_link.text")}{" "}
             <button
               onClick={onSwitchToLogin}
-              className="text-[#118B50] hover:underline font-medium"
+              className="text-[#118B50] hover:underline font-medium focus:outline-none focus:ring-2 focus:ring-[#118B50] focus:ring-offset-2 rounded"
+              disabled={isDisabled}
             >
               {t("login_link.link")}
             </button>

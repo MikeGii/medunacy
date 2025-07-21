@@ -15,6 +15,20 @@
     "register": {
       "title": "Loo konto",
       "subtitle": "Liitu Medunacy kogukonnaga",
+      "validation": {
+        "field_required": "{field} on kohustuslik",
+        "min_length": "Peab olema vähemalt {min} tähemärki",
+        "invalid_characters": "Lubatud on ainult tähed, tühikud, sidekriipsud ja ülakomad",
+        "invalid_email": "Palun sisesta kehtiv e-posti aadress",
+        "invalid_phone": "Palun sisesta kehtiv telefoninumber",
+        "password_complexity": "Parool peab sisaldama vähemalt ühte tähte ja ühte numbrit",
+        "email_already_exists": "See e-posti aadress on juba registreeritud. Palun logi sisse."
+      },
+      "errors": {
+        "fill_all_fields": "Palun täida kõik kohustuslikud väljad",
+        "unexpected_error": "Tekkis ootamatu viga. Palun proovi uuesti.",
+        "registration_failed": "Registreerimine ebaõnnestus. Palun proovi uuesti."
+      },
       "form": {
         "first_name": "Eesnimi",
         "last_name": "Perekonnanimi",
@@ -71,7 +85,32 @@
       "register_link": {
         "text": "Pole veel kontot?",
         "link": "Registreeru"
+      },
+      "validation": {
+        "fill_all_fields": "Palun täida kõik väljad",
+        "invalid_email": "Palun sisesta kehtiv e-posti aadress"
+      },
+      "errors": {
+        "invalid_credentials": "Vale e-post või parool",
+        "email_not_verified": "Palun kinnita oma e-posti aadress enne sisselogimist. Kontrolli oma postkasti kinnituslingi jaoks.",
+        "too_many_attempts": "Liiga palju sisselogimise katseid. Palun proovi mõne minuti pärast uuesti.",
+        "unexpected_error": "Tekkis ootamatu viga. Palun proovi uuesti.",
+        "sign_in_failed": "Sisselogimine ebaõnnestus. Palun proovi uuesti."
+      },
+      "success": {
+        "signing_in": "Sisselogimine õnnestus..."
       }
+    },
+    "common": {
+      "email_required": "E-posti aadress on nõutav",
+      "password_required": "Parool on nõutav",
+      "no_account_found": "Selle e-posti aadressiga kontot ei leitud",
+      "invalid_email_format": "Vigane e-posti formaat",
+      "email_already_registered": "See e-posti aadress on juba registreeritud. Palun logi sisse.",
+      "password_too_short": "Parool peab olema vähemalt 6 tähemärki pikk",
+      "registration_failed": "Registreerimine ebaõnnestus. Palun proovi uuesti.",
+      "too_many_requests": "Liiga palju päringuid. Palun proovi mõne minuti pärast uuesti.",
+      "email_password_required": "E-post ja parool on kohustuslikud"
     },
     "welcome": {
       "text": "Tere tulemast",
