@@ -11,6 +11,7 @@ import { useAuthModal } from "@/contexts/AuthModalContext";
 import { useAuth } from "@/contexts/AuthContext";
 import DesktopUserMenu from "./header/DesktopUserMenu";
 import MobileMenu from "./header/MobileMenu";
+import NotificationBell from "../ui/NotificationBell";
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -57,6 +58,9 @@ export default function Header() {
             <div className="hidden md:flex items-center space-x-6">
               {/* Language Switcher */}
               <LanguageSwitcher />
+
+              {/* Notification Bell - Only for logged in users */}
+              {user && <NotificationBell />}
 
               {/* Navigation Links for Logged In Users */}
               {user && (
@@ -179,6 +183,9 @@ export default function Header() {
 
             {/* Mobile Navigation */}
             <div className="md:hidden flex items-center space-x-3">
+              {/* Mobile Notification Bell - Only for logged in users */}
+              {user && <NotificationBell />}
+
               {/* Language Switcher - Always visible on mobile */}
               <LanguageSwitcher />
 
