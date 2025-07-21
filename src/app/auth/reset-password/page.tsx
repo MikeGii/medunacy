@@ -1,11 +1,12 @@
 // src/app/auth/reset-password/page.tsx
 'use client';
 
+import { Suspense } from 'react';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-export default function ResetPassword() {
+function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [password, setPassword] = useState('');
@@ -62,9 +63,8 @@ export default function ResetPassword() {
         text: 'Password updated successfully! Redirecting to login...'
       });
 
-      // Redirect to login after 2 seconds
       setTimeout(() => {
-        router.push('/et'); // Default to Estonian locale
+        router.push('/et');
       }, 2000);
 
     } catch (error: unknown) {
@@ -164,5 +164,20 @@ export default function ResetPassword() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResetPassword() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-16 h-16 border-4 border-[#118B50] border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-[#118B50] font-medium">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
