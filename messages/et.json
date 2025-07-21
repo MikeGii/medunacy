@@ -188,7 +188,10 @@
     "my_data": "Minu andmed",
     "healthcare_tools": "Tervisehoiutöötaja tööriistad",
     "users": "Kasutajad",
-    "users_description": "Vaata ja halda kasutajaid"
+    "users_description": "Vaata ja halda kasutajaid",
+    "admin_tools": "Administratiivsed tööriistad",
+    "roles": "Rollid",
+    "roles_description": "Halda kasutajate rolle ja õigusi"
   },
   "profile": {
     "title": "Minu profiil",
@@ -338,6 +341,29 @@
         "submitting": "Postitan...",
         "delete": "Kustuta kommentaar"
       }
+    }
+  },
+  "roles": {
+    "page_title": "Kasutajate rollid",
+    "page_subtitle": "Halda kasutajate rolle ja õigusi",
+    "loading": "Laadin kasutajaid...",
+    "no_users": "Kasutajaid ei leitud",
+    "table": {
+      "name": "Nimi",
+      "email": "E-post",
+      "current_role": "Praegune roll",
+      "change_role": "Muuda rolli",
+      "your_account": "Sinu konto"
+    },
+    "roles": {
+      "user": "Kasutaja",
+      "doctor": "Arst",
+      "admin": "Administraator"
+    },
+    "messages": {
+      "role_updated": "Roll edukalt uuendatud!",
+      "role_update_error": "Viga rolli uuendamisel",
+      "cannot_change_own_role": "Sa ei saa muuta oma rolli"
     }
   }
 }

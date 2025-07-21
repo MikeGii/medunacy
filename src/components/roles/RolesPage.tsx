@@ -1,16 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import Header from "../layout/Header";
-import DashboardHero from "./DashboardHero";
-import QuickActions from "./QuickActions";
-import HealthcareTools from "./HealthcareTools";
-import { AuthModalProvider } from "@/contexts/AuthModalContext";
-import { useAuth } from "@/contexts/AuthContext";
-import AdminTools from "./AdminTools";
+import { useEffect, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import Header from '../layout/Header';
+import RolesTable from './RolesTable';
+import { AuthModalProvider } from '@/contexts/AuthModalContext';
+import { useAuth } from '@/contexts/AuthContext';
 
-export default function DashboardPage() {
+export default function RolesPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -18,12 +15,18 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      // User is authenticated
-      setIsAuthorized(true);
+      // Check if user is admin
+      if (user.role === 'admin') {
+        setIsAuthorized(true);
+      } else {
+        setIsAuthorized(false);
+        const currentLocale = pathname.startsWith('/ukr') ? 'ukr' : 'et';
+        router.push(`/${currentLocale}/dashboard`);
+      }
     } else if (!loading && !user) {
       // Not authenticated
       setIsAuthorized(false);
-      const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
+      const currentLocale = pathname.startsWith('/ukr') ? 'ukr' : 'et';
       router.push(`/${currentLocale}`);
     }
   }, [user, loading, router, pathname]);
@@ -40,7 +43,7 @@ export default function DashboardPage() {
     );
   }
 
-  // Don't render dashboard if user is not authenticated
+  // Don't render if not authorized
   if (!isAuthorized) {
     return null;
   }
@@ -49,13 +52,10 @@ export default function DashboardPage() {
     <AuthModalProvider>
       <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA]">
         <Header />
-
-        {/* Main Dashboard Content */}
+        
+        {/* Main Roles Content */}
         <main>
-          <DashboardHero />
-          <QuickActions />
-          <HealthcareTools />
-          <AdminTools />
+          <RolesTable />
         </main>
       </div>
     </AuthModalProvider>
