@@ -168,7 +168,11 @@ export default function Header() {
                                     {firstName || user?.email}
                                   </p>
                                   <p className="text-xs text-green-100">
-                                    {t("member")}
+                                    {user?.role === "admin"
+                                      ? t("admin")
+                                      : user?.role === "doctor"
+                                      ? t("doctor")
+                                      : t("member")}
                                   </p>
                                 </div>
                               </div>
@@ -346,6 +350,11 @@ export default function Header() {
               <div className="text-center border-b border-gray-100 pb-4">
                 <p className="text-lg font-bold text-[#118B50]">
                   {firstName || user.email}
+                  {(user.role === "admin" || user.role === "doctor") && (
+                    <span className="text-sm font-normal text-[#5DB996]">
+                      {user.role === "admin" ? " - Admin" : " - Arst"}
+                    </span>
+                  )}
                 </p>
               </div>
             )}
