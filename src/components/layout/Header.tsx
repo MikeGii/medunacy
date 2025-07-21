@@ -18,7 +18,7 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const t = useTranslations("navigation");
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading, isHydrating } = useAuth();
   const { openLogin, openRegister } = useAuthModal();
 
   // Memoize locale calculation
@@ -58,6 +58,8 @@ export default function Header() {
     [pathname, baseUrl, t]
   );
 
+  const shouldShowUserSection = user || loading || isHydrating;
+
   return (
     <>
       {/* Header Component */}
@@ -83,10 +85,8 @@ export default function Header() {
             <div className="hidden md:flex items-center space-x-6">
               {/* Language Switcher */}
               <LanguageSwitcher />
-
               {/* Notification Bell - Only for logged in users */}
               {user && <NotificationBell />}
-
               {/* Navigation Links for Logged In Users */}
               {user && (
                 <div className="flex items-center space-x-4">
@@ -106,10 +106,10 @@ export default function Header() {
                 </div>
               )}
 
-              {/* Auth Buttons or User Menu */}
-              {user ? (
+              {/* Auth section with better handling */}
+              {shouldShowUserSection ? (
                 <UserSection
-                  firstName={firstName}
+                  firstName={firstName || (loading ? "..." : "User")} // Show loading state
                   onToggleMenu={toggleMobileMenu}
                   isMobileMenuOpen={isMobileMenuOpen}
                   baseUrl={baseUrl}
