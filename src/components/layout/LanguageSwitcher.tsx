@@ -3,6 +3,7 @@
 
 import React, { useCallback, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface LanguageSwitcherProps {
   onLanguageChange?: () => void;
@@ -15,6 +16,7 @@ const LanguageSwitcher = React.memo(function LanguageSwitcher({
 }: LanguageSwitcherProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useAuth(); // Get auth state
   
   // Memoize current locale extraction
   const currentLocale = useMemo(() => 
@@ -36,16 +38,29 @@ const LanguageSwitcher = React.memo(function LanguageSwitcher({
     // Construct new path
     const newPath = `/${newLocale}${pathWithoutLocale}`;
     
-    // Use router.push with optimizations
-    router.push(newPath, { scroll: false });
+    // Use router.replace instead of push to prevent history pollution
+    // and add a small delay to ensure auth state is preserved
+    if (user) {
+      // Store auth state indicator in sessionStorage temporarily
+      sessionStorage.setItem('medunacy_switching_lang', 'true');
+      
+      router.replace(newPath, { scroll: false });
+      
+      // Clear the indicator after navigation
+      setTimeout(() => {
+        sessionStorage.removeItem('medunacy_switching_lang');
+      }, 1000);
+    } else {
+      router.replace(newPath, { scroll: false });
+    }
     
     // Handle callback only if needed
     if (onLanguageChange && !preventClose) {
       onLanguageChange();
     }
-  }, [currentLocale, pathWithoutLocale, router, onLanguageChange, preventClose]);
+  }, [currentLocale, pathWithoutLocale, router, onLanguageChange, preventClose, user]);
 
-  // Memoize button configurations
+  // Rest of the component remains the same...
   const buttons = useMemo(() => [
     { locale: 'et', label: 'EST' },
     { locale: 'ukr', label: 'УКР' }
@@ -66,7 +81,7 @@ const LanguageSwitcher = React.memo(function LanguageSwitcher({
   );
 });
 
-// Separate button component for better optimization
+// LanguageButton component remains the same...
 const LanguageButton = React.memo(function LanguageButton({
   locale,
   label,

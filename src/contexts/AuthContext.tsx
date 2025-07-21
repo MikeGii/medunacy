@@ -1,7 +1,13 @@
 // src/contexts/AuthContext.tsx - Fixed version
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { useRouter, usePathname } from "next/navigation";
@@ -14,7 +20,8 @@ interface AuthContextType {
   user: UserWithRole | null;
   loading: boolean;
   signOut: () => Promise<void>;
-  isInitialized: boolean; // Add this to track initialization
+  isInitialized: boolean;
+  isHydrating: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -22,12 +29,14 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signOut: async () => {},
   isInitialized: false,
+  isHydrating: true, // Add this
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserWithRole | null>(null);
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isHydrating, setIsHydrating] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -62,7 +71,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initializeAuth = async () => {
       try {
         // Get initial session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
 
         if (!mounted) return;
 
@@ -74,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (session?.user) {
           const userData = await fetchUserData(session.user.id);
-          
+
           if (!mounted) return;
 
           const userWithRole: UserWithRole = {
@@ -95,6 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (mounted) {
           setLoading(false);
           setIsInitialized(true);
+          setIsHydrating(false); // Add this
         }
       }
     };
@@ -102,62 +115,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
 
     // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
 
-        // Skip if we're still initializing to prevent loops
-        if (!isInitialized && event !== 'INITIAL_SESSION') return;
+      // Skip if we're still initializing to prevent loops
+      if (!isInitialized && event !== "INITIAL_SESSION") return;
 
-        console.log("Auth event:", event);
+      console.log("Auth event:", event);
 
-        try {
-          if (session?.user) {
-            const userData = await fetchUserData(session.user.id);
-            
-            if (!mounted) return;
+      try {
+        if (session?.user) {
+          const userData = await fetchUserData(session.user.id);
 
-            const userWithRole: UserWithRole = {
-              ...session.user,
-              role: userData.role,
-            };
+          if (!mounted) return;
 
-            setUser(userWithRole);
+          const userWithRole: UserWithRole = {
+            ...session.user,
+            role: userData.role,
+          };
 
-            // Handle language redirect only on SIGNED_IN event
-            if (event === "SIGNED_IN" && userData.preferred_language) {
-              const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
-              
-              if (userData.preferred_language !== currentLocale) {
-                const pathWithoutLocale = pathname.replace(/^\/(et|ukr)/, "") || "/dashboard";
-                const newPath = `/${userData.preferred_language}${pathWithoutLocale}`;
-                
-                // Delay redirect to avoid race conditions
-                setTimeout(() => {
-                  if (mounted) {
-                    router.push(newPath);
-                  }
-                }, 500);
-              }
-            }
-          } else {
-            if (mounted) {
-              setUser(null);
+          setUser(userWithRole);
+
+          // Handle language redirect only on SIGNED_IN event
+          if (event === "SIGNED_IN" && userData.preferred_language) {
+            const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
+
+            if (userData.preferred_language !== currentLocale) {
+              const pathWithoutLocale =
+                pathname.replace(/^\/(et|ukr)/, "") || "/dashboard";
+              const newPath = `/${userData.preferred_language}${pathWithoutLocale}`;
+
+              // Delay redirect to avoid race conditions
+              setTimeout(() => {
+                if (mounted) {
+                  router.push(newPath);
+                }
+              }, 500);
             }
           }
-        } catch (error) {
-          console.error("Error in auth state change:", error);
+        } else {
           if (mounted) {
             setUser(null);
           }
         }
-
-        // Set loading to false after processing
-        if (mounted && event !== 'INITIAL_SESSION') {
-          setLoading(false);
+      } catch (error) {
+        console.error("Error in auth state change:", error);
+        if (mounted) {
+          setUser(null);
         }
       }
-    );
+
+      // Set loading to false after processing
+      if (mounted && event !== "INITIAL_SESSION") {
+        setLoading(false);
+      }
+    });
 
     return () => {
       mounted = false;
@@ -168,28 +182,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       // Clear user state first
       setUser(null);
 
       // Sign out from Supabase
       const { error } = await supabase.auth.signOut();
-      
+
       if (error) {
         console.error("Error signing out:", error);
       }
 
       // Clear any cached data
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         // Clear any localStorage items if you have any
-        localStorage.removeItem('supabase.auth.token');
+        localStorage.removeItem("supabase.auth.token");
         sessionStorage.clear();
       }
 
       // Redirect to home
       const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
       router.push(`/${currentLocale}`);
-      
     } catch (error) {
       console.error("Error in signOut:", error);
     } finally {
@@ -198,7 +211,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [pathname, router]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, signOut, isInitialized }}>
+    <AuthContext.Provider
+      value={{ user, loading, signOut, isInitialized, isHydrating }}
+    >
       {children}
     </AuthContext.Provider>
   );
