@@ -1,8 +1,8 @@
-// src/hooks/useTestCreation.ts
+// src/hooks/useTestCreation.ts - ENHANCED VERSION (without toast)
 
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { useExam } from "@/contexts/ExamContext";
@@ -22,6 +22,8 @@ interface UseTestCreationReturn {
   isSaving: boolean;
   isDeleting: boolean;
   error: string | null;
+  isDirty: boolean;
+  lastSaved: Date | null;
 
   // Actions
   createTest: (data: TestCreate) => Promise<Test | null>;
@@ -32,6 +34,10 @@ interface UseTestCreationReturn {
   publishTest: (testId: string) => Promise<boolean>;
   unpublishTest: (testId: string) => Promise<boolean>;
   clearError: () => void;
+
+  // Auto-save
+  enableAutoSave: (testId: string, data: TestUpdate) => void;
+  disableAutoSave: () => void;
 }
 
 interface ValidationResult {
@@ -50,12 +56,64 @@ export function useTestCreation(): UseTestCreationReturn {
     deleteTest: deleteTestInContext,
     publishTest: publishTestInContext,
     unpublishTest: unpublishTestInContext,
+    subscribeToTestUpdates,
+    notifyTestEdit,
   } = useExam();
 
   const [isCreating, setIsCreating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSaveDataRef = useRef<{ testId: string; data: TestUpdate } | null>(
+    null
+  );
+
+  // Auto-save functionality
+  const enableAutoSave = useCallback(
+    (testId: string, data: TestUpdate) => {
+      autoSaveDataRef.current = { testId, data };
+      setIsDirty(true);
+
+      // Clear existing timer
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+
+      // Set new timer for auto-save (2 seconds delay)
+      autoSaveTimerRef.current = setTimeout(async () => {
+        if (autoSaveDataRef.current) {
+          const { testId, data } = autoSaveDataRef.current;
+          try {
+            await updateTestInContext(testId, data);
+            setLastSaved(new Date());
+            setIsDirty(false);
+          } catch (err) {
+            console.error("Auto-save failed:", err);
+          }
+        }
+      }, 2000);
+    },
+    [updateTestInContext]
+  );
+
+  const disableAutoSave = useCallback(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+    autoSaveDataRef.current = null;
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      disableAutoSave();
+    };
+  }, [disableAutoSave]);
 
   // Create a new test
   const createTest = useCallback(
@@ -76,7 +134,9 @@ export function useTestCreation(): UseTestCreationReturn {
         }
         return newTest;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to create test");
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to create test";
+        setError(errorMessage);
         return null;
       } finally {
         setIsCreating(false);
@@ -98,15 +158,23 @@ export function useTestCreation(): UseTestCreationReturn {
 
       try {
         await updateTestInContext(id, data);
+        setLastSaved(new Date());
+        setIsDirty(false);
+
+        // Notify other users about the edit
+        notifyTestEdit(id, user.id);
+
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to update test");
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to update test";
+        setError(errorMessage);
         return false;
       } finally {
         setIsSaving(false);
       }
     },
-    [user, updateTestInContext]
+    [user, updateTestInContext, notifyTestEdit]
   );
 
   // Delete test
@@ -124,7 +192,9 @@ export function useTestCreation(): UseTestCreationReturn {
         await deleteTestInContext(id);
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to delete test");
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to delete test";
+        setError(errorMessage);
         return false;
       } finally {
         setIsDeleting(false);
@@ -133,7 +203,7 @@ export function useTestCreation(): UseTestCreationReturn {
     [user, deleteTestInContext]
   );
 
-  // Duplicate a test with all questions
+  // Duplicate test with questions
   const duplicateTest = useCallback(
     async (testId: string): Promise<Test | null> => {
       if (!user || !["admin", "doctor"].includes(user.role || "")) {
@@ -147,7 +217,7 @@ export function useTestCreation(): UseTestCreationReturn {
       try {
         // Fetch the original test with questions
         const { data: originalTest, error: fetchError } = await supabase
-          .from("tests")
+          .from("exam_tests")
           .select(
             `
             *,
@@ -161,51 +231,49 @@ export function useTestCreation(): UseTestCreationReturn {
           .single();
 
         if (fetchError) throw fetchError;
-        if (!originalTest) throw new Error("Test not found");
 
-        // Create the duplicated test
-        const { data: newTest, error: createError } = await supabase
-          .from("tests")
-          .insert({
-            title: `${originalTest.title} (Copy)`,
-            description: originalTest.description,
-            category_id: originalTest.category_id,
-            created_by: user.id,
-            is_published: false,
-            time_limit: originalTest.time_limit,
-            passing_score: originalTest.passing_score,
-            allow_multiple_attempts: originalTest.allow_multiple_attempts,
-            show_correct_answers_in_training:
-              originalTest.show_correct_answers_in_training,
-          })
-          .select()
-          .single();
+        // Create the duplicate test
+        const duplicateData: TestCreate = {
+          title: `${originalTest.title} (Copy)`,
+          description: originalTest.description,
+          category_id: originalTest.category_id,
+          time_limit: originalTest.time_limit,
+          passing_score: originalTest.passing_score,
+          allow_multiple_attempts: originalTest.allow_multiple_attempts,
+          show_correct_answers_in_training:
+            originalTest.show_correct_answers_in_training,
+        };
 
-        if (createError) throw createError;
+        const newTest = await createTestInContext(duplicateData);
+        if (!newTest) throw new Error("Failed to create duplicate test");
 
-        // Duplicate questions and options
-        for (const question of originalTest.questions || []) {
+        // Duplicate questions
+        for (const question of originalTest.questions) {
           const { data: newQuestion, error: questionError } = await supabase
             .from("test_questions")
-            .insert({
-              test_id: newTest.id,
-              question_text: question.question_text,
-              explanation: question.explanation,
-              question_order: question.question_order,
-              points: question.points,
-            })
+            .insert([
+              {
+                test_id: newTest.id,
+                question_text: question.question_text,
+                explanation: question.explanation,
+                points: question.points,
+                question_order: question.question_order,
+              },
+            ])
             .select()
             .single();
 
           if (questionError) throw questionError;
 
           // Duplicate options
-          const optionsToInsert = question.options.map((option: any) => ({
-            question_id: newQuestion.id,
-            option_text: option.option_text,
-            is_correct: option.is_correct,
-            option_order: option.option_order,
-          }));
+          const optionsToInsert = question.options.map(
+            (option: QuestionOption) => ({
+              question_id: newQuestion.id,
+              option_text: option.option_text,
+              is_correct: option.is_correct,
+              option_order: option.option_order,
+            })
+          );
 
           const { error: optionsError } = await supabase
             .from("question_options")
@@ -216,15 +284,15 @@ export function useTestCreation(): UseTestCreationReturn {
 
         return newTest;
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to duplicate test"
-        );
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to duplicate test";
+        setError(errorMessage);
         return null;
       } finally {
         setIsCreating(false);
       }
     },
-    [user]
+    [user, createTestInContext]
   );
 
   // Validate test before publishing
@@ -234,8 +302,9 @@ export function useTestCreation(): UseTestCreationReturn {
       const warnings: string[] = [];
 
       try {
-        const { data: test, error } = await supabase
-          .from("tests")
+        // Fetch test with questions
+        const { data: test, error: fetchError } = await supabase
+          .from("exam_tests")
           .select(
             `
             *,
@@ -248,42 +317,58 @@ export function useTestCreation(): UseTestCreationReturn {
           .eq("id", testId)
           .single();
 
-        if (error) throw error;
-        if (!test) {
-          errors.push("Test not found");
-          return { isValid: false, errors, warnings };
-        }
+        if (fetchError) throw fetchError;
 
         // Validation rules
+        if (!test.title || test.title.trim().length === 0) {
+          errors.push("Test must have a title");
+        }
+
+        if (!test.category_id) {
+          errors.push("Test must be assigned to a category");
+        }
+
         if (!test.questions || test.questions.length === 0) {
           errors.push("Test must have at least one question");
-        }
+        } else {
+          // Validate each question
+          test.questions.forEach((question: TestQuestion, index: number) => {
+            if (
+              !question.question_text ||
+              question.question_text.trim().length === 0
+            ) {
+              errors.push(`Question ${index + 1} is missing text`);
+            }
 
-        test.questions?.forEach((question: TestQuestion, index: number) => {
-          if (!question.options || question.options.length < 2) {
-            errors.push(`Question ${index + 1} must have at least 2 options`);
-          }
+            if (!question.options || question.options.length < 2) {
+              errors.push(`Question ${index + 1} must have at least 2 options`);
+            }
 
-          const correctOptions = question.options?.filter(
-            (opt: QuestionOption) => opt.is_correct
-          );
-          if (!correctOptions || correctOptions.length === 0) {
-            errors.push(
-              `Question ${index + 1} must have at least one correct answer`
+            const correctOptions = question.options.filter(
+              (opt: QuestionOption) => opt.is_correct
             );
-          }
+            if (correctOptions.length === 0) {
+              errors.push(
+                `Question ${index + 1} must have at least one correct answer`
+              );
+            }
 
-          if (question.points < 1) {
-            warnings.push(`Question ${index + 1} has 0 points`);
-          }
-        });
-
-        if (test.time_limit && test.time_limit < 5) {
-          warnings.push("Time limit is very short (less than 5 minutes)");
+            if (question.points <= 0) {
+              warnings.push(`Question ${index + 1} has no points assigned`);
+            }
+          });
         }
 
-        if (test.passing_score < 50) {
-          warnings.push("Passing score is below 50%");
+        if (
+          !test.passing_score ||
+          test.passing_score < 0 ||
+          test.passing_score > 100
+        ) {
+          errors.push("Passing score must be between 0 and 100");
+        }
+
+        if (test.time_limit && test.time_limit < 1) {
+          warnings.push("Time limit is very short");
         }
 
         return {
@@ -292,61 +377,40 @@ export function useTestCreation(): UseTestCreationReturn {
           warnings,
         };
       } catch (err) {
-        errors.push(
-          err instanceof Error ? err.message : "Failed to validate test"
-        );
-        return { isValid: false, errors, warnings };
+        return {
+          isValid: false,
+          errors: ["Failed to validate test"],
+          warnings: [],
+        };
       }
     },
     []
   );
 
-  // Publish test (with validation)
+  // Publish test
   const publishTest = useCallback(
-    async (testId: string): Promise<boolean> => {
-      const validation = await validateTest(testId);
-
+    async (id: string): Promise<boolean> => {
+      // Validate before publishing
+      const validation = await validateTest(id);
       if (!validation.isValid) {
         setError(validation.errors.join(", "));
         return false;
       }
 
-      if (validation.warnings.length > 0) {
-        const proceed = confirm(
-          `Warning:\n${validation.warnings.join(
-            "\n"
-          )}\n\nDo you want to publish anyway?`
-        );
-        if (!proceed) return false;
-      }
-
-      try {
-        await publishTestInContext(testId);
-        return true;
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to publish test");
-        return false;
-      }
+      return updateTest(id, { is_published: true });
     },
-    [validateTest, publishTestInContext]
+    [validateTest, updateTest]
   );
 
   // Unpublish test
   const unpublishTest = useCallback(
-    async (testId: string): Promise<boolean> => {
-      try {
-        await unpublishTestInContext(testId);
-        return true;
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to unpublish test"
-        );
-        return false;
-      }
+    async (id: string): Promise<boolean> => {
+      return updateTest(id, { is_published: false });
     },
-    [unpublishTestInContext]
+    [updateTest]
   );
 
+  // Clear error
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -356,6 +420,8 @@ export function useTestCreation(): UseTestCreationReturn {
     isSaving,
     isDeleting,
     error,
+    isDirty,
+    lastSaved,
     createTest,
     updateTest,
     deleteTest,
@@ -364,5 +430,7 @@ export function useTestCreation(): UseTestCreationReturn {
     publishTest,
     unpublishTest,
     clearError,
+    enableAutoSave,
+    disableAutoSave,
   };
 }

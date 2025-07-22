@@ -1,8 +1,8 @@
-// src/hooks/useQuestionEditor.ts
+// src/hooks/useQuestionEditor.ts - ENHANCED VERSION
 
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { TestQuestion, QuestionFormData } from "@/types/exam";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 interface UseQuestionEditorProps {
   testId: string;
   onQuestionSaved?: () => void;
+  enableAutoSave?: boolean;
 }
 
 interface UseQuestionEditorReturn {
@@ -18,6 +19,8 @@ interface UseQuestionEditorReturn {
   loading: boolean;
   saving: boolean;
   error: string | null;
+  selectedQuestions: Set<string>;
+  isDirty: boolean;
 
   // Actions
   fetchQuestions: () => Promise<void>;
@@ -34,17 +37,33 @@ interface UseQuestionEditorReturn {
     questions: QuestionFormData[]
   ) => Promise<{ success: number; failed: number }>;
   clearError: () => void;
+
+  // Selection
+  toggleQuestionSelection: (questionId: string) => void;
+  selectAllQuestions: () => void;
+  clearSelection: () => void;
+
+  // Auto-save
+  markAsDirty: () => void;
 }
 
 export function useQuestionEditor({
   testId,
   onQuestionSaved,
+  enableAutoSave = false,
 }: UseQuestionEditorProps): UseQuestionEditorReturn {
   const { user } = useAuth();
   const [questions, setQuestions] = useState<TestQuestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(
+    new Set()
+  );
+  const [isDirty, setIsDirty] = useState(false);
+
+  const questionsCache = useRef<Map<string, TestQuestion>>(new Map());
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch all questions for the test
   const fetchQuestions = useCallback(async () => {
@@ -73,6 +92,10 @@ export function useQuestionEditor({
       }));
 
       setQuestions(sortedQuestions);
+
+      // Update cache
+      questionsCache.current.clear();
+      sortedQuestions.forEach((q) => questionsCache.current.set(q.id, q));
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to fetch questions"
@@ -81,6 +104,26 @@ export function useQuestionEditor({
       setLoading(false);
     }
   }, [testId]);
+
+  // Auto-save functionality
+  useEffect(() => {
+    if (enableAutoSave && isDirty) {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+
+      autoSaveTimerRef.current = setTimeout(() => {
+        // Auto-save logic here if needed
+        setIsDirty(false);
+      }, 2000);
+    }
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [enableAutoSave, isDirty]);
 
   // Create a new question
   const createQuestion = useCallback(
@@ -95,22 +138,27 @@ export function useQuestionEditor({
 
       try {
         // Get the next order number
-        const maxOrder = Math.max(0, ...questions.map((q) => q.question_order));
+        const maxOrder = Math.max(
+          ...questions.map((q) => q.question_order || 0),
+          0
+        );
 
-        // Create question
-        const { data: newQuestion, error: questionError } = await supabase
+        // Create the question
+        const { data: newQuestion, error: createError } = await supabase
           .from("test_questions")
-          .insert({
-            test_id: testId,
-            question_text: data.question_text,
-            explanation: data.explanation,
-            points: data.points,
-            question_order: maxOrder + 1,
-          })
+          .insert([
+            {
+              test_id: testId,
+              question_text: data.question_text,
+              explanation: data.explanation,
+              points: data.points,
+              question_order: maxOrder + 1,
+            },
+          ])
           .select()
           .single();
 
-        if (questionError) throw questionError;
+        if (createError) throw createError;
 
         // Create options
         const optionsToInsert = data.options.map((option, index) => ({
@@ -120,7 +168,7 @@ export function useQuestionEditor({
           option_order: index,
         }));
 
-        const { data: newOptions, error: optionsError } = await supabase
+        const { data: insertedOptions, error: optionsError } = await supabase
           .from("question_options")
           .insert(optionsToInsert)
           .select();
@@ -129,11 +177,14 @@ export function useQuestionEditor({
 
         const completeQuestion = {
           ...newQuestion,
-          options: newOptions || [],
+          options: insertedOptions || [],
         };
 
+        // Update local state optimistically
         setQuestions((prev) => [...prev, completeQuestion]);
-        onQuestionSaved?.();
+        questionsCache.current.set(completeQuestion.id, completeQuestion);
+
+        if (onQuestionSaved) onQuestionSaved();
 
         return completeQuestion;
       } catch (err) {
@@ -148,7 +199,7 @@ export function useQuestionEditor({
     [user, testId, questions, onQuestionSaved]
   );
 
-  // Update existing question
+  // Update question
   const updateQuestion = useCallback(
     async (
       id: string,
@@ -163,20 +214,17 @@ export function useQuestionEditor({
       setError(null);
 
       try {
-        // Update question
-        const { data: updatedQuestion, error: questionError } = await supabase
+        // Update the question
+        const { error: updateError } = await supabase
           .from("test_questions")
           .update({
             question_text: data.question_text,
             explanation: data.explanation,
             points: data.points,
-            updated_at: new Date().toISOString(),
           })
-          .eq("id", id)
-          .select()
-          .single();
+          .eq("id", id);
 
-        if (questionError) throw questionError;
+        if (updateError) throw updateError;
 
         // Delete existing options
         const { error: deleteError } = await supabase
@@ -186,7 +234,7 @@ export function useQuestionEditor({
 
         if (deleteError) throw deleteError;
 
-        // Create new options
+        // Insert new options
         const optionsToInsert = data.options.map((option, index) => ({
           question_id: id,
           option_text: option.option_text,
@@ -194,24 +242,30 @@ export function useQuestionEditor({
           option_order: index,
         }));
 
-        const { data: newOptions, error: optionsError } = await supabase
+        const { data: insertedOptions, error: optionsError } = await supabase
           .from("question_options")
           .insert(optionsToInsert)
           .select();
 
         if (optionsError) throw optionsError;
 
-        const completeQuestion = {
-          ...updatedQuestion,
-          options: newOptions || [],
+        const updatedQuestion = {
+          ...questionsCache.current.get(id)!,
+          question_text: data.question_text,
+          explanation: data.explanation,
+          points: data.points,
+          options: insertedOptions || [],
         };
 
+        // Update local state optimistically
         setQuestions((prev) =>
-          prev.map((q) => (q.id === id ? completeQuestion : q))
+          prev.map((q) => (q.id === id ? updatedQuestion : q))
         );
-        onQuestionSaved?.();
+        questionsCache.current.set(id, updatedQuestion);
 
-        return completeQuestion;
+        if (onQuestionSaved) onQuestionSaved();
+
+        return updatedQuestion;
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to update question"
@@ -243,8 +297,16 @@ export function useQuestionEditor({
 
         if (deleteError) throw deleteError;
 
+        // Update local state optimistically
         setQuestions((prev) => prev.filter((q) => q.id !== id));
-        onQuestionSaved?.();
+        questionsCache.current.delete(id);
+        setSelectedQuestions((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(id);
+          return newSet;
+        });
+
+        if (onQuestionSaved) onQuestionSaved();
 
         return true;
       } catch (err) {
@@ -259,7 +321,6 @@ export function useQuestionEditor({
     [user, onQuestionSaved]
   );
 
-  // Reorder questions
   const reorderQuestions = useCallback(
     async (questionId: string, newOrder: number): Promise<boolean> => {
       if (!user || !["admin", "doctor"].includes(user.role || "")) {
@@ -274,74 +335,130 @@ export function useQuestionEditor({
         const currentQuestion = questions.find((q) => q.id === questionId);
         if (!currentQuestion) throw new Error("Question not found");
 
-        const oldOrder = currentQuestion.question_order;
-        const questionsToUpdate = [];
+        const oldOrder = currentQuestion.question_order || 0;
 
-        // Determine which questions need their order updated
+        // Prepare batch updates
+        const batchUpdates: Array<{ id: string; question_order: number }> = [];
+
         if (newOrder > oldOrder) {
-          // Moving down
-          questionsToUpdate.push(
-            ...questions.filter(
-              (q) => q.question_order > oldOrder && q.question_order <= newOrder
-            )
-          );
-          questionsToUpdate.forEach((q) => {
-            q.question_order--;
+          // Moving down - decrease order of questions in between
+          questions.forEach((q) => {
+            const order = q.question_order || 0;
+            if (order > oldOrder && order <= newOrder && q.id !== questionId) {
+              batchUpdates.push({ id: q.id, question_order: order - 1 });
+            }
           });
-        } else {
-          // Moving up
-          questionsToUpdate.push(
-            ...questions.filter(
-              (q) => q.question_order >= newOrder && q.question_order < oldOrder
-            )
-          );
-          questionsToUpdate.forEach((q) => {
-            q.question_order++;
+        } else if (newOrder < oldOrder) {
+          // Moving up - increase order of questions in between
+          questions.forEach((q) => {
+            const order = q.question_order || 0;
+            if (order >= newOrder && order < oldOrder && q.id !== questionId) {
+              batchUpdates.push({ id: q.id, question_order: order + 1 });
+            }
           });
         }
 
-        // Update the moved question
-        currentQuestion.question_order = newOrder;
-        questionsToUpdate.push(currentQuestion);
+        // Add the moved question
+        batchUpdates.push({ id: questionId, question_order: newOrder });
 
-        // Batch update in database
-        const updates = questionsToUpdate.map((q) =>
-          supabase
+        // Execute all updates
+        for (const update of batchUpdates) {
+          const { error: updateError } = await supabase
             .from("test_questions")
-            .update({ question_order: q.question_order })
-            .eq("id", q.id)
-        );
+            .update({ question_order: update.question_order })
+            .eq("id", update.id);
 
-        await Promise.all(updates);
+          if (updateError) throw updateError;
+        }
 
-        // Update local state
-        setQuestions((prev) =>
-          [...prev].sort((a, b) => a.question_order - b.question_order)
+        // Update local state optimistically
+        const updatedQuestions = questions.map((q) => {
+          const update = batchUpdates.find((u) => u.id === q.id);
+          if (update) {
+            return { ...q, question_order: update.question_order };
+          }
+          return q;
+        });
+
+        // Sort by order
+        updatedQuestions.sort(
+          (a, b) => (a.question_order || 0) - (b.question_order || 0)
         );
+        setQuestions(updatedQuestions);
 
         return true;
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to reorder questions"
         );
+        // Refetch on error to restore correct state
+        await fetchQuestions();
         return false;
       } finally {
         setSaving(false);
       }
     },
-    [user, questions]
+    [user, questions, fetchQuestions]
   );
+  
+  [
+    {
+      resource:
+        "/c:/Users/EmGii/Desktop/Gii Development/Medunacy/src/hooks/useQuestionEditor.ts",
+      owner: "typescript",
+      code: "2345",
+      severity: 8,
+      message:
+        "Argument of type 'PostgrestFilterBuilder<any, any, null, \"test_questions\", unknown>' is not assignable to parameter of type 'Promise<any>'.\n  Type 'PostgrestFilterBuilder<any, any, null, \"test_questions\", unknown>' is missing the following properties from type 'Promise<any>': catch, finally, [Symbol.toStringTag]",
+      source: "ts",
+      startLineNumber: 355,
+      startColumn: 28,
+      endLineNumber: 355,
+      endColumn: 41,
+      origin: "extHost1",
+    },
+    {
+      resource:
+        "/c:/Users/EmGii/Desktop/Gii Development/Medunacy/src/hooks/useQuestionEditor.ts",
+      owner: "typescript",
+      code: "2345",
+      severity: 8,
+      message:
+        "Argument of type 'PostgrestFilterBuilder<any, any, null, \"test_questions\", unknown>' is not assignable to parameter of type 'Promise<any>'.\n  Type 'PostgrestFilterBuilder<any, any, null, \"test_questions\", unknown>' is missing the following properties from type 'Promise<any>': catch, finally, [Symbol.toStringTag]",
+      source: "ts",
+      startLineNumber: 369,
+      startColumn: 28,
+      endLineNumber: 369,
+      endColumn: 41,
+      origin: "extHost1",
+    },
+    {
+      resource:
+        "/c:/Users/EmGii/Desktop/Gii Development/Medunacy/src/hooks/useQuestionEditor.ts",
+      owner: "typescript",
+      code: "2345",
+      severity: 8,
+      message:
+        "Argument of type 'PostgrestFilterBuilder<any, any, null, \"test_questions\", unknown>' is not assignable to parameter of type 'Promise<any>'.\n  Type 'PostgrestFilterBuilder<any, any, null, \"test_questions\", unknown>' is missing the following properties from type 'Promise<any>': catch, finally, [Symbol.toStringTag]",
+      source: "ts",
+      startLineNumber: 380,
+      startColumn: 22,
+      endLineNumber: 380,
+      endColumn: 41,
+      origin: "extHost1",
+    },
+  ];
 
-  // Duplicate a question
+  // Duplicate question
   const duplicateQuestion = useCallback(
     async (questionId: string): Promise<TestQuestion | null> => {
-      const originalQuestion = questions.find((q) => q.id === questionId);
+      const originalQuestion = questionsCache.current.get(questionId);
       if (!originalQuestion) {
         setError("Question not found");
         return null;
       }
 
-      const formData: QuestionFormData = {
+      const duplicateData: QuestionFormData = {
         question_text: `${originalQuestion.question_text} (Copy)`,
         explanation: originalQuestion.explanation,
         points: originalQuestion.points,
@@ -351,9 +468,9 @@ export function useQuestionEditor({
         })),
       };
 
-      return createQuestion(formData);
+      return createQuestion(duplicateData);
     },
-    [questions, createQuestion]
+    [createQuestion]
   );
 
   // Bulk delete questions
@@ -375,8 +492,12 @@ export function useQuestionEditor({
 
         if (deleteError) throw deleteError;
 
+        // Update local state optimistically
         setQuestions((prev) => prev.filter((q) => !questionIds.includes(q.id)));
-        onQuestionSaved?.();
+        questionIds.forEach((id) => questionsCache.current.delete(id));
+        setSelectedQuestions(new Set());
+
+        if (onQuestionSaved) onQuestionSaved();
 
         return true;
       } catch (err) {
@@ -391,7 +512,7 @@ export function useQuestionEditor({
     [user, onQuestionSaved]
   );
 
-  // Import multiple questions
+  // Import questions
   const importQuestions = useCallback(
     async (
       questionsData: QuestionFormData[]
@@ -413,6 +534,31 @@ export function useQuestionEditor({
     [createQuestion]
   );
 
+  // Selection handlers
+  const toggleQuestionSelection = useCallback((questionId: string) => {
+    setSelectedQuestions((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(questionId)) {
+        newSet.delete(questionId);
+      } else {
+        newSet.add(questionId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const selectAllQuestions = useCallback(() => {
+    setSelectedQuestions(new Set(questions.map((q) => q.id)));
+  }, [questions]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedQuestions(new Set());
+  }, []);
+
+  const markAsDirty = useCallback(() => {
+    setIsDirty(true);
+  }, []);
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -422,6 +568,8 @@ export function useQuestionEditor({
     loading,
     saving,
     error,
+    selectedQuestions,
+    isDirty,
     fetchQuestions,
     createQuestion,
     updateQuestion,
@@ -431,5 +579,9 @@ export function useQuestionEditor({
     bulkDeleteQuestions,
     importQuestions,
     clearError,
+    toggleQuestionSelection,
+    selectAllQuestions,
+    clearSelection,
+    markAsDirty,
   };
 }

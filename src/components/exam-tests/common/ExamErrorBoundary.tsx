@@ -1,4 +1,4 @@
-// src/components/exam-tests/common/ExamErrorBoundary.tsx
+// src/components/exam-tests/common/ExamErrorBoundary.tsx - ENHANCED VERSION
 
 "use client";
 
@@ -8,20 +8,46 @@ import { useTranslations } from "next-intl";
 interface Props {
   children: ReactNode;
   fallback?: (error: Error, reset: () => void) => ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void; // New: custom error handler
 }
 
 interface State {
   hasError: boolean;
   error: Error | null;
+  errorInfo: ErrorInfo | null; // New: store error info
 }
 
 // Error message translations component
 function ErrorMessage({ error, reset }: { error: Error; reset: () => void }) {
   const t = useTranslations("exam_tests.errors");
 
+  // Determine error type for better messaging
+  const getErrorMessage = () => {
+    if (error.message.includes("network")) {
+      return t("network_error", {
+        defaultValue:
+          "Network connection error. Please check your internet connection.",
+      });
+    }
+    if (
+      error.message.includes("permission") ||
+      error.message.includes("unauthorized")
+    ) {
+      return t("permission_error", {
+        defaultValue: "You don't have permission to perform this action.",
+      });
+    }
+    if (error.message.includes("not found")) {
+      return t("not_found_error", {
+        defaultValue: "The requested resource was not found.",
+      });
+    }
+    return error.message || t("unknown_error");
+  };
+
   return (
     <div className="min-h-[400px] flex items-center justify-center p-8">
-      <div className="max-w-md w-full bg-red-50 border border-red-200 rounded-xl p-6">
+      <div className="max-w-md w-full bg-red-50 border border-red-200 rounded-xl p-6 shadow-lg">
         <div className="flex items-center mb-4">
           <div className="flex-shrink-0">
             <svg
@@ -45,20 +71,30 @@ function ErrorMessage({ error, reset }: { error: Error; reset: () => void }) {
           </div>
         </div>
 
-        <p className="text-sm text-red-700 mb-4">
-          {error.message || t("unknown_error")}
-        </p>
+        <p className="text-sm text-red-700 mb-4">{getErrorMessage()}</p>
+
+        {/* Show error details in development */}
+        {process.env.NODE_ENV === "development" && (
+          <details className="mb-4">
+            <summary className="text-xs text-red-600 cursor-pointer hover:underline">
+              {t("error_details")}
+            </summary>
+            <pre className="mt-2 text-xs bg-red-100 p-2 rounded overflow-auto max-h-32">
+              {error.stack}
+            </pre>
+          </details>
+        )}
 
         <div className="flex space-x-3">
           <button
             onClick={reset}
-            className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
           >
             {t("try_again")}
           </button>
           <button
             onClick={() => window.location.reload()}
-            className="flex-1 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+            className="flex-1 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors font-medium"
           >
             {t("reload_page")}
           </button>
@@ -72,18 +108,32 @@ export default class ExamErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false,
     error: null,
+    errorInfo: null,
   };
 
-  public static getDerivedStateFromError(error: Error): State {
+  public static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("ExamErrorBoundary caught error:", error, errorInfo);
+
+    // Store error info
+    this.setState({ errorInfo });
+
+    // Call custom error handler if provided
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
+
+    // In production, you might want to send this to an error reporting service
+    if (process.env.NODE_ENV === "production") {
+      // Example: logErrorToService(error, errorInfo);
+    }
   }
 
   private reset = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, errorInfo: null });
   };
 
   public render() {

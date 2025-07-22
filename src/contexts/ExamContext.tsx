@@ -1,48 +1,46 @@
-// src/contexts/ExamContext.tsx
-
-"use client";
+// src/contexts/ExamContext.tsx - FIXED VERSION (remove TestSession)
 
 import React, {
   createContext,
   useContext,
   useState,
-  useEffect,
   useCallback,
+  useEffect,
   useRef,
 } from "react";
-import { useAuth } from "./AuthContext";
 import { supabase } from "@/lib/supabase";
-import {
-  Test,
-  TestCategory,
-  TestQuestion,
-  QuestionOption,
-  ExamSession,
-  ExamResults,
-} from "@/types/exam";
+import { Test, TestCategory, TestCreate, TestUpdate } from "@/types/exam";
+import { RealtimeChannel } from "@supabase/realtime-js";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ExamContextType {
   // State
   categories: TestCategory[];
   tests: Test[];
   currentTest: Test | null;
-  currentSession: ExamSession | null;
   loading: boolean;
   error: string | null;
+  testCache: Map<string, Test>;
 
   // Actions
   fetchCategories: () => Promise<void>;
   fetchTests: (categoryId?: string) => Promise<void>;
   fetchTestById: (testId: string) => Promise<Test | null>;
-  createCategory: (data: Partial<TestCategory>) => Promise<TestCategory | null>;
+  createCategory: (
+    data: Omit<TestCategory, "id" | "created_at">
+  ) => Promise<TestCategory | null>;
   updateCategory: (id: string, data: Partial<TestCategory>) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
-  createTest: (data: Partial<Test>) => Promise<Test | null>;
-  updateTest: (id: string, data: Partial<Test>) => Promise<void>;
+  createTest: (data: TestCreate) => Promise<Test | null>;
+  updateTest: (id: string, data: TestUpdate) => Promise<void>;
   deleteTest: (id: string) => Promise<void>;
   publishTest: (id: string) => Promise<void>;
   unpublishTest: (id: string) => Promise<void>;
   clearError: () => void;
+
+  // Collaborative features
+  subscribeToTestUpdates: (testId: string) => () => void;
+  notifyTestEdit: (testId: string, userId: string) => void;
 }
 
 const ExamContext = createContext<ExamContextType | undefined>(undefined);
@@ -52,17 +50,22 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
   const [categories, setCategories] = useState<TestCategory[]>([]);
   const [tests, setTests] = useState<Test[]>([]);
   const [currentTest, setCurrentTest] = useState<Test | null>(null);
-  const [currentSession, setCurrentSession] = useState<ExamSession | null>(
-    null
-  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [testCache] = useState(new Map<string, Test>());
 
-  // Refs for subscriptions
-  const categoriesSubscription = useRef<any>(null);
-  const testsSubscription = useRef<any>(null);
+  const categoriesSubscription = useRef<RealtimeChannel | null>(null);
+  const testsSubscription = useRef<RealtimeChannel | null>(null);
+  const testUpdateSubscriptions = useRef<Map<string, RealtimeChannel>>(
+    new Map()
+  );
 
-  // Fetch all categories
+  // Clear error
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  // Fetch categories with caching
   const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
@@ -71,13 +74,12 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
       const { data, error: fetchError } = await supabase
         .from("test_categories")
         .select("*")
-        .eq("is_active", true)
         .order("name");
 
       if (fetchError) throw fetchError;
+
       setCategories(data || []);
     } catch (err) {
-      console.error("Error fetching categories:", err);
       setError(
         err instanceof Error ? err.message : "Failed to fetch categories"
       );
@@ -86,63 +88,68 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Fetch tests (optionally by category)
+  // Fetch tests with optional category filter
   const fetchTests = useCallback(
     async (categoryId?: string) => {
       try {
         setLoading(true);
         setError(null);
 
-        let query = supabase.from("tests").select(
-          `
+        let query = supabase
+          .from("exam_tests")
+          .select(
+            `
           *,
           category:test_categories(*),
-          questions:test_questions(count)
+          question_count:test_questions(count)
         `
-        );
-
-        // If user is not admin/doctor, only show published tests
-        if (!user || !["admin", "doctor"].includes(user.role || "")) {
-          query = query.eq("is_published", true);
-        }
+          )
+          .order("created_at", { ascending: false });
 
         if (categoryId) {
           query = query.eq("category_id", categoryId);
         }
 
-        const { data, error: fetchError } = await query.order("created_at", {
-          ascending: false,
-        });
+        const { data, error: fetchError } = await query;
 
         if (fetchError) throw fetchError;
 
-        // Transform the data to include question count
-        const transformedTests =
-          data?.map((test) => ({
-            ...test,
-            question_count: test.questions?.[0]?.count || 0,
-          })) || [];
+        const enrichedTests = (data || []).map((test) => ({
+          ...test,
+          question_count: test.question_count?.[0]?.count || 0,
+        }));
 
-        setTests(transformedTests);
+        setTests(enrichedTests);
+
+        // Update cache
+        enrichedTests.forEach((test) => {
+          testCache.set(test.id, test);
+        });
       } catch (err) {
-        console.error("Error fetching tests:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch tests");
       } finally {
         setLoading(false);
       }
     },
-    [user]
+    [testCache]
   );
 
-  // Fetch single test by ID
+  // Fetch single test by ID with caching
   const fetchTestById = useCallback(
     async (testId: string): Promise<Test | null> => {
       try {
+        // Check cache first
+        if (testCache.has(testId)) {
+          const cached = testCache.get(testId)!;
+          setCurrentTest(cached);
+          return cached;
+        }
+
         setLoading(true);
         setError(null);
 
         const { data, error: fetchError } = await supabase
-          .from("tests")
+          .from("exam_tests")
           .select(
             `
           *,
@@ -158,72 +165,47 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
 
         if (fetchError) throw fetchError;
 
-        if (data) {
-          // Sort questions and options by order
-          const sortedQuestions = (data.questions || [])
-            .sort(
-              (a: TestQuestion, b: TestQuestion) =>
-                a.question_order - b.question_order
-            )
-            .map((question: TestQuestion) => ({
-              ...question,
-              options: question.options.sort(
-                (a: QuestionOption, b: QuestionOption) =>
-                  a.option_order - b.option_order
-              ),
-            }));
+        const enrichedTest = {
+          ...data,
+          question_count: data.questions?.length || 0,
+        };
 
-          const testWithSortedQuestions = {
-            ...data,
-            questions: sortedQuestions,
-          };
+        setCurrentTest(enrichedTest);
+        testCache.set(testId, enrichedTest);
 
-          setCurrentTest(testWithSortedQuestions);
-          return testWithSortedQuestions;
-        }
-
-        return null;
+        return enrichedTest;
       } catch (err) {
-        console.error("Error fetching test:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch test");
         return null;
       } finally {
         setLoading(false);
       }
     },
-    []
+    [testCache]
   );
 
   // Create category
   const createCategory = useCallback(
-    async (data: Partial<TestCategory>): Promise<TestCategory | null> => {
-      if (!user || !["admin", "doctor"].includes(user.role || "")) {
-        setError("Unauthorized to create categories");
-        return null;
-      }
-
+    async (
+      data: Omit<TestCategory, "id" | "created_at">
+    ): Promise<TestCategory | null> => {
       try {
         setLoading(true);
         setError(null);
 
         const { data: newCategory, error: createError } = await supabase
           .from("test_categories")
-          .insert({
-            ...data,
-            created_by: user.id,
-            is_active: true,
-          })
+          .insert([data])
           .select()
           .single();
 
         if (createError) throw createError;
 
-        // Update local state
+        // Optimistic update
         setCategories((prev) => [...prev, newCategory]);
 
         return newCategory;
       } catch (err) {
-        console.error("Error creating category:", err);
         setError(
           err instanceof Error ? err.message : "Failed to create category"
         );
@@ -232,37 +214,28 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     },
-    [user]
+    []
   );
 
   // Update category
   const updateCategory = useCallback(
     async (id: string, data: Partial<TestCategory>) => {
-      if (!user || !["admin", "doctor"].includes(user.role || "")) {
-        setError("Unauthorized to update categories");
-        return;
-      }
-
       try {
         setLoading(true);
         setError(null);
 
         const { error: updateError } = await supabase
           .from("test_categories")
-          .update({
-            ...data,
-            updated_at: new Date().toISOString(),
-          })
+          .update(data)
           .eq("id", id);
 
         if (updateError) throw updateError;
 
-        // Update local state
+        // Optimistic update
         setCategories((prev) =>
           prev.map((cat) => (cat.id === id ? { ...cat, ...data } : cat))
         );
       } catch (err) {
-        console.error("Error updating category:", err);
         setError(
           err instanceof Error ? err.message : "Failed to update category"
         );
@@ -270,62 +243,48 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     },
-    [user]
+    []
   );
 
   // Delete category
-  const deleteCategory = useCallback(
-    async (id: string) => {
-      if (!user || !["admin", "doctor"].includes(user.role || "")) {
-        setError("Unauthorized to delete categories");
-        return;
-      }
+  const deleteCategory = useCallback(async (id: string) => {
+    try {
+      setLoading(true);
+      setError(null);
 
-      try {
-        setLoading(true);
-        setError(null);
+      const { error: deleteError } = await supabase
+        .from("test_categories")
+        .delete()
+        .eq("id", id);
 
-        // Soft delete by setting is_active to false
-        const { error: deleteError } = await supabase
-          .from("test_categories")
-          .update({ is_active: false })
-          .eq("id", id);
+      if (deleteError) throw deleteError;
 
-        if (deleteError) throw deleteError;
+      // Optimistic update
+      setCategories((prev) => prev.filter((cat) => cat.id !== id));
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to delete category"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-        // Update local state
-        setCategories((prev) => prev.filter((cat) => cat.id !== id));
-      } catch (err) {
-        console.error("Error deleting category:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to delete category"
-        );
-      } finally {
-        setLoading(false);
-      }
-    },
-    [user]
-  );
-
-  // Create test
+  // Create test with optimistic update
   const createTest = useCallback(
-    async (data: Partial<Test>): Promise<Test | null> => {
-      if (!user || !["admin", "doctor"].includes(user.role || "")) {
-        setError("Unauthorized to create tests");
-        return null;
-      }
-
+    async (data: TestCreate): Promise<Test | null> => {
       try {
         setLoading(true);
         setError(null);
 
         const { data: newTest, error: createError } = await supabase
-          .from("tests")
-          .insert({
-            ...data,
-            created_by: user.id,
-            is_published: false,
-          })
+          .from("exam_tests")
+          .insert([
+            {
+              ...data,
+              created_by: user?.id,
+            },
+          ])
           .select(
             `
             *,
@@ -336,91 +295,83 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
 
         if (createError) throw createError;
 
-        // Update local state
-        setTests((prev) => [newTest, ...prev]);
+        const enrichedTest = {
+          ...newTest,
+          question_count: 0,
+        };
 
-        return newTest;
+        // Optimistic update
+        setTests((prev) => [enrichedTest, ...prev]);
+        testCache.set(enrichedTest.id, enrichedTest);
+
+        return enrichedTest;
       } catch (err) {
-        console.error("Error creating test:", err);
         setError(err instanceof Error ? err.message : "Failed to create test");
         return null;
       } finally {
         setLoading(false);
       }
     },
-    [user]
+    [user, testCache]
   );
 
-  // Update test
+  // Update test with optimistic update
   const updateTest = useCallback(
-    async (id: string, data: Partial<Test>) => {
-      if (!user || !["admin", "doctor"].includes(user.role || "")) {
-        setError("Unauthorized to update tests");
-        return;
-      }
-
+    async (id: string, data: TestUpdate) => {
       try {
         setLoading(true);
         setError(null);
 
         const { error: updateError } = await supabase
-          .from("tests")
-          .update({
-            ...data,
-            updated_at: new Date().toISOString(),
-          })
+          .from("exam_tests")
+          .update(data)
           .eq("id", id);
 
         if (updateError) throw updateError;
 
-        // Update local state
+        // Optimistic update
         setTests((prev) =>
           prev.map((test) => (test.id === id ? { ...test, ...data } : test))
         );
 
-        // Update current test if it's the one being edited
-        if (currentTest?.id === id) {
-          setCurrentTest((prev) => (prev ? { ...prev, ...data } : null));
+        // Update cache
+        const cachedTest = testCache.get(id);
+        if (cachedTest) {
+          testCache.set(id, { ...cachedTest, ...data });
         }
       } catch (err) {
-        console.error("Error updating test:", err);
         setError(err instanceof Error ? err.message : "Failed to update test");
       } finally {
         setLoading(false);
       }
     },
-    [user, currentTest]
+    [testCache]
   );
 
   // Delete test
   const deleteTest = useCallback(
     async (id: string) => {
-      if (!user || !["admin", "doctor"].includes(user.role || "")) {
-        setError("Unauthorized to delete tests");
-        return;
-      }
-
       try {
         setLoading(true);
         setError(null);
 
         const { error: deleteError } = await supabase
-          .from("tests")
+          .from("exam_tests")
           .delete()
           .eq("id", id);
 
         if (deleteError) throw deleteError;
 
-        // Update local state
+        // Optimistic update
         setTests((prev) => prev.filter((test) => test.id !== id));
+        testCache.delete(id);
       } catch (err) {
-        console.error("Error deleting test:", err);
         setError(err instanceof Error ? err.message : "Failed to delete test");
       } finally {
         setLoading(false);
       }
     },
-    [user]
+    [testCache]
   );
 
   // Publish test
@@ -439,28 +390,82 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     [updateTest]
   );
 
-  // Clear error
-  const clearError = useCallback(() => {
-    setError(null);
+  // Subscribe to test updates for collaborative editing
+  const subscribeToTestUpdates = useCallback(
+    (testId: string) => {
+      const channel = supabase
+        .channel(`test-updates-${testId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "exam_tests",
+            filter: `id=eq.${testId}`,
+          },
+          (payload) => {
+            if (payload.eventType === "UPDATE") {
+              const updatedTest = payload.new as Test;
+              setTests((prev) =>
+                prev.map((test) =>
+                  test.id === testId ? { ...test, ...updatedTest } : test
+                )
+              );
+
+              // Update cache
+              const cachedTest = testCache.get(testId);
+              if (cachedTest) {
+                testCache.set(testId, { ...cachedTest, ...updatedTest });
+              }
+
+              if (currentTest?.id === testId) {
+                setCurrentTest((prev) =>
+                  prev ? { ...prev, ...updatedTest } : null
+                );
+              }
+            }
+          }
+        )
+        .subscribe();
+
+      testUpdateSubscriptions.current.set(testId, channel);
+
+      return () => {
+        channel.unsubscribe();
+        testUpdateSubscriptions.current.delete(testId);
+      };
+    },
+    [currentTest, testCache]
+  );
+
+  // Notify when editing a test (for collaborative indicators)
+  const notifyTestEdit = useCallback(async (testId: string, userId: string) => {
+    const channel = supabase.channel(`test-editors-${testId}`);
+
+    await channel.send({
+      type: "broadcast",
+      event: "user_editing",
+      payload: { userId, timestamp: new Date().toISOString() },
+    });
   }, []);
 
   // Set up real-time subscriptions
   useEffect(() => {
-    // Subscribe to category changes
+    // Subscribe to categories changes
     categoriesSubscription.current = supabase
-      .channel("test_categories_changes")
+      .channel("categories-changes")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "test_categories" },
         (payload) => {
-          console.log("Category change:", payload);
-
           if (payload.eventType === "INSERT") {
             setCategories((prev) => [...prev, payload.new as TestCategory]);
           } else if (payload.eventType === "UPDATE") {
             setCategories((prev) =>
               prev.map((cat) =>
-                cat.id === payload.new.id ? (payload.new as TestCategory) : cat
+                cat.id === payload.old.id
+                  ? { ...cat, ...(payload.new as TestCategory) }
+                  : cat
               )
             );
           } else if (payload.eventType === "DELETE") {
@@ -472,22 +477,23 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
       )
       .subscribe();
 
-    // Subscribe to test changes
+    // Subscribe to tests changes
     testsSubscription.current = supabase
-      .channel("tests_changes")
+      .channel("tests-changes")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "tests" },
-        (payload) => {
-          console.log("Test change:", payload);
-
+        { event: "*", schema: "public", table: "exam_tests" },
+        async (payload) => {
           if (payload.eventType === "INSERT") {
-            // Fetch the complete test with relations
-            fetchTestById(payload.new.id);
+            // Fetch full test data with relations
+            const newTest = await fetchTestById(payload.new.id);
+            if (newTest) {
+              setTests((prev) => [newTest, ...prev]);
+            }
           } else if (payload.eventType === "UPDATE") {
             setTests((prev) =>
               prev.map((test) =>
-                test.id === payload.new.id
+                test.id === payload.old.id
                   ? { ...test, ...(payload.new as Test) }
                   : test
               )
@@ -509,6 +515,9 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
       if (testsSubscription.current) {
         supabase.removeChannel(testsSubscription.current);
       }
+      testUpdateSubscriptions.current.forEach((channel) => {
+        channel.unsubscribe();
+      });
     };
   }, [fetchTestById]);
 
@@ -516,9 +525,9 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     categories,
     tests,
     currentTest,
-    currentSession,
     loading,
     error,
+    testCache,
     fetchCategories,
     fetchTests,
     fetchTestById,
@@ -531,6 +540,8 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     publishTest,
     unpublishTest,
     clearError,
+    subscribeToTestUpdates,
+    notifyTestEdit,
   };
 
   return <ExamContext.Provider value={value}>{children}</ExamContext.Provider>;

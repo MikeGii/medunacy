@@ -9,7 +9,6 @@ import { useExamSession } from "@/hooks/useExamSession";
 import ExamQuestion from "./ExamQuestion";
 import ExamProgress from "./ExamProgress";
 import ExamTimer from "./ExamTimer";
-import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useTranslations, useLocale } from "next-intl";
 import ExamErrorBoundary from "@/components/exam-tests/common/ExamErrorBoundary";
 import ErrorDisplay from "./common/ErrorDisplay";
