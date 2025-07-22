@@ -284,7 +284,10 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
 
                 // Calculate start and end indices
                 let start = Math.max(0, currentIndex - halfWindow);
-                let end = Math.min(totalQuestions - 1, start + maxVisible - 1);
+                const end = Math.min(
+                  totalQuestions - 1,
+                  start + maxVisible - 1
+                );
 
                 // Adjust start if we're near the end
                 if (end - start + 1 < maxVisible) {
