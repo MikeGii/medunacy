@@ -1,20 +1,18 @@
 // src/app/[locale]/exam-tests/[mode]/[year]/page.tsx
 
-import ExamTestPage from '@/components/exam-tests/ExamTestPage';
+import ExamTestPage from "@/components/exam-tests/ExamTestPage";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     locale: string;
-    mode: 'training' | 'exam';
+    mode: "training" | "exam";
     year: string;
-  };
+  }>;
 }
 
-export default function Page({ params }: PageProps) {
-  return (
-    <ExamTestPage 
-      mode={params.mode} 
-      year={parseInt(params.year)} 
-    />
-  );
+export default async function Page({ params }: PageProps) {
+  // Await the params as required by Next.js 15
+  const { mode, year } = await params;
+
+  return <ExamTestPage mode={mode} year={parseInt(year)} />;
 }
