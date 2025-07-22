@@ -1,5 +1,10 @@
-import ForumPage from '@/components/forum/ForumPage';
+import ForumPage from "@/components/forum/ForumPage";
+import { ForumProvider } from "@/contexts/ForumContext";
 
 export default function Forum() {
-  return <ForumPage />;
+  return (
+    <ForumProvider>
+      <ForumPage />
+    </ForumProvider>
+  );
 }

@@ -1,194 +1,206 @@
+// src/components/forum/ForumCommentsList.tsx
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, memo, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useComments } from "@/hooks/useComments";
 import ForumCommentCard from "./ForumCommentCard";
 import CreateCommentForm from "./CreateCommentForm";
+import { FORUM_CONSTANTS } from "@/utils/forum.constants";
 
 interface ForumCommentsListProps {
   postId: string;
 }
 
-export default function ForumCommentsList({ postId }: ForumCommentsListProps) {
+const ForumCommentsList = memo(function ForumCommentsList({
+  postId,
+}: ForumCommentsListProps) {
   const t = useTranslations("forum.post_detail.comments");
   const { user } = useAuth();
+  const {
+    comments,
+    loading,
+    error,
+    fetchComments,
+    createComment,
+    updateComment,
+    deleteComment,
+    toggleCommentLike,
+  } = useComments(postId);
 
-  interface Comment {
-    id: string;
-    content: string;
-    created_at: string;
-    user: {
-      id: string;
-      first_name: string;
-      last_name: string;
-      role: string;
-    };
-    likes_count: number;
-    user_has_liked: boolean;
-  }
-
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchComments = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      // Fetch comments
-      const { data: commentsData, error } = await supabase
-        .from("forum_comments")
-        .select(
-          `
-          id,
-          content,
-          created_at,
-          user_id,
-          users (
-            user_id,
-            first_name,
-            last_name,
-            role
-          )
-        `
-        )
-        .eq("post_id", postId)
-        .eq("is_deleted", false)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      // Fetch likes for comments
-      const commentIds = commentsData?.map((c) => c.id) || [];
-      const { data: likesData } = await supabase
-        .from("forum_likes")
-        .select("comment_id, user_id")
-        .in("comment_id", commentIds)
-        .not("comment_id", "is", null);
-
-      // Transform data
-      const transformedComments =
-        commentsData?.map((comment) => {
-          const commentLikes =
-            likesData?.filter((l) => l.comment_id === comment.id) || [];
-          const userHasLiked = commentLikes.some((l) => l.user_id === user.id);
-
-          // Handle potential array response
-          const userData = Array.isArray(comment.users)
-            ? comment.users[0]
-            : comment.users;
-
-          return {
-            id: comment.id,
-            content: comment.content,
-            created_at: comment.created_at,
-            user: {
-              id: userData?.user_id || "",
-              first_name: userData?.first_name || "",
-              last_name: userData?.last_name || "",
-              role: userData?.role || "user",
-            },
-            likes_count: commentLikes.length,
-            user_has_liked: userHasLiked,
-          };
-        }) || [];
-
-      setComments(transformedComments);
-    } catch (error) {
-      console.error("Error fetching comments:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [postId, user]);
-
+  // Fetch comments on mount
   useEffect(() => {
-    fetchComments();
-  }, [fetchComments]);
-
-  const handleLike = async (commentId: string) => {
-    if (!user) return;
-
-    const comment = comments.find((c) => c.id === commentId);
-    if (!comment) return;
-
-    try {
-      if (comment.user_has_liked) {
-        // Unlike
-        await supabase
-          .from("forum_likes")
-          .delete()
-          .eq("comment_id", commentId)
-          .eq("user_id", user.id);
-      } else {
-        // Like
-        await supabase.from("forum_likes").insert({
-          comment_id: commentId,
-          user_id: user.id,
-        });
-      }
-
-      // Refresh comments
-      await fetchComments();
-    } catch (error) {
-      console.error("Error toggling like:", error);
+    if (user) {
+      fetchComments();
     }
-  };
+  }, [fetchComments, user]);
 
-  const handleDelete = async (commentId: string) => {
-    if (!user) return;
-
-    if (confirm("Are you sure you want to delete this comment?")) {
-      try {
-        const { data, error } = await supabase.rpc("soft_delete_comment", {
-          comment_id: commentId,
-        });
-
-        if (error) {
-          alert(`Failed to delete comment: ${error.message}`);
-          return;
-        }
-
-        if (data && !data.success) {
-          alert(`Failed to delete comment: ${data.error}`);
-          return;
-        }
-
-        await fetchComments();
-      } catch (error) {
-        console.error("Error deleting comment:", error);
-        alert("An unexpected error occurred while deleting the comment");
+  // Handle comment creation
+  const handleCommentCreated = useCallback(
+    async (content: string) => {
+      const result = await createComment(content);
+      if (result.success) {
+        // Comments are automatically updated in the hook
+        return true;
       }
-    }
-  };
+      return false;
+    },
+    [createComment]
+  );
+
+  // Handle like toggle with optimistic update
+  const handleLike = useCallback(
+    async (commentId: string) => {
+      if (!user) return;
+
+      // Optimistic update is handled in the hook
+      await toggleCommentLike(commentId);
+    },
+    [user, toggleCommentLike]
+  );
+
+  // Handle delete with confirmation
+  const handleDelete = useCallback(
+    async (commentId: string) => {
+      if (!user) return;
+
+      // Use a better confirmation dialog (could be replaced with a modal)
+      const confirmMessage = t("confirm_delete");
+      if (!window.confirm(confirmMessage)) return;
+
+      const result = await deleteComment(commentId);
+      if (!result.success) {
+        // Error is already set in the hook, but we could show a toast here
+        console.error("Failed to delete comment");
+      }
+    },
+    [user, deleteComment, t]
+  );
+
+  // Handle update
+  const handleUpdate = useCallback(
+    async (commentId: string, newContent: string) => {
+      const result = await updateComment(commentId, newContent);
+      return result.success;
+    },
+    [updateComment]
+  );
+
+  // Loading skeleton
+  const renderSkeleton = () => (
+    <div className="space-y-4">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="bg-white/40 rounded-xl p-4 animate-pulse">
+          <div className="flex items-start space-x-3">
+            <div className="w-10 h-10 bg-gray-300 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-gray-300 rounded w-1/4" />
+              <div className="h-3 bg-gray-200 rounded w-full" />
+              <div className="h-3 bg-gray-200 rounded w-3/4" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-[#118B50] mb-6">{t("title")}</h2>
+      <h2 className="text-xl font-bold text-[#118B50] mb-6">
+        {t("title")} ({comments.length})
+      </h2>
 
-      {/* Comment Form */}
-      <CreateCommentForm postId={postId} onCommentCreated={fetchComments} />
+      {/* Comment Form - Only show if user is logged in */}
+      {user && (
+        <CreateCommentForm
+          postId={postId}
+          onCommentCreated={handleCommentCreated}
+        />
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm flex items-center">
+          <svg
+            className="w-5 h-5 mr-2 flex-shrink-0"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span>{t("error_loading")}</span>
+          <button
+            onClick={fetchComments}
+            className="ml-2 text-red-800 underline hover:no-underline"
+          >
+            {t("retry")}
+          </button>
+        </div>
+      )}
 
       {/* Comments List */}
       <div className="mt-8 space-y-4">
         {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin w-6 h-6 border-3 border-[#118B50] border-t-transparent rounded-full mx-auto"></div>
-          </div>
+          renderSkeleton()
         ) : comments.length === 0 ? (
-          <p className="text-center text-gray-500 py-8">{t("empty")}</p>
+          <div className="text-center py-12">
+            <svg
+              className="w-16 h-16 mx-auto text-gray-300 mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
+            <p className="text-gray-500">{t("empty")}</p>
+            {!user && (
+              <p className="text-sm text-gray-400 mt-2">
+                {t("login_to_comment")}
+              </p>
+            )}
+          </div>
         ) : (
-          comments.map((comment) => (
-            <ForumCommentCard
-              key={comment.id}
-              comment={comment}
-              onLike={handleLike}
-              onDelete={handleDelete}
-              onUpdate={fetchComments}
-            />
-          ))
+          <div className="space-y-4">
+            {comments.map((comment) => (
+              <ForumCommentCard
+                key={comment.id}
+                comment={comment}
+                currentUserId={user?.id}
+                onLike={() => handleLike(comment.id)}
+                onDelete={() => handleDelete(comment.id)}
+                onUpdate={(newContent) => handleUpdate(comment.id, newContent)}
+              />
+            ))}
+          </div>
         )}
       </div>
+
+      {/* Load more button if needed in the future */}
+      {comments.length >= FORUM_CONSTANTS.COMMENTS_PER_PAGE && (
+        <div className="mt-6 text-center">
+          <button
+            className="px-6 py-2 text-[#118B50] hover:text-[#0F7A43] font-medium transition-colors"
+            onClick={() => {
+              // Implement pagination in the future
+              console.log("Load more comments");
+            }}
+          >
+            {t("load_more")}
+          </button>
+        </div>
+      )}
     </div>
   );
-}
+});
+
+export default ForumCommentsList;

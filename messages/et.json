@@ -328,7 +328,8 @@
     "categories": {
       "all": "Kõik kategooriad",
       "title": "Kategooriad",
-      "no_posts": "Selles kategoorias pole veel postitusi"
+      "no_posts": "Selles kategoorias pole veel postitusi",
+      "no_categories": "Kategooriaid ei leitud"
     },
     "posts": {
       "create": "Uus postitus",
@@ -336,11 +337,16 @@
       "loading": "Laadin postitusi...",
       "by": "Autor",
       "comments": "kommentaari",
-      "likes": "meeldimist"
+      "likes": "meeldimist",
+      "no_posts_category": "Selles kategoorias pole veel postitusi",
+      "no_posts_search": "Otsingule \"{query}\" ei leitud ühtegi postitust"
     },
     "search": {
       "placeholder": "Otsi postitusi...",
-      "button": "Otsi"
+      "button": "Otsi",
+      "shortcut_hint": "kiirklahv",
+      "clear": "Tühista",
+      "searching": "Otsimine..."
     },
     "create_post": {
       "button": "Uus postitus",
@@ -354,7 +360,8 @@
         "content_placeholder": "Kirjuta oma postitus siia...",
         "submit": "Avalda postitus",
         "cancel": "Tühista",
-        "creating": "Avaldan..."
+        "creating": "Avaldan...",
+        "markdown_supported": "Markdown on toetatud"
       },
       "category": {
         "new": "Lisa uus kategooria",
@@ -392,7 +399,12 @@
         "cancel": "Tühista",
         "editing": "Muudan...",
         "edit_success": "Kommentaar edukalt uuendatud",
-        "edit_error": "Viga kommentaari uuendamisel"
+        "edit_error": "Viga kommentaari uuendamisel",
+        "form": {
+          "placeholder": "Lisa kommentaar...",
+          "submit": "Postita",
+          "posting": "Postitamine..."
+        }
       }
     },
     "edit_post": {
@@ -406,6 +418,10 @@
         "cancel": "Tühista"
       },
       "error": "Viga postituse uuendamisel"
+    },
+    "stats": {
+      "active_members": "{count} aktiivset liiget",
+      "discussions": "{count} arutelu"
     }
   },
   "roles": {

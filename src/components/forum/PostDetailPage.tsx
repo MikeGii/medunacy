@@ -1,43 +1,27 @@
 // src/components/forum/PostDetailPage.tsx
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useCallback, memo, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/contexts/AuthContext";
-import Header from "../layout/Header";
-import { AuthModalProvider } from "@/contexts/AuthModalContext";
 import { formatDistanceToNow } from "date-fns";
 import { et, uk } from "date-fns/locale";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePost } from "@/hooks/usePost";
+import { useForumContext } from "@/contexts/ForumContext";
+import Header from "../layout/Header";
+import { AuthModalProvider } from "@/contexts/AuthModalContext";
 import ForumCommentsList from "./ForumCommentsList";
-import { useAuthorization } from "@/hooks/useAuthorization";
 import EditPostModal from "./EditPostModal";
+import { useAuthorization } from "@/hooks/useAuthorization";
 
 interface PostDetailPageProps {
   postId: string;
 }
 
-interface PostDetail {
-  id: string;
-  title: string;
-  content: string;
-  created_at: string;
-  user: {
-    id: string;
-    first_name: string;
-    last_name: string;
-    role: string;
-  };
-  category: {
-    id: string;
-    name: string;
-  };
-  likes_count: number;
-  user_has_liked: boolean;
-}
-
-export default function PostDetailPage({ postId }: PostDetailPageProps) {
+const PostDetailPage = memo(function PostDetailPage({
+  postId,
+}: PostDetailPageProps) {
   const {
     isAuthorized,
     isLoading: authLoading,
@@ -51,97 +35,24 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations("forum.post_detail");
-  const [post, setPost] = useState<PostDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { dispatch } = useForumContext();
+
+  const {
+    post,
+    loading,
+    error,
+    canEdit,
+    canDelete,
+    fetchPost,
+    toggleLike,
+    deletePost,
+  } = usePost(postId);
+
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const currentLocale = pathname.includes("/ukr") ? "ukr" : "et";
   const dateLocale = currentLocale === "ukr" ? uk : et;
-
-  // Rest of the component code remains exactly the same...
-  const fetchPost = useCallback(async () => {
-    if (!user || !postId) return;
-
-    try {
-      setLoading(true);
-
-      // Fetch post details
-      const { data: postData, error: postError } = await supabase
-        .from("forum_posts")
-        .select(
-          `
-          id,
-          title,
-          content,
-          created_at,
-          user_id,
-          users (
-            user_id,
-            first_name,
-            last_name,
-            role
-          ),
-          forum_categories (
-            id,
-            name
-          )
-        `
-        )
-        .eq("id", postId)
-        .eq("is_deleted", false)
-        .single();
-
-      if (postError || !postData) {
-        console.error("Post not found:", postError);
-        setPost(null);
-        setLoading(false);
-        return;
-      }
-
-      // Fetch likes
-      const { data: likesData } = await supabase
-        .from("forum_likes")
-        .select("user_id")
-        .eq("post_id", postId)
-        .is("comment_id", null);
-
-      const likesCount = likesData?.length || 0;
-      const userHasLiked =
-        likesData?.some((like) => like.user_id === user.id) || false;
-
-      // Handle potential array response from joins
-      const userData = Array.isArray(postData.users)
-        ? postData.users[0]
-        : postData.users;
-      const categoryData = Array.isArray(postData.forum_categories)
-        ? postData.forum_categories[0]
-        : postData.forum_categories;
-
-      setPost({
-        id: postData.id,
-        title: postData.title,
-        content: postData.content,
-        created_at: postData.created_at,
-        user: {
-          id: userData?.user_id || "",
-          first_name: userData?.first_name || "",
-          last_name: userData?.last_name || "",
-          role: userData?.role || "user",
-        },
-        category: {
-          id: categoryData?.id || "",
-          name: categoryData?.name || "",
-        },
-        likes_count: likesCount,
-        user_has_liked: userHasLiked,
-      });
-    } catch (error) {
-      console.error("Error fetching post:", error);
-      setPost(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [postId, user]);
 
   // Fetch post when authorized
   useEffect(() => {
@@ -150,90 +61,75 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
     }
   }, [isAuthorized, user, fetchPost]);
 
-  const handleLike = async () => {
-    if (!user || !post) return;
+  // Handle delete with confirmation
+  const handleDelete = useCallback(async () => {
+    if (!canDelete || isDeleting) return;
 
-    try {
-      if (post.user_has_liked) {
-        // Unlike
-        await supabase
-          .from("forum_likes")
-          .delete()
-          .eq("post_id", post.id)
-          .eq("user_id", user.id)
-          .is("comment_id", null);
-      } else {
-        // Like
-        await supabase.from("forum_likes").insert({
-          post_id: post.id,
-          user_id: user.id,
-        });
-      }
+    const confirmMessage = t("confirm_delete");
+    if (!window.confirm(confirmMessage)) return;
 
-      // Refresh post data
-      await fetchPost();
-    } catch (error) {
-      console.error("Error toggling like:", error);
+    setIsDeleting(true);
+    const result = await deletePost();
+
+    if (result.success) {
+      // Update the posts list in context
+      dispatch({ type: "DELETE_POST", payload: postId });
+      router.push(`/${currentLocale}/forum`);
+    } else {
+      // Show error (in production, use toast instead)
+      console.error("Failed to delete post");
+      setIsDeleting(false);
     }
-  };
+  }, [
+    canDelete,
+    isDeleting,
+    deletePost,
+    postId,
+    currentLocale,
+    router,
+    dispatch,
+    t,
+  ]);
 
-  const handleDelete = async () => {
-    if (!user || !post) return;
+  // Handle post update
+  const handlePostUpdate = useCallback(() => {
+    fetchPost();
+    setShowEditModal(false);
+  }, [fetchPost]);
 
-    // Check if user can delete (owner or admin)
-    const canDelete = user.id === post.user.id || user.role === "admin";
-    if (!canDelete) return;
+  // Handle back navigation
+  const handleBack = useCallback(() => {
+    router.push(`/${currentLocale}/forum`);
+  }, [router, currentLocale]);
 
-    if (confirm("Are you sure you want to delete this post?")) {
-      try {
-        const { data, error } = await supabase.rpc("soft_delete_post", {
-          post_id: post.id,
-        });
-
-        if (error) {
-          console.error("Delete error:", error);
-          alert(`Failed to delete post: ${error.message}`);
-          return;
-        }
-
-        if (data && !data.success) {
-          alert(`Failed to delete post: ${data.error}`);
-          return;
-        }
-
-        router.push(`/${currentLocale}/forum`);
-      } catch (error) {
-        console.error("Error deleting post:", error);
-        alert("An unexpected error occurred while deleting the post");
-      }
-    }
-  };
-
-  const getRoleBadge = (role: string) => {
+  // Get role badge
+  const getRoleBadge = useCallback((role: string) => {
     const badges = {
       admin: { text: "Admin", color: "from-red-500 to-red-600" },
       doctor: { text: "Arst", color: "from-[#118B50] to-[#5DB996]" },
       user: null,
     };
     return badges[role as keyof typeof badges];
-  };
+  }, []);
 
-  // Show loading while checking authorization or loading post
+  // Loading state
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin w-16 h-16 border-4 border-[#118B50] border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-[#118B50] font-medium">Loading...</p>
+          <p className="text-[#118B50] font-medium">{t("loading")}</p>
         </div>
       </div>
     );
   }
 
-  // Don't render if not authorized
+  // Not authorized
   if (!isAuthorized) {
     return null;
   }
+
+  const badge = post ? getRoleBadge(post.user.role) : null;
 
   return (
     <AuthModalProvider>
@@ -243,11 +139,11 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Back Button */}
           <button
-            onClick={() => router.push(`/${currentLocale}/forum`)}
-            className="flex items-center space-x-2 text-[#118B50] hover:text-[#0F7A43] mb-6 transition-colors"
+            onClick={handleBack}
+            className="flex items-center space-x-2 text-[#118B50] hover:text-[#0F7A43] mb-6 transition-colors group"
           >
             <svg
-              className="w-5 h-5"
+              className="w-5 h-5 transition-transform group-hover:-translate-x-1"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -262,36 +158,67 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
             <span>{t("back")}</span>
           </button>
 
-          {!post ? (
+          {/* Error State */}
+          {error && !post && (
+            <div className="bg-white/40 backdrop-blur-md rounded-2xl md:rounded-3xl border border-white/50 shadow-lg p-8">
+              <div className="text-center">
+                <svg
+                  className="w-16 h-16 mx-auto text-red-400 mb-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                <p className="text-gray-600 mb-4">{t("error_loading")}</p>
+                <button
+                  onClick={fetchPost}
+                  className="px-4 py-2 bg-[#118B50] text-white rounded-lg hover:bg-[#0F7A43] transition-colors"
+                >
+                  {t("retry")}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Post Not Found */}
+          {!loading && !post && !error && (
             <div className="bg-white/40 backdrop-blur-md rounded-2xl md:rounded-3xl border border-white/50 shadow-lg p-8">
               <p className="text-center text-gray-600">{t("not_found")}</p>
             </div>
-          ) : (
+          )}
+
+          {/* Post Content */}
+          {post && (
             <>
-              {/* Post Content */}
-              <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg p-6 md:p-8 mb-6">
+              <article className="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg p-6 md:p-8 mb-6">
                 {/* Header */}
-                <div className="mb-6">
+                <header className="mb-6">
                   <div className="flex items-start justify-between mb-4">
-                    <h1 className="text-2xl md:text-3xl font-bold text-[#118B50]">
+                    <h1 className="text-2xl md:text-3xl font-bold text-[#118B50] flex-1 mr-4">
                       {post.title}
                     </h1>
-                    <div className="flex items-center space-x-2">
-                      {user?.id === post.user.id && (
+                    <div className="flex items-center space-x-2 shrink-0">
+                      {canEdit && (
                         <button
                           onClick={() => setShowEditModal(true)}
-                          className="px-3 py-1 bg-[#118B50] hover:bg-[#0F7A43] text-white text-sm rounded-lg transition-colors"
+                          className="px-3 py-1 bg-[#118B50] hover:bg-[#0F7A43] text-white text-sm rounded-lg transition-colors font-medium"
                         >
                           {t("edit")}
                         </button>
                       )}
-                      {(user?.id === post.user.id ||
-                        user?.role === "admin") && (
+                      {canDelete && (
                         <button
                           onClick={handleDelete}
-                          className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-colors"
+                          disabled={isDeleting}
+                          className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {t("delete")}
+                          {isDeleting ? t("deleting") : t("delete")}
                         </button>
                       )}
                     </div>
@@ -300,52 +227,53 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
                   <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#E3F0AF] text-[#118B50] text-sm font-medium">
                     {post.category.name}
                   </div>
-                </div>
+                </header>
 
                 {/* Author Info */}
                 <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-200">
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 bg-gradient-to-r from-[#118B50] to-[#5DB996] rounded-full flex items-center justify-center text-white font-semibold">
-                      {post.user.first_name.charAt(0)}
+                      {post.user.first_name.charAt(0).toUpperCase()}
                     </div>
                     <div>
                       <p className="font-medium text-gray-800 flex items-center space-x-2">
                         <span>
                           {post.user.first_name} {post.user.last_name}
                         </span>
-                        {getRoleBadge(post.user.role) && (
+                        {badge && (
                           <span
-                            className={`inline-flex px-2 py-0.5 text-xs font-medium text-white rounded-full bg-gradient-to-r ${
-                              getRoleBadge(post.user.role)!.color
-                            }`}
+                            className={`inline-flex px-2 py-0.5 text-xs font-medium text-white rounded-full bg-gradient-to-r ${badge.color}`}
                           >
-                            {getRoleBadge(post.user.role)!.text}
+                            {badge.text}
                           </span>
                         )}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <time className="text-sm text-gray-500">
                         {formatDistanceToNow(new Date(post.created_at), {
                           addSuffix: true,
                           locale: dateLocale,
                         })}
-                      </p>
+                      </time>
                     </div>
                   </div>
 
-                  {/* Like Button */}
                   <button
-                    onClick={handleLike}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
+                    onClick={toggleLike}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm transition-all transform active:scale-95 ${
                       post.user_has_liked
                         ? "bg-red-50 text-red-600 hover:bg-red-100"
                         : "bg-gray-50 text-gray-600 hover:bg-gray-100"
                     }`}
+                    aria-label={post.user_has_liked ? t("unlike") : t("like")}
+                    aria-pressed={post.user_has_liked}
                   >
                     <svg
-                      className={`w-5 h-5 ${
-                        post.user_has_liked ? "fill-current" : ""
+                      className={`w-5 h-5 transition-transform ${
+                        post.user_has_liked
+                          ? "fill-current scale-110"
+                          : "hover:scale-110"
                       }`}
-                      fill="none"
+                      fill={post.user_has_liked ? "currentColor" : "none"}
                       stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
@@ -356,36 +284,36 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
                         d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                       />
                     </svg>
-                    <span>{post.likes_count}</span>
+                    <span className="font-medium">{post.likes_count}</span>
                   </button>
                 </div>
 
                 {/* Post Content */}
                 <div className="prose prose-lg max-w-none">
-                  <p className="text-gray-700 whitespace-pre-wrap">
+                  <p className="text-gray-700 whitespace-pre-wrap break-words">
                     {post.content}
                   </p>
                 </div>
-              </div>
+              </article>
 
               {/* Comments Section */}
-              <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg p-6 md:p-8">
+              <section className="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg p-6 md:p-8">
                 <ForumCommentsList postId={postId} />
-              </div>
-            </>
-          )}
+              </section>
 
-          {/* Edit Post Modal */}
-          {post && (
-            <EditPostModal
-              isOpen={showEditModal}
-              onClose={() => setShowEditModal(false)}
-              post={post}
-              onUpdate={fetchPost}
-            />
+              {/* Edit Post Modal */}
+              <EditPostModal
+                isOpen={showEditModal}
+                onClose={() => setShowEditModal(false)}
+                post={post}
+                onUpdate={handlePostUpdate}
+              />
+            </>
           )}
         </main>
       </div>
     </AuthModalProvider>
   );
-}
+});
+
+export default PostDetailPage;
