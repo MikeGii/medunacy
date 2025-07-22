@@ -1,13 +1,13 @@
-// src/hooks/useExamSession.ts
+// src/hooks/useExamSession.ts - COMPLETELY REWRITTEN
 
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ExamQuestion,
+  Test,
+  TestQuestion,
   ExamSession,
-  ExamAnswer,
   ExamSessionState,
 } from "@/types/exam";
 import { supabase } from "@/lib/supabase";
@@ -15,11 +15,11 @@ import { useLocale } from "next-intl";
 
 interface UseExamSessionProps {
   mode: "training" | "exam";
-  year: number;
+  testId: string;
   userId: string;
 }
 
-export function useExamSession({ mode, year, userId }: UseExamSessionProps) {
+export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
   const router = useRouter();
   const locale = useLocale();
   const [loading, setLoading] = useState(true);
@@ -36,53 +36,55 @@ export function useExamSession({ mode, year, userId }: UseExamSessionProps) {
     try {
       setLoading(true);
 
-      // Fetch questions for the selected year
-      const { data: questions, error: questionsError } = await supabase
-        .from("exam_questions")
-        .select("*")
-        .eq("year", year);
+      // Fetch test with questions and options
+      const response = await fetch(`/api/tests/${testId}`);
+      const data = await response.json();
 
-      if (questionsError) throw questionsError;
-      if (!questions || questions.length === 0) {
-        throw new Error("No questions found for this year");
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch test");
       }
 
-      // Shuffle questions for randomization
+      if (!data.success || !data.data) {
+        throw new Error("Test not found");
+      }
+
+      const test: Test = data.data;
+      const questions: TestQuestion[] = test.questions || [];
+
+      if (questions.length === 0) {
+        throw new Error("No questions found for this test");
+      }
+
+      // Shuffle questions for randomization (optional - you might want to keep order for some tests)
       const shuffledQuestions = [...questions].sort(() => Math.random() - 0.5);
 
-      // Create session in database (only for exam mode)
-      let sessionId = `temp-${Date.now()}`;
+      // Create session in database
+      const sessionResponse = await fetch("/api/exam-sessions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          test_id: testId,
+          mode: mode,
+        }),
+      });
 
-      if (mode === "exam") {
-        const { data: session, error: sessionError } = await supabase
-          .from("exam_sessions")
-          .insert({
-            user_id: userId,
-            exam_year: year,
-            mode: mode,
-            total_questions: shuffledQuestions.length,
-          })
-          .select()
-          .single();
-
-        if (sessionError) throw sessionError;
-        sessionId = session.id;
-        sessionRef.current = session;
+      const sessionData = await sessionResponse.json();
+      if (!sessionResponse.ok) {
+        throw new Error(sessionData.error || "Failed to create session");
       }
+
+      const session: ExamSession = sessionData.data;
+      sessionRef.current = session;
 
       // Initialize session state
       setSessionState({
-        session: {
-          id: sessionId,
-          userId,
-          mode,
-          examYear: year,
-          startedAt: new Date(),
-          totalQuestions: shuffledQuestions.length,
-        },
+        session,
+        test,
         questions: shuffledQuestions,
         currentQuestionIndex: 0,
-        answers: {},
+        answers: {}, // questionId -> array of selected option IDs
         markedForReview: new Set(),
       });
     } catch (err) {
@@ -93,11 +95,18 @@ export function useExamSession({ mode, year, userId }: UseExamSessionProps) {
     } finally {
       setLoading(false);
     }
-  }, [mode, year, userId]);
+  }, [mode, testId, userId]);
 
-  // Timer management for exam mode
+  // Initialize on mount
   useEffect(() => {
-    if (mode === "exam" && sessionState && !sessionState.session.completedAt) {
+    if (userId) {
+      initializeSession();
+    }
+  }, [initializeSession, userId]);
+
+  // Timer management
+  useEffect(() => {
+    if (mode === "exam" && sessionState && !sessionState.session.completed_at) {
       timerRef.current = setInterval(() => {
         setTimeElapsed((prev) => prev + 1);
       }, 1000);
@@ -110,45 +119,60 @@ export function useExamSession({ mode, year, userId }: UseExamSessionProps) {
     }
   }, [mode, sessionState]);
 
-  // Auto-submit after 90 minutes for exam mode
+  // Auto-submit when time limit is reached
   useEffect(() => {
-    if (mode === "exam" && timeElapsed >= 5400) {
-      // 90 minutes = 5400 seconds
-      submitExam();
+    if (mode === "exam" && sessionState?.test.time_limit) {
+      const timeLimit = sessionState.test.time_limit * 60; // convert minutes to seconds
+      if (timeElapsed >= timeLimit) {
+        submitExam();
+      }
     }
-  }, [mode, timeElapsed]);
+  }, [mode, timeElapsed, sessionState]);
 
-  // Select answer
+  // Select answer(s) - supports multiple selections
   const selectAnswer = useCallback(
-    async (questionId: string, optionIndex: number) => {
+    (questionId: string, optionId: string) => {
       if (!sessionState) return;
+
+      const currentQuestion = sessionState.questions.find(
+        (q) => q.id === questionId
+      );
+      if (!currentQuestion) return;
+
+      // Check if question allows multiple correct answers
+      const correctOptions = currentQuestion.options.filter(
+        (opt) => opt.is_correct
+      );
+      const allowMultiple = correctOptions.length > 1;
 
       setSessionState((prev) => {
         if (!prev) return null;
+
+        const currentAnswers = prev.answers[questionId] || [];
+        let newAnswers: string[];
+
+        if (allowMultiple) {
+          // Toggle selection for multiple choice
+          if (currentAnswers.includes(optionId)) {
+            newAnswers = currentAnswers.filter((id) => id !== optionId);
+          } else {
+            newAnswers = [...currentAnswers, optionId];
+          }
+        } else {
+          // Single selection
+          newAnswers = [optionId];
+        }
 
         return {
           ...prev,
           answers: {
             ...prev.answers,
-            [questionId]: optionIndex,
+            [questionId]: newAnswers,
           },
         };
       });
-
-      // In training mode, check answer immediately
-      if (mode === "training") {
-        const question = sessionState.questions.find(
-          (q) => q.id === questionId
-        );
-        if (question) {
-          const isCorrect = question.options[optionIndex].isCorrect;
-          return { isCorrect };
-        }
-      }
-
-      return null;
     },
-    [sessionState, mode]
+    [sessionState]
   );
 
   // Navigate between questions
@@ -207,55 +231,86 @@ export function useExamSession({ mode, year, userId }: UseExamSessionProps) {
 
       // Calculate results
       let correctAnswers = 0;
+      let totalPoints = 0;
+      let earnedPoints = 0;
       const questionResults = [];
 
       for (const question of sessionState.questions) {
-        const selectedOption = sessionState.answers[question.id];
-        const isCorrect =
-          selectedOption !== undefined &&
-          question.options[selectedOption]?.isCorrect === true;
+        const selectedOptionIds = sessionState.answers[question.id] || [];
+        const correctOptionIds = question.options
+          .filter((option) => option.is_correct)
+          .map((option) => option.id);
 
-        if (isCorrect) correctAnswers++;
+        // Check if answer is correct (all correct options selected, no incorrect ones)
+        const isCorrect =
+          selectedOptionIds.length === correctOptionIds.length &&
+          selectedOptionIds.every((id) => correctOptionIds.includes(id));
+
+        if (isCorrect) {
+          correctAnswers++;
+          earnedPoints += question.points;
+        }
+
+        totalPoints += question.points;
 
         questionResults.push({
           question,
-          selectedOption: selectedOption ?? -1,
+          selectedOptions: question.options.filter((opt) =>
+            selectedOptionIds.includes(opt.id)
+          ),
+          correctOptions: question.options.filter((opt) => opt.is_correct),
           isCorrect,
+          pointsEarned: isCorrect ? question.points : 0,
         });
 
-        // Save individual answer to database (for exam mode)
-        if (mode === "exam" && sessionRef.current) {
-          await supabase.from("exam_answers").insert({
-            session_id: sessionRef.current.id,
-            question_id: question.id,
-            selected_option: selectedOption ?? -1,
-            is_correct: isCorrect,
+        // Save individual answer to database
+        if (sessionRef.current) {
+          await fetch("/api/exam-answers", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              session_id: sessionRef.current.id,
+              question_id: question.id,
+              selected_option_ids: selectedOptionIds,
+            }),
           });
         }
       }
 
-      // Update session in database (for exam mode)
-      if (mode === "exam" && sessionRef.current) {
-        const { error: updateError } = await supabase
-          .from("exam_sessions")
-          .update({
-            completed_at: new Date().toISOString(),
-            correct_answers: correctAnswers,
-            time_spent: timeElapsed,
-          })
-          .eq("id", sessionRef.current.id);
+      const scorePercentage =
+        totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
+      const passed = scorePercentage >= (sessionState.test.passing_score || 70);
 
-        if (updateError) throw updateError;
+      // Update session in database
+      if (sessionRef.current) {
+        await fetch(`/api/exam-sessions/${sessionRef.current.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            completed_at: new Date().toISOString(),
+            score_percentage: scorePercentage,
+            correct_answers: correctAnswers,
+            total_questions: sessionState.questions.length,
+            time_spent: timeElapsed,
+            passed,
+          }),
+        });
       }
 
       // Navigate to results
       const resultsData = {
         sessionId: sessionState.session.id,
+        test: sessionState.test,
         totalQuestions: sessionState.questions.length,
         correctAnswers,
         incorrectAnswers: sessionState.questions.length - correctAnswers,
-        scorePercentage: (correctAnswers / sessionState.questions.length) * 100,
+        scorePercentage,
         timeSpent: timeElapsed,
+        passed,
         questionResults,
       };
 
@@ -270,44 +325,38 @@ export function useExamSession({ mode, year, userId }: UseExamSessionProps) {
     } finally {
       setLoading(false);
     }
-  }, [sessionState, mode, timeElapsed, router, locale]);
+  }, [sessionState, timeElapsed, router, locale]);
 
-  // Get current question
+  // Helper computed values
   const currentQuestion =
-    sessionState?.questions[sessionState.currentQuestionIndex];
+    sessionState?.questions[sessionState.currentQuestionIndex] || null;
   const selectedAnswer = currentQuestion
-    ? sessionState.answers[currentQuestion.id]
-    : undefined;
+    ? sessionState?.answers[currentQuestion.id] || []
+    : [];
   const isMarkedForReview = currentQuestion
-    ? sessionState.markedForReview.has(currentQuestion.id)
+    ? sessionState?.markedForReview.has(currentQuestion.id) || false
     : false;
 
-  // Calculate progress
-  const answeredCount = Object.keys(sessionState?.answers || {}).length;
-  const progress = {
-    current: sessionState?.currentQuestionIndex ?? 0,
-    total: sessionState?.questions.length ?? 0,
-    answered: answeredCount,
-    markedForReview: sessionState?.markedForReview.size ?? 0,
-  };
-
-  // Initialize session on mount
-  useEffect(() => {
-    initializeSession();
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
+  const progress = sessionState
+    ? {
+        current: sessionState.currentQuestionIndex,
+        total: sessionState.questions.length,
+        answered: Object.keys(sessionState.answers).length,
+        markedForReview: sessionState.markedForReview.size,
       }
-    };
-  }, [initializeSession]);
+    : {
+        current: 0,
+        total: 0,
+        answered: 0,
+        markedForReview: 0,
+      };
 
   return {
     loading,
     error,
     sessionState,
     currentQuestion,
-    selectedAnswer,
+    selectedAnswer, // Now array of option IDs
     isMarkedForReview,
     progress,
     timeElapsed,

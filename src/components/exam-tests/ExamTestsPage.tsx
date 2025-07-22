@@ -9,65 +9,96 @@ import { useLocale } from "next-intl";
 import Header from "../layout/Header";
 import { AuthModalProvider } from "@/contexts/AuthModalContext";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
-
-interface AvailableYear {
-  year: number;
-  questionCount: number;
-}
+import { TestCategory, Test } from "@/types/exam";
 
 export default function ExamTestsPage() {
   const t = useTranslations("exam_tests");
   const router = useRouter();
   const locale = useLocale();
   const { user } = useAuth();
+
+  const [selectedCategory, setSelectedCategory] = useState<TestCategory | null>(
+    null
+  );
+  const [selectedTest, setSelectedTest] = useState<Test | null>(null);
   const [selectedMode, setSelectedMode] = useState<"training" | "exam" | null>(
     null
   );
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
-  const [availableYears, setAvailableYears] = useState<AvailableYear[]>([]);
-  const [loadingYears, setLoadingYears] = useState(true);
+  const [categories, setCategories] = useState<TestCategory[]>([]);
+  const [tests, setTests] = useState<Test[]>([]);
+
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [loadingTests, setLoadingTests] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch available years when component mounts and user is available
+  // Fetch categories on mount
   useEffect(() => {
-    const fetchAvailableYears = async () => {
-      if (!user) {
-        setLoadingYears(false);
-        return;
-      }
-
+    const fetchCategories = async () => {
       try {
-        const response = await fetch("/api/exam/years");
+        const response = await fetch("/api/test-categories");
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || "Failed to fetch available years");
+          throw new Error(data.error || "Failed to fetch categories");
         }
 
         if (data.success) {
-          setAvailableYears(data.years);
+          setCategories(data.data);
         }
       } catch (err) {
-        console.error("Error fetching years:", err);
+        console.error("Error fetching categories:", err);
         setError(
-          err instanceof Error ? err.message : "Failed to load exam years"
+          err instanceof Error ? err.message : "Failed to load categories"
         );
       } finally {
-        setLoadingYears(false);
+        setLoadingCategories(false);
       }
     };
 
-    fetchAvailableYears();
-  }, [user]);
+    fetchCategories();
+  }, []);
+
+  // Fetch tests when category is selected
+  useEffect(() => {
+    const fetchTests = async () => {
+      if (!selectedCategory) {
+        setTests([]);
+        return;
+      }
+
+      setLoadingTests(true);
+      try {
+        const response = await fetch(
+          `/api/tests?category_id=${selectedCategory.id}`
+        );
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to fetch tests");
+        }
+
+        if (data.success) {
+          setTests(data.data);
+        }
+      } catch (err) {
+        console.error("Error fetching tests:", err);
+        setError(err instanceof Error ? err.message : "Failed to load tests");
+      } finally {
+        setLoadingTests(false);
+      }
+    };
+
+    fetchTests();
+  }, [selectedCategory]);
 
   const handleStartTest = () => {
-    if (selectedMode && selectedYear && user) {
-      router.push(`/${locale}/exam-tests/${selectedMode}/${selectedYear}`);
+    if (selectedTest && selectedMode && user) {
+      router.push(`/${locale}/exam-tests/${selectedMode}/${selectedTest.id}`);
     }
   };
 
-  const canStart = selectedMode && selectedYear && user;
+  const canStart = selectedTest && selectedMode && user;
 
   return (
     <AuthModalProvider>
@@ -111,151 +142,23 @@ export default function ExamTestsPage() {
               </div>
             )}
 
-            {/* Mode Selection */}
+            {/* Step 1: Category Selection */}
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-[#E3F0AF]/30 p-8 mb-8">
               <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold text-[#118B50] mb-2">
-                  {t("select_mode")}
+                  {t("select_category")}
                 </h2>
-                <p className="text-gray-600">{t("mode_description")}</p>
+                <p className="text-gray-600">{t("category_description")}</p>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Training Mode */}
-                <button
-                  onClick={() => setSelectedMode("training")}
-                  className={`group relative p-8 rounded-2xl border-2 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl ${
-                    selectedMode === "training"
-                      ? "border-[#118B50] bg-gradient-to-br from-[#E3F0AF]/20 to-[#5DB996]/10 shadow-lg"
-                      : "border-gray-200 hover:border-[#5DB996]/50 bg-gradient-to-br from-white to-gray-50/50"
-                  }`}
-                >
-                  <div className="flex flex-col items-center text-center">
-                    <div
-                      className={`w-16 h-16 rounded-full mb-4 flex items-center justify-center transition-colors ${
-                        selectedMode === "training"
-                          ? "bg-[#118B50] text-white"
-                          : "bg-gray-100 text-gray-600 group-hover:bg-[#E3F0AF] group-hover:text-[#118B50]"
-                      }`}
-                    >
-                      <svg
-                        className="w-8 h-8"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                        />
-                      </svg>
-                    </div>
-                    <h3 className="font-bold text-xl mb-3 text-[#118B50]">
-                      {t("modes.training")}
-                    </h3>
-                    <p className="text-gray-600 text-sm leading-relaxed">
-                      {t("modes.training_desc")}
-                    </p>
-                  </div>
-                  {selectedMode === "training" && (
-                    <div className="absolute top-4 right-4">
-                      <div className="w-6 h-6 bg-[#118B50] rounded-full flex items-center justify-center">
-                        <svg
-                          className="w-4 h-4 text-white"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  )}
-                </button>
-
-                {/* Exam Mode */}
-                <button
-                  onClick={() => setSelectedMode("exam")}
-                  className={`group relative p-8 rounded-2xl border-2 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl ${
-                    selectedMode === "exam"
-                      ? "border-[#118B50] bg-gradient-to-br from-[#E3F0AF]/20 to-[#5DB996]/10 shadow-lg"
-                      : "border-gray-200 hover:border-[#5DB996]/50 bg-gradient-to-br from-white to-gray-50/50"
-                  }`}
-                >
-                  <div className="flex flex-col items-center text-center">
-                    <div
-                      className={`w-16 h-16 rounded-full mb-4 flex items-center justify-center transition-colors ${
-                        selectedMode === "exam"
-                          ? "bg-[#118B50] text-white"
-                          : "bg-gray-100 text-gray-600 group-hover:bg-[#E3F0AF] group-hover:text-[#118B50]"
-                      }`}
-                    >
-                      <svg
-                        className="w-8 h-8"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
-                    </div>
-                    <h3 className="font-bold text-xl mb-3 text-[#118B50]">
-                      {t("modes.exam")}
-                    </h3>
-                    <p className="text-gray-600 text-sm leading-relaxed">
-                      {t("modes.exam_desc")}
-                    </p>
-                  </div>
-                  {selectedMode === "exam" && (
-                    <div className="absolute top-4 right-4">
-                      <div className="w-6 h-6 bg-[#118B50] rounded-full flex items-center justify-center">
-                        <svg
-                          className="w-4 h-4 text-white"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Year Selection */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-[#E3F0AF]/30 p-8 mb-8">
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-[#118B50] mb-2">
-                  {t("select_year")}
-                </h2>
-                <p className="text-gray-600">{t("year_description")}</p>
-              </div>
-
-              {loadingYears ? (
+              {loadingCategories ? (
                 <div className="text-center py-8">
                   <LoadingSpinner />
-                  <p className="text-gray-600 mt-4">{t("loading_years")}</p>
+                  <p className="text-gray-600 mt-4">
+                    {t("loading_categories")}
+                  </p>
                 </div>
-              ) : availableYears.length === 0 ? (
+              ) : categories.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg
@@ -268,63 +171,320 @@ export default function ExamTestsPage() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
                       />
                     </svg>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                    {t("no_exams_available")}
+                    {t("no_categories_available")}
                   </h3>
                   <p className="text-gray-500 mb-6">
-                    {t("no_exams_description")}
+                    {t("no_categories_description")}
                   </p>
-                  {user?.role === "admin" && (
+                  {(user?.role === "doctor" || user?.role === "admin") && (
                     <button
                       onClick={() =>
-                        router.push(`/${locale}/admin/import-exam-questions`)
+                        router.push(`/${locale}/exam-tests/create`)
                       }
                       className="px-6 py-3 bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white rounded-xl font-semibold hover:from-[#0A6B3B] hover:to-[#4A9B7E] transition-all duration-300 transform hover:scale-105"
                     >
-                      {t("import_exam_questions")}
+                      {t("create_first_test")}
                     </button>
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {availableYears.map(({ year, questionCount }) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {categories.map((category) => (
                     <button
-                      key={year}
-                      onClick={() => setSelectedYear(year)}
-                      className={`group p-6 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 ${
-                        selectedYear === year
-                          ? "bg-gradient-to-br from-[#118B50] to-[#5DB996] text-white shadow-lg border-2 border-[#118B50]"
-                          : "bg-gradient-to-br from-gray-50 to-gray-100 text-gray-700 border-2 border-gray-200 hover:border-[#5DB996] hover:from-[#E3F0AF]/20 hover:to-[#5DB996]/10"
+                      key={category.id}
+                      onClick={() => setSelectedCategory(category)}
+                      className={`group p-6 rounded-2xl border-2 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl ${
+                        selectedCategory?.id === category.id
+                          ? "border-[#118B50] bg-gradient-to-br from-[#E3F0AF]/20 to-[#5DB996]/10 shadow-lg"
+                          : "border-gray-200 hover:border-[#5DB996]/50 bg-gradient-to-br from-white to-gray-50/50"
                       }`}
                     >
-                      <div className="flex flex-col items-center">
-                        <span className="text-2xl mb-1">{year}</span>
-                        <span className="text-sm opacity-75">
-                          {questionCount} {t("questions")}
-                        </span>
+                      <div className="text-center">
+                        <h3 className="font-bold text-lg mb-2 text-[#118B50]">
+                          {category.name}
+                        </h3>
+                        {category.description && (
+                          <p className="text-gray-600 text-sm">
+                            {category.description}
+                          </p>
+                        )}
                       </div>
+                      {selectedCategory?.id === category.id && (
+                        <div className="absolute top-4 right-4">
+                          <div className="w-6 h-6 bg-[#118B50] rounded-full flex items-center justify-center">
+                            <svg
+                              className="w-4 h-4 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
                     </button>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Start Button Section */}
-            {availableYears.length > 0 && (
+            {/* Step 2: Test Selection */}
+            {selectedCategory && (
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-[#E3F0AF]/30 p-8 mb-8">
+                <div className="text-center mb-8">
+                  <h2 className="text-2xl font-bold text-[#118B50] mb-2">
+                    {t("select_test")} - {selectedCategory.name}
+                  </h2>
+                  <p className="text-gray-600">{t("test_description")}</p>
+                </div>
+
+                {loadingTests ? (
+                  <div className="text-center py-8">
+                    <LoadingSpinner />
+                    <p className="text-gray-600 mt-4">{t("loading_tests")}</p>
+                  </div>
+                ) : tests.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg
+                        className="w-8 h-8 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                      {t("no_tests_available")}
+                    </h3>
+                    <p className="text-gray-500 mb-6">
+                      {t("no_tests_description")}
+                    </p>
+                    {(user?.role === "doctor" || user?.role === "admin") && (
+                      <button
+                        onClick={() =>
+                          router.push(`/${locale}/exam-tests/create`)
+                        }
+                        className="px-6 py-3 bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white rounded-xl font-semibold hover:from-[#0A6B3B] hover:to-[#4A9B7E] transition-all duration-300 transform hover:scale-105"
+                      >
+                        {t("create_test")}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {tests.map((test) => (
+                      <button
+                        key={test.id}
+                        onClick={() => setSelectedTest(test)}
+                        className={`group p-6 rounded-2xl border-2 text-left transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl ${
+                          selectedTest?.id === test.id
+                            ? "border-[#118B50] bg-gradient-to-br from-[#E3F0AF]/20 to-[#5DB996]/10 shadow-lg"
+                            : "border-gray-200 hover:border-[#5DB996]/50 bg-gradient-to-br from-white to-gray-50/50"
+                        }`}
+                      >
+                        <div className="relative">
+                          <h3 className="font-bold text-lg mb-2 text-[#118B50]">
+                            {test.title}
+                          </h3>
+                          {test.description && (
+                            <p className="text-gray-600 text-sm mb-4">
+                              {test.description}
+                            </p>
+                          )}
+                          <div className="flex items-center justify-between text-sm text-gray-500">
+                            <span>
+                              {test.question_count || 0} {t("questions")}
+                            </span>
+                            {test.time_limit && (
+                              <span>
+                                {test.time_limit} {t("minutes")}
+                              </span>
+                            )}
+                          </div>
+                          {selectedTest?.id === test.id && (
+                            <div className="absolute top-0 right-0">
+                              <div className="w-6 h-6 bg-[#118B50] rounded-full flex items-center justify-center">
+                                <svg
+                                  className="w-4 h-4 text-white"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 3: Mode Selection */}
+            {selectedTest && (
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-[#E3F0AF]/30 p-8 mb-8">
+                <div className="text-center mb-8">
+                  <h2 className="text-2xl font-bold text-[#118B50] mb-2">
+                    {t("select_mode")}
+                  </h2>
+                  <p className="text-gray-600">{t("mode_description")}</p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Training Mode */}
+                  <button
+                    onClick={() => setSelectedMode("training")}
+                    className={`group relative p-8 rounded-2xl border-2 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl ${
+                      selectedMode === "training"
+                        ? "border-[#118B50] bg-gradient-to-br from-[#E3F0AF]/20 to-[#5DB996]/10 shadow-lg"
+                        : "border-gray-200 hover:border-[#5DB996]/50 bg-gradient-to-br from-white to-gray-50/50"
+                    }`}
+                  >
+                    <div className="flex flex-col items-center text-center">
+                      <div
+                        className={`w-16 h-16 rounded-full mb-4 flex items-center justify-center transition-colors ${
+                          selectedMode === "training"
+                            ? "bg-[#118B50] text-white"
+                            : "bg-gray-100 text-gray-600 group-hover:bg-[#E3F0AF] group-hover:text-[#118B50]"
+                        }`}
+                      >
+                        <svg
+                          className="w-8 h-8"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="font-bold text-xl mb-3 text-[#118B50]">
+                        {t("modes.training")}
+                      </h3>
+                      <p className="text-gray-600 text-sm leading-relaxed">
+                        {t("modes.training_desc")}
+                      </p>
+                    </div>
+                    {selectedMode === "training" && (
+                      <div className="absolute top-4 right-4">
+                        <div className="w-6 h-6 bg-[#118B50] rounded-full flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+                  </button>
+
+                  {/* Exam Mode */}
+                  <button
+                    onClick={() => setSelectedMode("exam")}
+                    className={`group relative p-8 rounded-2xl border-2 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl ${
+                      selectedMode === "exam"
+                        ? "border-[#118B50] bg-gradient-to-br from-[#E3F0AF]/20 to-[#5DB996]/10 shadow-lg"
+                        : "border-gray-200 hover:border-[#5DB996]/50 bg-gradient-to-br from-white to-gray-50/50"
+                    }`}
+                  >
+                    <div className="flex flex-col items-center text-center">
+                      <div
+                        className={`w-16 h-16 rounded-full mb-4 flex items-center justify-center transition-colors ${
+                          selectedMode === "exam"
+                            ? "bg-[#118B50] text-white"
+                            : "bg-gray-100 text-gray-600 group-hover:bg-[#E3F0AF] group-hover:text-[#118B50]"
+                        }`}
+                      >
+                        <svg
+                          className="w-8 h-8"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="font-bold text-xl mb-3 text-[#118B50]">
+                        {t("modes.exam")}
+                      </h3>
+                      <p className="text-gray-600 text-sm leading-relaxed">
+                        {t("modes.exam_desc")}
+                      </p>
+                    </div>
+                    {selectedMode === "exam" && (
+                      <div className="absolute top-4 right-4">
+                        <div className="w-6 h-6 bg-[#118B50] rounded-full flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Start Button */}
+            {canStart && (
               <div className="text-center">
                 <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg border border-[#E3F0AF]/30 p-8 inline-block">
                   <button
                     onClick={handleStartTest}
-                    disabled={!canStart}
-                    className={`group relative px-12 py-4 rounded-xl font-bold text-lg transition-all duration-300 transform ${
-                      canStart
-                        ? "bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white hover:from-[#0A6B3B] hover:to-[#4A9B7E] hover:scale-105 shadow-lg hover:shadow-xl"
-                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    }`}
+                    className="group relative px-12 py-4 rounded-xl font-bold text-lg transition-all duration-300 transform bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white hover:from-[#0A6B3B] hover:to-[#4A9B7E] hover:scale-105 shadow-lg hover:shadow-xl"
                   >
                     <span className="flex items-center">
                       <svg
@@ -342,9 +502,7 @@ export default function ExamTestsPage() {
                       </svg>
                       {t("start_test")}
                     </span>
-                    {canStart && (
-                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                    )}
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                   </button>
                   {!user && (
                     <p className="text-red-500 text-sm mt-3">

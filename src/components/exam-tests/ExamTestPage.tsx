@@ -1,4 +1,4 @@
-// src/components/exam-tests/ExamTestPage.tsx
+// src/components/exam-tests/ExamTestPage.tsx - UPDATED
 
 "use client";
 
@@ -14,10 +14,10 @@ import { useTranslations, useLocale } from "next-intl";
 
 interface ExamTestPageProps {
   mode: "training" | "exam";
-  year: number;
+  testId: string; // Changed from year to testId
 }
 
-export default function ExamTestPage({ mode, year }: ExamTestPageProps) {
+export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
   const t = useTranslations("exam_tests");
   const router = useRouter();
   const locale = useLocale();
@@ -40,7 +40,7 @@ export default function ExamTestPage({ mode, year }: ExamTestPageProps) {
     submitExam,
   } = useExamSession({
     mode,
-    year,
+    testId, // Changed from year to testId
     userId: user?.id || "",
   });
 
@@ -117,7 +117,7 @@ export default function ExamTestPage({ mode, year }: ExamTestPageProps) {
       <div className="bg-gradient-to-r from-white/90 to-[#FBF6E9]/90 backdrop-blur-sm border-b border-[#E3F0AF]/30 sticky top-0 z-10 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20 py-4">
-            {/* Left Section - Progress & Mode */}
+            {/* Left Section - Progress & Test Info */}
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 bg-gradient-to-r from-[#118B50] to-[#5DB996] rounded-xl flex items-center justify-center">
@@ -151,7 +151,7 @@ export default function ExamTestPage({ mode, year }: ExamTestPageProps) {
                     </span>
                   </div>
                   <div className="text-sm text-gray-600">
-                    {t("year")} {year}
+                    {sessionState?.test.title}
                   </div>
                 </div>
               </div>
@@ -177,9 +177,13 @@ export default function ExamTestPage({ mode, year }: ExamTestPageProps) {
 
             {/* Right Section - Timer & Submit */}
             <div className="flex items-center space-x-4">
-              {mode === "exam" && (
+              {mode === "exam" && sessionState?.test.time_limit && (
                 <div className="bg-white/80 rounded-xl px-4 py-2 border border-[#E3F0AF]/50">
-                  <ExamTimer timeElapsed={timeElapsed} onTimeUp={submitExam} />
+                  <ExamTimer
+                    timeElapsed={timeElapsed}
+                    timeLimit={sessionState.test.time_limit * 60}
+                    onTimeUp={submitExam}
+                  />
                 </div>
               )}
 
@@ -218,11 +222,12 @@ export default function ExamTestPage({ mode, year }: ExamTestPageProps) {
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-[#E3F0AF]/30 p-8 mb-6">
               <ExamQuestion
                 question={currentQuestion}
-                selectedAnswer={selectedAnswer}
-                onSelectAnswer={(optionIndex) =>
-                  selectAnswer(currentQuestion.id, optionIndex)
+                selectedAnswer={selectedAnswer} // Now array of option IDs
+                onSelectAnswer={
+                  (optionId: string) =>
+                    selectAnswer(currentQuestion.id, optionId, false) // Single selection for now
                 }
-                showResult={mode === "training" && selectedAnswer !== undefined}
+                showResult={mode === "training" && selectedAnswer.length > 0}
                 isMarkedForReview={isMarkedForReview}
                 onToggleMarkForReview={() =>
                   toggleMarkForReview(currentQuestion.id)
