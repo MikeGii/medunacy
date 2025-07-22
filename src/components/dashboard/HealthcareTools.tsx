@@ -106,9 +106,9 @@ export default function HealthcareTools() {
               <Link
                 href={action.href}
                 className={`group relative bg-white/40 backdrop-blur-md rounded-2xl md:rounded-3xl p-6 md:p-8 
-           border border-white/50 hover:border-[#5DB996]/50 
-           shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 
-           overflow-hidden block h-full flex items-center`}
+  border border-white/50 hover:border-[#5DB996]/50 
+  shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 
+  overflow-hidden h-full flex items-center`}
               >
                 {/* Background gradient on hover */}
                 <div

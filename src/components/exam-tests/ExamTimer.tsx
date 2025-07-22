@@ -1,72 +1,103 @@
-// src/components/exam-tests/ExamTimer.tsx - FIXED
+// src/components/exam-tests/ExamTimer.tsx
 
 "use client";
 
+import { memo, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
 
 interface ExamTimerProps {
-  timeElapsed: number;
-  timeLimit?: number; // in seconds, optional
+  timeElapsed: number; // in seconds
+  timeLimit: number; // in seconds
   onTimeUp: () => void;
 }
 
-export default function ExamTimer({
-  timeElapsed,
-  timeLimit,
-  onTimeUp,
-}: ExamTimerProps) {
-  const t = useTranslations("exam_tests");
-  const [isWarning, setIsWarning] = useState(false);
-
-  // ALWAYS call useEffect - never conditionally
-  useEffect(() => {
-    if (!timeLimit) return; // Early return inside useEffect is fine
+const ExamTimer = memo(
+  ({ timeElapsed, timeLimit, onTimeUp }: ExamTimerProps) => {
+    const t = useTranslations("exam_tests");
+    const [isWarning, setIsWarning] = useState(false);
+    const [isCritical, setIsCritical] = useState(false);
 
     const timeRemaining = Math.max(0, timeLimit - timeElapsed);
+    const percentageRemaining = (timeRemaining / timeLimit) * 100;
 
-    if (timeRemaining <= 300 && timeRemaining > 0) {
-      // Last 5 minutes
-      setIsWarning(true);
-    }
+    useEffect(() => {
+      // Warning at 10 minutes remaining
+      if (timeRemaining <= 600 && timeRemaining > 300) {
+        setIsWarning(true);
+        setIsCritical(false);
+      }
+      // Critical at 5 minutes remaining
+      else if (timeRemaining <= 300 && timeRemaining > 0) {
+        setIsWarning(false);
+        setIsCritical(true);
+      }
+      // Time's up
+      else if (timeRemaining === 0) {
+        onTimeUp();
+      }
+    }, [timeRemaining, onTimeUp]);
 
-    if (timeRemaining <= 0) {
-      onTimeUp();
-    }
-  }, [timeLimit, timeElapsed, onTimeUp]);
+    const formatTime = (seconds: number): string => {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
 
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
+      if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, "0")}:${secs
+          .toString()
+          .padStart(2, "0")}`;
+      }
+      return `${minutes}:${secs.toString().padStart(2, "0")}`;
+    };
 
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, "0")}:${secs
-        .toString()
-        .padStart(2, "0")}`;
-    }
-    return `${minutes}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  if (!timeLimit) {
-    // No time limit - show elapsed time
     return (
-      <div className="font-mono text-lg text-gray-700">
-        {t("time_elapsed")}: {formatTime(timeElapsed)}
+      <div
+        className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all ${
+          isCritical
+            ? "bg-red-100 text-red-800"
+            : isWarning
+            ? "bg-yellow-100 text-yellow-800"
+            : "bg-gray-100 text-gray-700"
+        }`}
+      >
+        <svg
+          className={`w-5 h-5 ${isCritical ? "animate-pulse" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <div>
+          <div className="text-xs opacity-75">{t("time_remaining")}</div>
+          <div className="font-mono font-semibold">
+            {formatTime(timeRemaining)}
+          </div>
+        </div>
+
+        {/* Mini progress bar */}
+        <div className="w-16 h-1 bg-gray-300 rounded-full overflow-hidden">
+          <div
+            className={`h-full transition-all duration-1000 ${
+              isCritical
+                ? "bg-red-500"
+                : isWarning
+                ? "bg-yellow-500"
+                : "bg-green-500"
+            }`}
+            style={{ width: `${percentageRemaining}%` }}
+          />
+        </div>
       </div>
     );
   }
+);
 
-  // With time limit - show remaining time
-  const timeRemaining = Math.max(0, timeLimit - timeElapsed);
+ExamTimer.displayName = "ExamTimer";
 
-  return (
-    <div
-      className={`font-mono text-lg ${
-        isWarning ? "text-red-600 animate-pulse" : "text-gray-700"
-      }`}
-    >
-      {t("time_remaining")}: {formatTime(timeRemaining)}
-    </div>
-  );
-}
+export default ExamTimer;

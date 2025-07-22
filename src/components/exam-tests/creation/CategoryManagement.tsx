@@ -2,17 +2,28 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { TestCategory, TestCategoryCreate } from "@/types/exam";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { debounce } from "@/utils/debounce";
 
 interface CategoryManagementProps {
   categories: TestCategory[];
   onRefresh: () => void;
 }
+
+// Pure function for slug generation - can be used anywhere
+const generateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+};
 
 export default function CategoryManagement({
   categories,
@@ -32,78 +43,86 @@ export default function CategoryManagement({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "");
-  };
+  // Debounced version for real-time slug generation as user types
+  const debouncedGenerateSlug = useMemo(
+    () =>
+      debounce((name: string) => {
+        const slug = generateSlug(name);
+        setFormData((prev) => ({ ...prev, slug }));
+      }, 300),
+    []
+  );
 
-  const handleNameChange = (name: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      name,
-      slug: generateSlug(name),
-    }));
-  };
+  const handleNameChange = useCallback(
+    (name: string) => {
+      setFormData((prev) => ({ ...prev, name }));
+      if (!editingCategory) {
+        debouncedGenerateSlug(name);
+      }
+    },
+    [editingCategory, debouncedGenerateSlug]
+  );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!user) {
-      setError("You must be logged in to create categories");
-      return;
-    }
-
-    // Check user role client-side
-    if (!["doctor", "admin"].includes(user.role || "")) {
-      setError("You don't have permission to create categories");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      if (editingCategory) {
-        // Update existing category
-        const { error } = await supabase
-          .from("test_categories")
-          .update({
-            ...formData,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", editingCategory.id);
-
-        if (error) throw error;
-      } else {
-        // Create new category
-        const slug = formData.slug || generateSlug(formData.name);
-
-        const { error } = await supabase.from("test_categories").insert({
-          ...formData,
-          slug,
-          created_by: user.id,
-          is_active: true,
-        });
-
-        if (error) throw error;
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!user) {
+        setError("You must be logged in to create categories");
+        return;
       }
 
-      // Reset form and refresh
-      setFormData({ name: "", description: "", slug: "" });
-      setIsCreating(false);
-      setEditingCategory(null);
-      onRefresh();
-    } catch (err) {
-      console.error("Error saving category:", err);
-      setError(err instanceof Error ? err.message : "Failed to save category");
-    } finally {
-      setLoading(false);
-    }
-  };
+      // Check user role client-side
+      if (!["doctor", "admin"].includes(user.role || "")) {
+        setError("You don't have permission to create categories");
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        if (editingCategory) {
+          // Update existing category
+          const { error } = await supabase
+            .from("test_categories")
+            .update({
+              ...formData,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", editingCategory.id);
+
+          if (error) throw error;
+        } else {
+          // Create new category
+          // Use the immediate generateSlug function if slug is empty
+          const slug = formData.slug || generateSlug(formData.name);
+
+          const { error } = await supabase.from("test_categories").insert({
+            ...formData,
+            slug,
+            created_by: user.id,
+            is_active: true,
+          });
+
+          if (error) throw error;
+        }
+
+        // Reset form and refresh
+        setFormData({ name: "", description: "", slug: "" });
+        setIsCreating(false);
+        setEditingCategory(null);
+        onRefresh();
+      } catch (err) {
+        console.error("Error saving category:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to save category"
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user, formData, editingCategory, onRefresh]
+  );
 
   const handleEdit = (category: TestCategory) => {
     setEditingCategory(category);
