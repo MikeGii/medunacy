@@ -706,7 +706,8 @@
     "next": "Наступне",
     "submit_exam": "Здати екзамен",
     "submit_confirm": "Ви впевнені, що хочете здати екзамен?",
-    "unanswered_warning": "У вас є {{count}} питань без відповіді!",
+    "unanswered_warning": "У вас є {count} питань без відповіді!",
+    "correct_answer": "Правильна відповідь",
 
     "results": {
       "title": "Результати екзамену",
@@ -822,6 +823,9 @@
     "confirm_delete_question": "Ви впевнені, що хочете видалити це питання?",
     "point": "бал",
     "test_not_found": "Тест не знайдено",
-    "back_to_tests": "Повернутися до тестів"
+    "back_to_tests": "Повернутися до тестів",
+    "test_management": "Керування тестами",
+    "question_management": "Керування питаннями",
+    "create_question": "Створити питання"
   }
 }
