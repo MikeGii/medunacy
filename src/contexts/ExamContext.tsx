@@ -98,7 +98,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         setError(null);
 
         let query = supabase
-          .from("exam_tests")
+          .from("tests")
           .select(
             `
           *,
@@ -153,7 +153,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         setError(null);
 
         const { data, error: fetchError } = await supabase
-          .from("exam_tests")
+          .from("tests")
           .select(
             `
         *,
