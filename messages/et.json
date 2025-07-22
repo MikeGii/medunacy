@@ -1,4 +1,29 @@
 {
+  "common": {
+    "logo_alt": "Medunacy Logo",
+    "loading": "Laadimine...",
+    "error": "Viga",
+    "success": "Õnnestus",
+    "cancel": "Tühista",
+    "save": "Salvesta",
+    "delete": "Kustuta",
+    "edit": "Muuda",
+    "create": "Loo",
+    "update": "Uuenda",
+    "search": "Otsi",
+    "filter": "Filtreeri",
+    "sort": "Sorteeri",
+    "refresh": "Värskenda",
+    "back": "Tagasi",
+    "next": "Järgmine",
+    "previous": "Eelmine",
+    "close": "Sulge",
+    "open": "Ava",
+    "confirm": "Kinnita",
+    "yes": "Jah",
+    "no": "Ei"
+  },
+
   "navigation": {
     "home": "Pealeht",
     "dashboard": "Töölaud",
@@ -11,6 +36,134 @@
     "doctor": "Medunacy arst",
     "member": "Medunacy liige"
   },
+
+  "errors": {
+    "generic": {
+      "something_went_wrong": "Midagi läks valesti",
+      "try_again": "Proovi uuesti",
+      "not_found": "Ei leitud",
+      "unauthorized": "Autoriseerimata",
+      "forbidden": "Juurdepääs keelatud",
+      "server_error": "Serveri viga",
+      "network_error": "Võrguühenduse viga",
+      "timeout": "Päring aegus",
+      "unknown": "Tundmatu viga"
+    }
+  },
+
+  "datetime": {
+    "formats": {
+      "date": "DD.MM.YYYY",
+      "time": "HH:mm",
+      "datetime": "DD.MM.YYYY HH:mm",
+      "month_year": "MMMM YYYY",
+      "day_month": "DD. MMMM"
+    },
+    "relative": {
+      "just_now": "Just nüüd",
+      "seconds_ago": "{count} sekundit tagasi",
+      "minute_ago": "1 minut tagasi",
+      "minutes_ago": "{count} minutit tagasi",
+      "hour_ago": "1 tund tagasi",
+      "hours_ago": "{count} tundi tagasi",
+      "day_ago": "1 päev tagasi",
+      "days_ago": "{count} päeva tagasi",
+      "week_ago": "1 nädal tagasi",
+      "weeks_ago": "{count} nädalat tagasi",
+      "month_ago": "1 kuu tagasi",
+      "months_ago": "{count} kuud tagasi",
+      "year_ago": "1 aasta tagasi",
+      "years_ago": "{count} aastat tagasi"
+    }
+  },
+
+  "languages": {
+    "estonian": "Eesti",
+    "ukrainian": "Ukraina",
+    "english": "Inglise",
+    "russian": "Vene",
+    "select_language": "Vali keel",
+    "change_language": "Muuda keelt"
+  },
+
+  "language_levels": {
+    "native": "Emakeel",
+    "fluent": "Kõrgtase",
+    "intermediate": "Kesktase",
+    "basic": "Algtase",
+    "none": "Ei oska"
+  },
+
+  "actions": {
+    "save": "Salvesta",
+    "cancel": "Tühista",
+    "delete": "Kustuta",
+    "edit": "Muuda",
+    "create": "Loo",
+    "update": "Uuenda",
+    "search": "Otsi",
+    "filter": "Filtreeri",
+    "sort": "Sorteeri",
+    "refresh": "Värskenda",
+    "back": "Tagasi",
+    "next": "Järgmine",
+    "previous": "Eelmine",
+    "close": "Sulge",
+    "open": "Ava",
+    "confirm": "Kinnita",
+    "loading": "Laadimine...",
+    "saving": "Salvestamine...",
+    "deleting": "Kustutamine...",
+    "updating": "Uuendamine...",
+    "searching": "Otsimine...",
+    "submit": "Esita",
+    "reset": "Lähtesta",
+    "clear": "Tühjenda",
+    "select": "Vali",
+    "upload": "Laadi üles",
+    "download": "Laadi alla",
+    "copy": "Kopeeri",
+    "paste": "Kleebi",
+    "share": "Jaga",
+    "export": "Ekspordi",
+    "import": "Impordi",
+    "print": "Prindi"
+  },
+
+  "validation": {
+    "required": "See väli on kohustuslik",
+    "email": "Sisesta kehtiv e-posti aadress",
+    "phone": "Sisesta kehtiv telefoninumber",
+    "min_length": "Minimaalselt {min} tähemärki",
+    "max_length": "Maksimaalselt {max} tähemärki",
+    "pattern": "Vale formaat",
+    "number": "Peab olema number",
+    "positive": "Peab olema positiivne number",
+    "url": "Sisesta kehtiv URL",
+    "date": "Sisesta kehtiv kuupäev",
+    "time": "Sisesta kehtiv kellaaeg",
+    "password_match": "Paroolid peavad ühtima",
+    "terms_required": "Peate nõustuma tingimustega",
+    "age_requirement": "Peate olema vähemalt 18-aastane"
+  },
+
+  "success": {
+    "saved": "Edukalt salvestatud",
+    "deleted": "Edukalt kustutatud",
+    "updated": "Edukalt uuendatud",
+    "created": "Edukalt loodud",
+    "sent": "Edukalt saadetud",
+    "copied": "Kopeeritud lõikelauale",
+    "uploaded": "Edukalt üles laaditud",
+    "downloaded": "Edukalt alla laaditud",
+    "imported": "Edukalt imporditud",
+    "exported": "Edukalt eksporditud",
+    "completed": "Edukalt lõpetatud",
+    "approved": "Edukalt kinnitatud",
+    "rejected": "Edukalt tagasi lükatud",
+    "published": "Edukalt avaldatud"
+  },
+
   "auth": {
     "register": {
       "title": "Loo konto",
@@ -40,7 +193,6 @@
         "required": "nõutav",
         "optional": "valikuline"
       },
-
       "placeholders": {
         "first_name": "Mari",
         "last_name": "Maasikas",
@@ -140,101 +292,7 @@
       }
     }
   },
-  "hero": {
-    "title": "Ühendame",
-    "subtitle": "Meditsiinitalente",
-    "description": "Medunacy on Eesti juhtiv platvorm meditsiinispetsialistidele ja välismaalastele, kes otsivad karjäärivõimalusi tervishoiusektoris ning juhiseid meditsiinimaailma sisenemiseks.",
-    "features": {
-      "network": "Ekspertide võrgustik",
-      "growth": "Karjäärikasv"
-    },
-    "cta": {
-      "get_started": "Alusta täna",
-      "learn_more": "Loe edasi",
-      "welcome_back": "Tere tulemast tagasi"
-    }
-  },
-  "common": {
-    "logo_alt": "Medunacy Logo"
-  },
-  "services": {
-    "title": "Mida me pakume",
-    "subtitle": "Toetame sind igal sammul meditsiinikarjääri rajamisel ja Eesti tervisehoiusektorisse sisenemisel.",
-    "team_info": "Meie tiimis on juba Eestis töötavad arstid, kes oskavad nõustada sind igal sammul.",
-    "student_guidance": {
-      "title": "Tudengijuhendamine",
-      "description": "Oled veel tudeng ja soovid varakult nõu, kuidas valmistuda eksamiteks ning tervisehoiusektorisse sisenemiseks? Pakume personaalset nõustamist ja strateegilist planeerimist."
-    },
-    "graduate_support": {
-      "title": "Lõpetanute toetus",
-      "description": "Oled juba lõpetanud ülikooli, kuid ei tea, kuidas edasi toimida? Aitame sul leida õige tee ja planeerida järgmised sammud meditsiinikarjääris."
-    },
-    "documentation": {
-      "title": "Dokumentide korrastamine",
-      "description": "Vajad abi dokumentide korrastamisel, et siseneda Eesti tervisehoiusektorisse? Juhendame sind läbi kogu bürokraatliku protsessi."
-    },
-    "training": {
-      "title": "Koolitused ja kursused",
-      "description": "Soovid informatsiooni parimate lisakoolituste ja keelekursuste kohta? Tutvustame kvaliteetseid õppevõimalusi ja aitame valida sobivad programmid."
-    },
-    "exam_prep": {
-      "title": "Eksamiks valmistumine",
-      "description": "Tahad valmistuda eksamiteks ja sertifitseerimistestideks? Pakume struktureeritud õppematerjale ja personaalset ettevalmistust."
-    },
-    "personal_consulting": {
-      "title": "Personaalne nõustamine",
-      "description": "Vajad personaalset nõustamist ja abi, kuidas käituda ja mida teada tervisehoiusektori osas? Pakume individuaalset lähenemist ja ekspertide nõuandeid."
-    },
-    "get_started": "Alusta koostööd"
-  },
-  "team": {
-    "title": "Kes me oleme?",
-    "subtitle": "Meie tiim koosneb kogenud arstidest, kes töötavad juba edukalt Eesti tervisehoiusüsteemis ja on valmis jagama oma kogemusi.",
-    "doctors": {
-      "doctor1": {
-        "name": "Dr. Kateryna Rosenko",
-        "specialization": "Arst-konsultant",
-        "description": "2022. aastal kolisin Ukrainast Eestisse. Kogemusi vastsündinute intensiivravis ja töötanud Tallinna Lastehaigla operatsiooniblokis. Täna töötab Keilas Elora õendusabi osakonnas arst-konsultandina. Lõpetanud Bogomoletsi nimelise Rahvusliku Meditsiiniülikooli Ukrainas, Kiievis."
-      }
-    },
-    "bottom_text": "Meie eesmärk on aidata igal uuel meditsiinitöötajal leida oma koht Eesti tervisehoiusüsteemis."
-  },
-  "faq": {
-    "title": "Korduma kippuvad küsimused",
-    "subtitle": "Siin leiad vastused kõige sagedamini esitatud küsimustele meie teenuste kohta.",
-    "questions": {
-      "q1": {
-        "question": "Kuidas saan alustada oma teekonda läbi Medunacy?",
-        "answer": "Selleks tee omale kasutajakonto meie keskkonnas ja nii lihtne see ongi."
-      },
-      "q2": {
-        "question": "Kas Medunacy keskkonna kasutamine garanteerib mulle töö?",
-        "answer": "Ei, Medunacy nõustajad ei garanteeri sulle töö Eesti tervisehoiusektoris, kuid on suuresti abiks, et saaksid luua kõik eeldused töö alustamiseks."
-      },
-      "q3": {
-        "question": "Kas kõik see on tasuta?",
-        "answer": "Medunacy keskkonnaga liitumine on tasuta, kuid kõik teenused ei ole tasuta, sest ka meie arstid ja nõustajad on pidanud oma elu jooksul läbima erinevaid väljakutseid ja personaalne lähenemine nõuab aega ja pühendumust."
-      },
-      "q4": {
-        "question": "Soovin samuti aidata teistel alustada oma karjääri tervisehoiuteenuse valdkonnas.",
-        "answer": "Mida suurem on kogukond ja meie tiim seda paremat teenust suudame pakkuda. Anna meile oma soovist teada ja võtame Sinuga ühendust."
-      }
-    }
-  },
-  "dashboard": {
-    "welcome": "Siin on sinu töölaud,",
-    "quick_actions": "Kiired toimingud",
-    "forum": "Foorum",
-    "my_data": "Minu andmed",
-    "healthcare_tools": "Tervisehoiutöötaja tööriistad",
-    "users": "Kasutajad",
-    "users_description": "Vaata ja halda kasutajaid",
-    "admin_tools": "Administratiivsed tööriistad",
-    "roles": "Rollid",
-    "roles_description": "Halda kasutajate rolle ja õigusi",
-    "forum_description": "Liitu kogukonna aruteludega",
-    "my_data_description": "Halda oma profiili andmeid"
-  },
+
   "profile": {
     "title": "Minu profiil",
     "subtitle": "Tere, {name}! Siin saad hallata oma profiili andmeid.",
@@ -301,6 +359,7 @@
       "languages_required": "Vähemalt üks keel peab olema valitud"
     }
   },
+
   "users": {
     "page_title": "Kasutajad",
     "table_title": "Siin näed registreeritud kasutajaid ja nende andmeid",
@@ -323,6 +382,51 @@
       "close": "Sulge"
     }
   },
+
+  "roles": {
+    "page_title": "Kasutajate rollid",
+    "page_subtitle": "Halda kasutajate rolle ja õigusi",
+    "loading": "Laadin kasutajaid...",
+    "no_users": "Kasutajaid ei leitud",
+    "table": {
+      "name": "Nimi",
+      "email": "E-post",
+      "current_role": "Praegune roll",
+      "change_role": "Muuda rolli",
+      "your_account": "Sinu konto"
+    },
+    "roles": {
+      "user": "Kasutaja",
+      "doctor": "Arst",
+      "admin": "Administraator"
+    },
+    "messages": {
+      "role_updated": "Roll edukalt uuendatud!",
+      "role_update_error": "Viga rolli uuendamisel",
+      "cannot_change_own_role": "Sa ei saa muuta oma rolli"
+    },
+    "search": {
+      "placeholder": "Otsi nime või e-posti järgi...",
+      "results": "Leitud {count} kasutajat",
+      "no_results": "Kasutajaid ei leitud"
+    }
+  },
+
+  "dashboard": {
+    "welcome": "Siin on sinu töölaud,",
+    "quick_actions": "Kiired toimingud",
+    "forum": "Foorum",
+    "my_data": "Minu andmed",
+    "healthcare_tools": "Tervisehoiutöötaja tööriistad",
+    "users": "Kasutajad",
+    "users_description": "Vaata ja halda kasutajaid",
+    "admin_tools": "Administratiivsed tööriistad",
+    "roles": "Rollid",
+    "roles_description": "Halda kasutajate rolle ja õigusi",
+    "forum_description": "Liitu kogukonna aruteludega",
+    "my_data_description": "Halda oma profiili andmeid"
+  },
+
   "forum": {
     "page_title": "Foorum",
     "page_subtitle": "Kogukonna arutelud ja teadmiste jagamine",
@@ -333,6 +437,12 @@
       "no_posts": "Selles kategoorias pole veel postitusi",
       "no_categories": "Kategooriaid ei leitud"
     },
+    "pagination": {
+      "previous": "Eelmine",
+      "next": "Järgmine",
+      "page": "Lehekülg {page}",
+      "of": "{total}st"
+    },
     "posts": {
       "create": "Uus postitus",
       "no_posts": "Postitusi ei leitud",
@@ -341,7 +451,9 @@
       "comments": "kommentaari",
       "likes": "meeldimist",
       "no_posts_category": "Selles kategoorias pole veel postitusi",
-      "no_posts_search": "Otsingule \"{query}\" ei leitud ühtegi postitust"
+      "no_posts_search": "Otsingule \"{query}\" ei leitud ühtegi postitust",
+      "showing_posts": "Näitan {from}-{to} postitust {total}st",
+      "error_loading": "Viga postituste laadimisel"
     },
     "search": {
       "placeholder": "Otsi postitusi...",
@@ -403,6 +515,7 @@
       "delete": "Kustuta",
       "like": "Meeldib",
       "unlike": "Eemalda meeldimine",
+      "confirm_delete": "Kas oled kindel, et soovid selle postituse kustutada?",
       "comments": {
         "title": "Kommentaarid",
         "empty": "Kommentaare pole veel. Ole esimene!",
@@ -417,6 +530,7 @@
         "editing": "Muudan...",
         "edit_success": "Kommentaar edukalt uuendatud",
         "edit_error": "Viga kommentaari uuendamisel",
+        "confirm_delete": "Kas oled kindel, et soovid selle kommentaari kustutada?",
         "form": {
           "placeholder": "Lisa kommentaar...",
           "submit": "Postita",
@@ -439,34 +553,99 @@
     "stats": {
       "active_members": "{count} aktiivset liiget",
       "discussions": "{count} arutelu"
+    },
+    "errors": {
+      "fetch_posts": "Viga postituste laadimisel",
+      "create_post": "Viga postituse loomisel",
+      "update_post": "Viga postituse uuendamisel",
+      "delete_post": "Viga postituse kustutamisel",
+      "fetch_comments": "Viga kommentaaride laadimisel",
+      "create_comment": "Viga kommentaari loomisel",
+      "update_comment": "Viga kommentaari uuendamisel",
+      "delete_comment": "Viga kommentaari kustutamisel",
+      "unauthorized": "Teil pole selleks tegevuseks õigusi"
     }
   },
-  "roles": {
-    "page_title": "Kasutajate rollid",
-    "page_subtitle": "Halda kasutajate rolle ja õigusi",
-    "loading": "Laadin kasutajaid...",
-    "no_users": "Kasutajaid ei leitud",
-    "table": {
-      "name": "Nimi",
-      "email": "E-post",
-      "current_role": "Praegune roll",
-      "change_role": "Muuda rolli",
-      "your_account": "Sinu konto"
+
+  "hero": {
+    "title": "Ühendame",
+    "subtitle": "Meditsiinitalente",
+    "description": "Medunacy on Eesti juhtiv platvorm meditsiinispetsialistidele ja välismaalastele, kes otsivad karjäärivõimalusi tervishoiusektoris ning juhiseid meditsiinimaailma sisenemiseks.",
+    "features": {
+      "network": "Ekspertide võrgustik",
+      "growth": "Karjäärikasv"
     },
-    "roles": {
-      "user": "Kasutaja",
-      "doctor": "Arst",
-      "admin": "Administraator"
+    "cta": {
+      "get_started": "Alusta täna",
+      "learn_more": "Loe edasi",
+      "welcome_back": "Tere tulemast tagasi"
+    }
+  },
+
+  "services": {
+    "title": "Mida me pakume",
+    "subtitle": "Toetame sind igal sammul meditsiinikarjääri rajamisel ja Eesti tervisehoiusektorisse sisenemisel.",
+    "team_info": "Meie tiimis on juba Eestis töötavad arstid, kes oskavad nõustada sind igal sammul.",
+    "student_guidance": {
+      "title": "Tudengijuhendamine",
+      "description": "Oled veel tudeng ja soovid varakult nõu, kuidas valmistuda eksamiteks ning tervisehoiusektorisse sisenemiseks? Pakume personaalset nõustamist ja strateegilist planeerimist."
     },
-    "messages": {
-      "role_updated": "Roll edukalt uuendatud!",
-      "role_update_error": "Viga rolli uuendamisel",
-      "cannot_change_own_role": "Sa ei saa muuta oma rolli"
+    "graduate_support": {
+      "title": "Lõpetanute toetus",
+      "description": "Oled juba lõpetanud ülikooli, kuid ei tea, kuidas edasi toimida? Aitame sul leida õige tee ja planeerida järgmised sammud meditsiinikarjääris."
     },
-    "search": {
-      "placeholder": "Otsi nime või e-posti järgi...",
-      "results": "Leitud {count} kasutajat",
-      "no_results": "Kasutajaid ei leitud"
+    "documentation": {
+      "title": "Dokumentide korrastamine",
+      "description": "Vajad abi dokumentide korrastamisel, et siseneda Eesti tervisehoiusektorisse? Juhendame sind läbi kogu bürokraatliku protsessi."
+    },
+    "training": {
+      "title": "Koolitused ja kursused",
+      "description": "Soovid informatsiooni parimate lisakoolituste ja keelekursuste kohta? Tutvustame kvaliteetseid õppevõimalusi ja aitame valida sobivad programmid."
+    },
+    "exam_prep": {
+      "title": "Eksamiks valmistumine",
+      "description": "Tahad valmistuda eksamiteks ja sertifitseerimistestideks? Pakume struktureeritud õppematerjale ja personaalset ettevalmistust."
+    },
+    "personal_consulting": {
+      "title": "Personaalne nõustamine",
+      "description": "Vajad personaalset nõustamist ja abi, kuidas käituda ja mida teada tervisehoiusektori osas? Pakume individuaalset lähenemist ja ekspertide nõuandeid."
+    },
+    "get_started": "Alusta koostööd"
+  },
+
+  "team": {
+    "title": "Kes me oleme?",
+    "subtitle": "Meie tiim koosneb kogenud arstidest, kes töötavad juba edukalt Eesti tervisehoiusüsteemis ja on valmis jagama oma kogemusi.",
+    "doctors": {
+      "doctor1": {
+        "name": "Dr. Kateryna Rosenko",
+        "specialization": "Arst-konsultant",
+        "description": "2022. aastal kolisin Ukrainast Eestisse. Kogemusi vastsündinute intensiivravis ja töötanud Tallinna Lastehaigla operatsiooniblokis. Täna töötab Keilas Elora õendusabi osakonnas arst-konsultandina. Lõpetanud Bogomoletsi nimelise Rahvusliku Meditsiiniülikooli Ukrainas, Kiievis."
+      }
+    },
+    "bottom_text": "Meie eesmärk on aidata igal uuel meditsiinitöötajal leida oma koht Eesti tervisehoiusüsteemis."
+  },
+
+  "faq": {
+    "title": "Korduma kippuvad küsimused",
+    "subtitle": "Siin leiad vastused kõige sagedamini esitatud küsimustele meie teenuste kohta.",
+    "questions": {
+      "q1": {
+        "question": "Kuidas saan alustada oma teekonda läbi Medunacy?",
+        "answer": "Selleks tee omale kasutajakonto meie keskkonnas ja nii lihtne see ongi."
+      },
+      "q2": {
+        "question": "Kas Medunacy keskkonna kasutamine garanteerib mulle töö?",
+        "answer": "Ei, Medunacy nõustajad ei garanteeri sulle töö Eesti tervisehoiusektoris, kuid on suuresti abiks, et saaksid luua kõik eeldused töö alustamiseks."
+      },
+      "q3": {
+        "question": "Kas kõik see on tasuta?",
+        "answer": "Medunacy keskkonnaga liitumine on tasuta, kuid kõik teenused ei ole tasuta, sest ka meie arstid ja nõustajad on pidanud oma elu jooksul läbima erinevaid väljakutseid ja personaalne lähenemine nõuab aega ja pühendumust."
+      },
+      "q4": {
+        "question": "Soovin samuti aidata teistel alustada oma karjääri tervisehoiuteenuse valdkonnas.",
+        "answer": "Mida suurem on kogukond ja meie tiim seda paremat teenust suudame pakkuda. Anna meile oma soovist teada ja võtame Sinuga ühendust."
+      }
     }
   }
 }
