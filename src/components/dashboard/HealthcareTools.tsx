@@ -66,7 +66,7 @@ export default function HealthcareTools() {
           />
         </svg>
       ),
-      href: `${baseUrl}/test-creation`,
+      href: `${baseUrl}/exam-tests/create`,
       gradient: "from-[#E3F0AF] to-[#118B50]",
       bgGradient: "from-[#E3F0AF]/10 to-[#118B50]/10",
     },

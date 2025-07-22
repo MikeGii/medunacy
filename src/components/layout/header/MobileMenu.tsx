@@ -205,7 +205,7 @@ export default function MobileMenu({
 
             {/* Test Creation Link */}
             <Link
-              href={`${baseUrl}/test-creation`}
+              href={`${baseUrl}/exam-tests/create`}
               onClick={onClose}
               className="flex items-center space-x-3 w-full px-6 py-3 text-[#5DB996] hover:text-[#118B50] 
    bg-gradient-to-r from-[#E3F0AF]/20 to-[#118B50]/20 hover:from-[#E3F0AF]/30 hover:to-[#118B50]/30 

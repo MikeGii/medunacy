@@ -143,7 +143,7 @@ export default function DesktopUserMenu({
                   </Link>
 
                   <Link
-                    href={`${baseUrl}/test-creation`}
+                    href={`${baseUrl}/exam-tests/create`}
                     onClick={onClose}
                     className="flex items-center space-x-3 w-full px-4 py-3 text-left hover:bg-green-50 transition-colors duration-200 group"
                   >
