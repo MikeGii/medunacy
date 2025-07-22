@@ -10,17 +10,16 @@
     "check-translations": "node scripts/check-translations.js",
     "verify": "npm run lint && npm run check-translations",
     "translations:watch": "node scripts/watch-translations.js",
-    
     "// Git workflow scripts": "",
     "pre-commit": "npm run lint && npm run check-translations",
     "pre-push": "npm run verify",
-    
     "// Convenience scripts": "",
     "commit": "npm run pre-commit && echo 'All checks passed! Use git commit to continue'",
     "push": "npm run pre-push && echo 'All checks passed! Use git push to continue'"
   },
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.52.0",
     "chalk": "^5.4.1",
     "date-fns": "^4.1.0",
