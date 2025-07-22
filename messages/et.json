@@ -710,7 +710,8 @@
     "next": "Järgmine",
     "submit_exam": "Esita eksam",
     "submit_confirm": "Kas oled kindel, et soovid eksami esitada?",
-    "unanswered_warning": "Sul on {{count}} vastamata küsimust!",
+    "unanswered_warning": "Sul on {count} vastamata küsimust!",
+    "correct_answer": "Õige vastus",
 
     "results": {
       "title": "Eksami tulemused",
@@ -826,6 +827,9 @@
     "confirm_delete_question": "Kas oled kindel, et soovid selle küsimuse kustutada?",
     "point": "punkt",
     "test_not_found": "Testi ei leitud",
-    "back_to_tests": "Tagasi testide juurde"
+    "back_to_tests": "Tagasi testide juurde",
+    "test_management": "Testide haldamine",
+    "question_management": "Küsimuste haldamine",
+    "create_question": "Loo küsimus"
   }
 }

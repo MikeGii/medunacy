@@ -56,7 +56,8 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
     const unanswered = progress.total - progress.answered;
 
     if (unanswered > 0) {
-      const message = t("unanswered_warning", { count: unanswered });
+      // Fix: Ensure the translation returns a proper string
+      const message = t("unanswered_warning", { count: unanswered.toString() });
       if (!confirm(`${message}\n\n${t("submit_confirm")}`)) {
         return;
       }

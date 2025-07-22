@@ -39,50 +39,9 @@ export default function ExamResultsPage({ sessionId }: ExamResultsPageProps) {
       }
     }
 
-    // If no stored results, try to fetch from API
-    const fetchResults = async () => {
-      try {
-        const response = await fetch(`/api/exam-sessions/${sessionId}`);
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-          // Transform API data to match our ExamResults interface
-          const session = data.data;
-          const transformedResults: ExamResults = {
-            sessionId: session.id,
-            test: session.test,
-            totalQuestions: session.total_questions || 0,
-            correctAnswers: session.correct_answers || 0,
-            incorrectAnswers:
-              (session.total_questions || 0) - (session.correct_answers || 0),
-            scorePercentage: session.score_percentage || 0,
-            timeSpent: session.time_spent || 0,
-            passed: session.passed || false,
-            questionResults:
-              session.answers?.map((answer: any) => ({
-                question: answer.question,
-                selectedOptions: answer.question.options.filter((opt: any) =>
-                  answer.selected_option_ids.includes(opt.id)
-                ),
-                correctOptions: answer.question.options.filter(
-                  (opt: any) => opt.is_correct
-                ),
-                isCorrect: answer.is_correct,
-                pointsEarned: answer.points_earned,
-              })) || [],
-          };
-          setResults(transformedResults);
-        } else {
-          console.error("Failed to fetch session results");
-        }
-      } catch (error) {
-        console.error("Error fetching session results:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchResults();
+    // If no stored results, show no results found (remove API call)
+    console.log("No stored results found for session:", sessionId);
+    setLoading(false);
   }, [sessionId]);
 
   const formatTime = (seconds: number) => {

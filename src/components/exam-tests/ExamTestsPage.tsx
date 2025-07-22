@@ -72,17 +72,25 @@ export default function ExamTestsPage() {
           .from("tests")
           .select(
             `
-          *,
-          category:test_categories(*),
-          question_count:test_questions(count)
-        `
+        *,
+        category:test_categories(*),
+        test_questions(count)
+      `
           )
           .eq("category_id", selectedCategory.id)
           .eq("is_published", true)
           .order("created_at", { ascending: false });
 
         if (error) throw error;
-        setTests(data || []);
+
+        // Transform the data to extract the count properly
+        const transformedTests =
+          data?.map((test: any) => ({
+            ...test,
+            question_count: test.test_questions?.[0]?.count || 0,
+          })) || [];
+
+        setTests(transformedTests);
       } catch (err) {
         console.error("Error fetching tests:", err);
         setError(err instanceof Error ? err.message : "Failed to load tests");
