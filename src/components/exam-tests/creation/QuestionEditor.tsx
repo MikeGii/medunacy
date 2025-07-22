@@ -11,12 +11,14 @@ interface QuestionEditorProps {
   question?: TestQuestion | null;
   onSave: (questionData: QuestionFormData) => Promise<void>;
   onCancel: () => void;
+  isSaving?: boolean;
 }
 
 export default function QuestionEditor({
   question,
   onSave,
   onCancel,
+  isSaving = false,
 }: QuestionEditorProps) {
   const t = useTranslations("test_creation");
   const [loading, setLoading] = useState(false);
@@ -370,18 +372,16 @@ export default function QuestionEditor({
         <div className="flex space-x-4 pt-4 border-t border-gray-200">
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || isSaving}
             className="px-6 py-3 bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white rounded-xl font-semibold hover:from-[#0A6B3B] hover:to-[#4A9B7E] transition-all duration-300 disabled:opacity-50"
           >
-            {loading ? (
+            {loading || isSaving ? (
               <div className="flex items-center space-x-2">
                 <LoadingSpinner />
                 <span>{t("saving")}</span>
               </div>
-            ) : question ? (
-              t("update_question")
             ) : (
-              t("add_question")
+              t("save_question")
             )}
           </button>
 

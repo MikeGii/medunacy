@@ -1,16 +1,16 @@
-// src/components/exam-tests/ExamTestsPage.tsx
+// src/components/exam-tests/ExamTestsPage.tsx - REFACTORED
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
-import { useLocale } from "next-intl";
+import { useExam } from "@/contexts/ExamContext";
 import Header from "../layout/Header";
 import { AuthModalProvider } from "@/contexts/AuthModalContext";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { TestCategory, Test } from "@/types/exam";
-import { supabase } from "@/lib/supabase";
 
 export default function ExamTestsPage() {
   const t = useTranslations("exam_tests");
@@ -18,6 +18,18 @@ export default function ExamTestsPage() {
   const locale = useLocale();
   const { user } = useAuth();
 
+  // Use the ExamContext
+  const {
+    categories,
+    tests,
+    loading,
+    error,
+    fetchCategories,
+    fetchTests,
+    clearError,
+  } = useExam();
+
+  // Local state for UI interactions
   const [selectedCategory, setSelectedCategory] = useState<TestCategory | null>(
     null
   );
@@ -26,100 +38,33 @@ export default function ExamTestsPage() {
     null
   );
 
-  const [categories, setCategories] = useState<TestCategory[]>([]);
-  const [tests, setTests] = useState<Test[]>([]);
-
-  const [loadingCategories, setLoadingCategories] = useState(true);
-  const [loadingTests, setLoadingTests] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Fetch categories on mount - STABLE REFERENCE
-  const fetchCategories = useCallback(async () => {
-    try {
-      setLoadingCategories(true);
-      const { data, error } = await supabase
-        .from("test_categories")
-        .select("*")
-        .eq("is_active", true)
-        .order("name");
-
-      if (error) throw error;
-      setCategories(data || []);
-    } catch (err) {
-      console.error("Error fetching categories:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to load categories"
-      );
-    } finally {
-      setLoadingCategories(false);
-    }
-  }, []);
-
-  // Fetch tests for selected category - STABLE REFERENCE
-  const fetchTests = useCallback(async (categoryId: string) => {
-    try {
-      setLoadingTests(true);
-      setError(null); // Clear previous errors
-
-      const { data, error } = await supabase
-        .from("tests")
-        .select(
-          `
-          *,
-          category:test_categories(*),
-          test_questions(count)
-        `
-        )
-        .eq("category_id", categoryId)
-        .eq("is_published", true)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      // Transform the data to extract the count properly
-      const transformedTests =
-        data?.map((test: any) => ({
-          ...test,
-          question_count: test.test_questions?.[0]?.count || 0,
-        })) || [];
-
-      setTests(transformedTests);
-    } catch (err) {
-      console.error("Error fetching tests:", err);
-      setError(err instanceof Error ? err.message : "Failed to load tests");
-    } finally {
-      setLoadingTests(false);
-    }
-  }, []);
-
-  // SINGLE useEffect for categories - runs once on mount
+  // Fetch categories on mount
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
 
-  // CONTROLLED useEffect for tests - only runs when category is explicitly selected
+  // Fetch tests when category changes
   useEffect(() => {
-    if (selectedCategory?.id) {
+    if (selectedCategory) {
       fetchTests(selectedCategory.id);
     } else {
-      // Clear tests when no category is selected
-      setTests([]);
+      // Reset selections when no category selected
       setSelectedTest(null);
       setSelectedMode(null);
     }
-  }, [selectedCategory?.id, fetchTests]);
+  }, [selectedCategory, fetchTests]);
 
   // Handle category selection
   const handleCategorySelect = useCallback((category: TestCategory) => {
     setSelectedCategory(category);
-    setSelectedTest(null); // Reset test selection
-    setSelectedMode(null); // Reset mode selection
+    setSelectedTest(null);
+    setSelectedMode(null);
   }, []);
 
   // Handle test selection
   const handleTestSelect = useCallback((test: Test) => {
     setSelectedTest(test);
-    setSelectedMode(null); // Reset mode selection
+    setSelectedMode(null);
   }, []);
 
   // Handle mode selection
@@ -127,11 +72,19 @@ export default function ExamTestsPage() {
     setSelectedMode(mode);
   }, []);
 
+  // Handle start test
   const handleStartTest = useCallback(() => {
-    if (selectedTest && selectedMode && user) {
-      router.push(`/${locale}/exam-tests/${selectedMode}/${selectedTest.id}`);
+    if (!selectedTest || !selectedMode || !user) return;
+
+    // Check if test has questions
+    if (!selectedTest.question_count || selectedTest.question_count === 0) {
+      // You might want to show a toast here instead
+      alert(t("no_questions_in_test"));
+      return;
     }
-  }, [selectedTest, selectedMode, user, router, locale]);
+
+    router.push(`/${locale}/exam-tests/${selectedMode}/${selectedTest.id}`);
+  }, [selectedTest, selectedMode, user, router, locale, t]);
 
   const canStart = selectedTest && selectedMode && user;
 
@@ -158,9 +111,9 @@ export default function ExamTestsPage() {
             {/* Error Message */}
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
-                <div className="flex items-center">
+                <div className="flex items-center space-x-3">
                   <svg
-                    className="w-6 h-6 text-red-600 mr-3"
+                    className="w-6 h-6 text-red-600"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -169,10 +122,18 @@ export default function ExamTestsPage() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <p className="text-red-800 font-medium">{error}</p>
+                  <div>
+                    <p className="text-red-800 font-medium">{error}</p>
+                    <button
+                      onClick={clearError}
+                      className="text-red-600 underline text-sm mt-1"
+                    >
+                      {t("dismiss")}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -180,18 +141,18 @@ export default function ExamTestsPage() {
             {/* Step 1: Category Selection */}
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-[#E3F0AF]/30 p-8 mb-8">
               <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-[#118B50] to-[#5DB996] text-white rounded-full mb-4">
+                  <span className="font-bold text-xl">1</span>
+                </div>
                 <h2 className="text-2xl font-bold text-[#118B50] mb-2">
                   {t("select_category")}
                 </h2>
                 <p className="text-gray-600">{t("category_description")}</p>
               </div>
 
-              {loadingCategories ? (
-                <div className="text-center py-8">
+              {loading && categories.length === 0 ? (
+                <div className="flex justify-center py-8">
                   <LoadingSpinner />
-                  <p className="text-gray-600 mt-4">
-                    {t("loading_categories")}
-                  </p>
                 </div>
               ) : categories.length === 0 ? (
                 <div className="text-center py-12">
@@ -211,61 +172,55 @@ export default function ExamTestsPage() {
                     </svg>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                    {t("no_categories_available")}
+                    {t("no_categories")}
                   </h3>
-                  <p className="text-gray-500 mb-6">
-                    {t("no_categories_description")}
-                  </p>
                   {(user?.role === "doctor" || user?.role === "admin") && (
                     <button
                       onClick={() =>
                         router.push(`/${locale}/exam-tests/create`)
                       }
-                      className="px-6 py-3 bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white rounded-xl font-semibold hover:from-[#0A6B3B] hover:to-[#4A9B7E] transition-all duration-300 transform hover:scale-105"
+                      className="mt-4 px-6 py-3 bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white rounded-xl font-semibold hover:from-[#0A6B3B] hover:to-[#4A9B7E] transition-all duration-300"
                     >
-                      {t("create_first_test")}
+                      {t("create_first_category")}
                     </button>
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {categories.map((category) => (
                     <button
                       key={category.id}
-                      onClick={() => setSelectedCategory(category)}
-                      className={`group p-6 rounded-2xl border-2 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl ${
+                      onClick={() => handleCategorySelect(category)}
+                      className={`group p-6 rounded-xl border-2 text-left transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg ${
                         selectedCategory?.id === category.id
-                          ? "border-[#118B50] bg-gradient-to-br from-[#E3F0AF]/20 to-[#5DB996]/10 shadow-lg"
-                          : "border-gray-200 hover:border-[#5DB996]/50 bg-gradient-to-br from-white to-gray-50/50"
+                          ? "border-[#118B50] bg-gradient-to-br from-[#E3F0AF]/20 to-[#5DB996]/10 shadow-md"
+                          : "border-gray-200 hover:border-[#5DB996]/50 bg-white"
                       }`}
                     >
-                      <div className="text-center">
-                        <h3 className="font-bold text-lg mb-2 text-[#118B50]">
-                          {category.name}
-                        </h3>
-                        {category.description && (
-                          <p className="text-gray-600 text-sm">
-                            {category.description}
-                          </p>
-                        )}
-                      </div>
+                      <h3 className="font-semibold text-lg mb-2 text-gray-800 group-hover:text-[#118B50] transition-colors">
+                        {category.name}
+                      </h3>
+                      {category.description && (
+                        <p className="text-sm text-gray-600 line-clamp-2">
+                          {category.description}
+                        </p>
+                      )}
                       {selectedCategory?.id === category.id && (
-                        <div className="absolute top-4 right-4">
-                          <div className="w-6 h-6 bg-[#118B50] rounded-full flex items-center justify-center">
-                            <svg
-                              className="w-4 h-4 text-white"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          </div>
+                        <div className="mt-3 flex items-center text-[#118B50] text-sm font-medium">
+                          <svg
+                            className="w-4 h-4 mr-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          {t("selected")}
                         </div>
                       )}
                     </button>
@@ -278,16 +233,18 @@ export default function ExamTestsPage() {
             {selectedCategory && (
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-[#E3F0AF]/30 p-8 mb-8">
                 <div className="text-center mb-8">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-[#118B50] to-[#5DB996] text-white rounded-full mb-4">
+                    <span className="font-bold text-xl">2</span>
+                  </div>
                   <h2 className="text-2xl font-bold text-[#118B50] mb-2">
-                    {t("select_test")} - {selectedCategory.name}
+                    {t("select_test")}
                   </h2>
                   <p className="text-gray-600">{t("test_description")}</p>
                 </div>
 
-                {loadingTests ? (
-                  <div className="text-center py-8">
+                {loading ? (
+                  <div className="flex justify-center py-8">
                     <LoadingSpinner />
-                    <p className="text-gray-600 mt-4">{t("loading_tests")}</p>
                   </div>
                 ) : tests.length === 0 ? (
                   <div className="text-center py-12">
@@ -317,7 +274,7 @@ export default function ExamTestsPage() {
                         onClick={() =>
                           router.push(`/${locale}/exam-tests/create`)
                         }
-                        className="px-6 py-3 bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white rounded-xl font-semibold hover:from-[#0A6B3B] hover:to-[#4A9B7E] transition-all duration-300 transform hover:scale-105"
+                        className="px-6 py-3 bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white rounded-xl font-semibold hover:from-[#0A6B3B] hover:to-[#4A9B7E] transition-all duration-300"
                       >
                         {t("create_test")}
                       </button>
@@ -328,52 +285,57 @@ export default function ExamTestsPage() {
                     {tests.map((test) => (
                       <button
                         key={test.id}
-                        onClick={() => setSelectedTest(test)}
+                        onClick={() => handleTestSelect(test)}
                         className={`group p-6 rounded-2xl border-2 text-left transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl ${
                           selectedTest?.id === test.id
                             ? "border-[#118B50] bg-gradient-to-br from-[#E3F0AF]/20 to-[#5DB996]/10 shadow-lg"
                             : "border-gray-200 hover:border-[#5DB996]/50 bg-gradient-to-br from-white to-gray-50/50"
                         }`}
                       >
-                        <div className="relative">
-                          <h3 className="font-bold text-lg mb-2 text-[#118B50]">
+                        <div className="flex justify-between items-start mb-4">
+                          <h3 className="font-bold text-xl text-gray-800 group-hover:text-[#118B50] transition-colors flex-1">
                             {test.title}
                           </h3>
-                          {test.description && (
-                            <p className="text-gray-600 text-sm mb-4">
-                              {test.description}
-                            </p>
-                          )}
-                          <div className="flex items-center justify-between text-sm text-gray-500">
-                            <span>
-                              {test.question_count || 0} {t("questions")}
+                          {test.time_limit && (
+                            <span className="text-sm text-gray-500 ml-2">
+                              ⏱️ {test.time_limit} {t("minutes")}
                             </span>
-                            {test.time_limit && (
-                              <span>
-                                {test.time_limit} {t("minutes")}
-                              </span>
-                            )}
-                          </div>
-                          {selectedTest?.id === test.id && (
-                            <div className="absolute top-0 right-0">
-                              <div className="w-6 h-6 bg-[#118B50] rounded-full flex items-center justify-center">
-                                <svg
-                                  className="w-4 h-4 text-white"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M5 13l4 4L19 7"
-                                  />
-                                </svg>
-                              </div>
-                            </div>
                           )}
                         </div>
+
+                        {test.description && (
+                          <p className="text-gray-600 mb-4 line-clamp-2">
+                            {test.description}
+                          </p>
+                        )}
+
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-500">
+                            📝 {test.question_count || 0} {t("questions")}
+                          </span>
+                          <span className="text-gray-500">
+                            ✓ {test.passing_score}% {t("to_pass")}
+                          </span>
+                        </div>
+
+                        {selectedTest?.id === test.id && (
+                          <div className="mt-4 flex items-center justify-center text-[#118B50] font-medium">
+                            <svg
+                              className="w-5 h-5 mr-2"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            {t("selected")}
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -385,6 +347,9 @@ export default function ExamTestsPage() {
             {selectedTest && (
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-[#E3F0AF]/30 p-8 mb-8">
                 <div className="text-center mb-8">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-[#118B50] to-[#5DB996] text-white rounded-full mb-4">
+                    <span className="font-bold text-xl">3</span>
+                  </div>
                   <h2 className="text-2xl font-bold text-[#118B50] mb-2">
                     {t("select_mode")}
                   </h2>
@@ -394,7 +359,7 @@ export default function ExamTestsPage() {
                 <div className="grid md:grid-cols-2 gap-6">
                   {/* Training Mode */}
                   <button
-                    onClick={() => setSelectedMode("training")}
+                    onClick={() => handleModeSelect("training")}
                     className={`group relative p-8 rounded-2xl border-2 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl ${
                       selectedMode === "training"
                         ? "border-[#118B50] bg-gradient-to-br from-[#E3F0AF]/20 to-[#5DB996]/10 shadow-lg"
@@ -453,19 +418,19 @@ export default function ExamTestsPage() {
 
                   {/* Exam Mode */}
                   <button
-                    onClick={() => setSelectedMode("exam")}
+                    onClick={() => handleModeSelect("exam")}
                     className={`group relative p-8 rounded-2xl border-2 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl ${
                       selectedMode === "exam"
-                        ? "border-[#118B50] bg-gradient-to-br from-[#E3F0AF]/20 to-[#5DB996]/10 shadow-lg"
-                        : "border-gray-200 hover:border-[#5DB996]/50 bg-gradient-to-br from-white to-gray-50/50"
+                        ? "border-red-500 bg-gradient-to-br from-red-50 to-orange-50 shadow-lg"
+                        : "border-gray-200 hover:border-red-300 bg-gradient-to-br from-white to-gray-50/50"
                     }`}
                   >
                     <div className="flex flex-col items-center text-center">
                       <div
                         className={`w-16 h-16 rounded-full mb-4 flex items-center justify-center transition-colors ${
                           selectedMode === "exam"
-                            ? "bg-[#118B50] text-white"
-                            : "bg-gray-100 text-gray-600 group-hover:bg-[#E3F0AF] group-hover:text-[#118B50]"
+                            ? "bg-red-500 text-white"
+                            : "bg-gray-100 text-gray-600 group-hover:bg-red-100 group-hover:text-red-600"
                         }`}
                       >
                         <svg
@@ -478,11 +443,11 @@ export default function ExamTestsPage() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
                           />
                         </svg>
                       </div>
-                      <h3 className="font-bold text-xl mb-3 text-[#118B50]">
+                      <h3 className="font-bold text-xl mb-3 text-red-600">
                         {t("modes.exam")}
                       </h3>
                       <p className="text-gray-600 text-sm leading-relaxed">
@@ -491,7 +456,7 @@ export default function ExamTestsPage() {
                     </div>
                     {selectedMode === "exam" && (
                       <div className="absolute top-4 right-4">
-                        <div className="w-6 h-6 bg-[#118B50] rounded-full flex items-center justify-center">
+                        <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
                           <svg
                             className="w-4 h-4 text-white"
                             fill="none"
@@ -510,40 +475,29 @@ export default function ExamTestsPage() {
                     )}
                   </button>
                 </div>
-              </div>
-            )}
 
-            {/* Step 4: Start Button */}
-            {canStart && (
-              <div className="text-center">
-                <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg border border-[#E3F0AF]/30 p-8 inline-block">
+                {/* Start Button */}
+                <div className="mt-8 text-center">
                   <button
                     onClick={handleStartTest}
-                    className="group relative px-12 py-4 rounded-xl font-bold text-lg transition-all duration-300 transform bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white hover:from-[#0A6B3B] hover:to-[#4A9B7E] hover:scale-105 shadow-lg hover:shadow-xl"
+                    disabled={!canStart || loading}
+                    className={`px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 transform ${
+                      canStart && !loading
+                        ? "bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white hover:from-[#0A6B3B] hover:to-[#4A9B7E] hover:scale-105 shadow-lg hover:shadow-xl"
+                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
                   >
-                    <span className="flex items-center">
-                      <svg
-                        className="w-6 h-6 mr-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293H16M6 6h12M6 18h12"
-                        />
-                      </svg>
-                      {t("start_test")}
-                    </span>
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                    {loading ? (
+                      <div className="flex items-center space-x-2">
+                        <LoadingSpinner />
+                        <span>{t("loading")}</span>
+                      </div>
+                    ) : !user ? (
+                      t("login_required")
+                    ) : (
+                      t("start_test")
+                    )}
                   </button>
-                  {!user && (
-                    <p className="text-red-500 text-sm mt-3">
-                      {t("login_required")}
-                    </p>
-                  )}
                 </div>
               </div>
             )}

@@ -1,8 +1,8 @@
-// src/components/exam-tests/ExamTestPage.tsx - UPDATED
+// src/components/exam-tests/ExamTestPage.tsx - REFACTORED
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useExamSession } from "@/hooks/useExamSession";
@@ -11,10 +11,14 @@ import ExamProgress from "./ExamProgress";
 import ExamTimer from "./ExamTimer";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useTranslations, useLocale } from "next-intl";
+import ExamErrorBoundary from "@/components/exam-tests/common/ExamErrorBoundary";
+import ErrorDisplay from "./common/ErrorDisplay";
+import ConfirmationModal from "./common/ConfirmationModal";
+import { ExamSessionSkeleton } from "./common/ExamSkeleton";
 
 interface ExamTestPageProps {
   mode: "training" | "exam";
-  testId: string; // Changed from year to testId
+  testId: string;
 }
 
 export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
@@ -22,6 +26,9 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
   const router = useRouter();
   const locale = useLocale();
   const { user } = useAuth();
+
+  const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   const {
     loading,
@@ -40,7 +47,7 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
     submitExam,
   } = useExamSession({
     mode,
-    testId, // Changed from year to testId
+    testId,
     userId: user?.id || "",
   });
 
@@ -51,79 +58,104 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
     }
   }, [user, router, locale]);
 
-  // Handle submit confirmation
+  // Prevent accidental navigation
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (sessionState && !sessionState.session.completed_at) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [sessionState]);
+
+  // Handle submit
   const handleSubmit = () => {
     const unanswered = progress.total - progress.answered;
 
     if (unanswered > 0) {
-      // Fix: Ensure the translation returns a proper string
-      const message = t("unanswered_warning", { count: unanswered.toString() });
-      if (!confirm(`${message}\n\n${t("submit_confirm")}`)) {
-        return;
-      }
-    } else if (!confirm(t("submit_confirm"))) {
-      return;
+      setShowConfirmSubmit(true);
+    } else {
+      submitExam();
     }
-
-    submitExam();
   };
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) return;
+
+      switch (e.key) {
+        case "ArrowLeft":
+          goToPrevious();
+          break;
+        case "ArrowRight":
+          goToNext();
+          break;
+        case "m":
+        case "M":
+          toggleMarkForReview();
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [goToNext, goToPrevious, toggleMarkForReview]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA] flex items-center justify-center">
-        <div className="text-center">
-          <LoadingSpinner />
-          <p className="text-[#118B50] font-medium mt-4">{t("loading_exam")}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA] flex items-center justify-center">
-        <div className="text-center bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-red-200 p-8 max-w-md mx-4">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg
-              className="w-8 h-8 text-red-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
+      <ExamErrorBoundary>
+        <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA]">
+          <div className="max-w-6xl mx-auto px-4 py-8">
+            <ExamSessionSkeleton />
           </div>
-          <p className="text-red-600 mb-6 font-medium">{error}</p>
-          <button
-            onClick={() => router.push(`/${locale}/exam-tests`)}
-            className="px-6 py-3 bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white rounded-xl font-semibold hover:from-[#0A6B3B] hover:to-[#4A9B7E] transition-all duration-300 transform hover:scale-105"
-          >
-            {t("back_to_tests")}
-          </button>
         </div>
-      </div>
+      </ExamErrorBoundary>
     );
   }
 
-  if (!currentQuestion) return null;
+  if (error || !sessionState) {
+    return (
+      <ExamErrorBoundary>
+        <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA]">
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <ErrorDisplay
+                error={error || t("errors.session_not_found")}
+                type="error"
+              />
+              <button
+                onClick={() => router.push(`/${locale}/exam-tests`)}
+                className="mt-4 px-6 py-3 bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white rounded-xl font-semibold hover:from-[#0A6B3B] hover:to-[#4A9B7E] transition-all duration-300"
+              >
+                {t("back_to_tests")}
+              </button>
+            </div>
+          </div>
+        </div>
+      </ExamErrorBoundary>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA]">
-      {/* Modern Header */}
-      <div className="bg-gradient-to-r from-white/90 to-[#FBF6E9]/90 backdrop-blur-sm border-b border-[#E3F0AF]/30 sticky top-0 z-10 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20 py-4">
-            {/* Left Section - Progress & Test Info */}
-            <div className="flex items-center space-x-6">
+    <ExamErrorBoundary>
+      <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA]">
+        {/* Header Bar */}
+        <div className="bg-white shadow-md sticky top-0 z-40">
+          <div className="max-w-6xl mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              {/* Left Section - Test Info */}
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-[#118B50] to-[#5DB996] rounded-xl flex items-center justify-center">
+                <button
+                  onClick={() => setShowExitConfirm(true)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title={t("exit_exam")}
+                >
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-6 h-6 text-gray-600"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -132,17 +164,18 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      d="M6 18L18 6M6 6l12 12"
                     />
                   </svg>
-                </div>
+                </button>
+
                 <div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-2xl font-bold text-[#118B50]">
-                      {progress.current + 1} / {progress.total}
-                    </span>
+                    <h1 className="text-lg font-semibold text-gray-900">
+                      {sessionState.test.title}
+                    </h1>
                     <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
                         mode === "exam"
                           ? "bg-red-100 text-red-800"
                           : "bg-blue-100 text-blue-800"
@@ -152,169 +185,235 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
                     </span>
                   </div>
                   <div className="text-sm text-gray-600">
-                    {sessionState?.test.title}
+                    {t("question")} {progress.current + 1} {t("of")}{" "}
+                    {progress.total}
                   </div>
                 </div>
               </div>
 
-              {/* Progress Bar */}
-              <div className="hidden md:block w-48">
-                <div className="bg-gray-200 rounded-full h-3">
-                  <div
-                    className="bg-gradient-to-r from-[#118B50] to-[#5DB996] h-3 rounded-full transition-all duration-300"
-                    style={{
-                      width: `${
-                        ((progress.current + 1) / progress.total) * 100
-                      }%`,
-                    }}
-                  />
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {progress.answered} {t("answered")} •{" "}
-                  {progress.markedForReview} {t("flagged")}
-                </div>
+              {/* Center Section - Progress */}
+              <div className="hidden md:block flex-1 max-w-md mx-8">
+                <ExamProgress
+                  current={progress.current}
+                  total={progress.total}
+                  answered={progress.answered}
+                  markedForReview={progress.markedForReview}
+                />
               </div>
-            </div>
 
-            {/* Right Section - Timer & Submit */}
-            <div className="flex items-center space-x-4">
-              {mode === "exam" && sessionState?.test.time_limit && (
-                <div className="bg-white/80 rounded-xl px-4 py-2 border border-[#E3F0AF]/50">
+              {/* Right Section - Timer & Submit */}
+              <div className="flex items-center space-x-4">
+                {mode === "exam" && sessionState.test.time_limit && (
                   <ExamTimer
                     timeElapsed={timeElapsed}
                     timeLimit={sessionState.test.time_limit * 60}
                     onTimeUp={submitExam}
                   />
-                </div>
-              )}
+                )}
 
-              <button
-                onClick={handleSubmit}
-                className="group px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-              >
-                <span className="flex items-center">
-                  <svg
-                    className="w-5 h-5 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
+                <button
+                  onClick={handleSubmit}
+                  className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-300 shadow-lg"
+                >
                   {t("submit_exam")}
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Question Section - Left Side */}
-          <div className="lg:col-span-3">
-            {/* Question Card */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-[#E3F0AF]/30 p-8 mb-6">
-              <ExamQuestion
-                question={currentQuestion}
-                selectedAnswer={selectedAnswer} // Array of option IDs
-                onSelectAnswer={(optionId: string) => selectAnswer(optionId)} // Fixed: only 1 argument
-                showResult={mode === "training" && selectedAnswer.length > 0}
-                isMarkedForReview={isMarkedForReview}
-                onToggleMarkForReview={toggleMarkForReview} // Fixed: no arguments needed
-              />
-            </div>
-
-            {/* Navigation */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-[#E3F0AF]/30 p-6">
-              <div className="flex justify-between items-center">
-                <button
-                  onClick={goToPrevious}
-                  disabled={progress.current === 0}
-                  className={`group flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
-                    progress.current === 0
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-[#E3F0AF] hover:to-[#5DB996]/20 hover:text-[#118B50] transform hover:scale-105 shadow-md hover:shadow-lg"
-                  }`}
-                >
-                  <svg
-                    className="w-5 h-5 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 19l-7-7 7-7"
-                    />
-                  </svg>
-                  {t("previous")}
-                </button>
-
-                {/* Question Counter */}
-                <div className="text-center">
-                  <div className="text-sm text-gray-500 mb-1">
-                    {t("question")}
-                  </div>
-                  <div className="text-2xl font-bold text-[#118B50]">
-                    {progress.current + 1}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {t("of")} {progress.total}
-                  </div>
-                </div>
-
-                <button
-                  onClick={goToNext}
-                  disabled={progress.current === progress.total - 1}
-                  className={`group flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
-                    progress.current === progress.total - 1
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white hover:from-[#0A6B3B] hover:to-[#4A9B7E] transform hover:scale-105 shadow-md hover:shadow-lg"
-                  }`}
-                >
-                  {t("next")}
-                  <svg
-                    className="w-5 h-5 ml-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
                 </button>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Progress Section - Right Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-32">
-              <ExamProgress
-                progress={progress}
-                onQuestionClick={goToQuestion}
-                currentQuestionIndex={progress.current}
-                answeredQuestions={sessionState?.answers || {}}
-                markedQuestions={sessionState?.markedForReview || new Set()}
-                questions={sessionState?.questions || []}
-              />
+        {/* Main Content */}
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          {/* Error Display */}
+          {error && (
+            <ErrorDisplay error={error} type="error" className="mb-6" />
+          )}
+
+          {/* Question Card */}
+          {currentQuestion && (
+            <ExamQuestion
+              question={currentQuestion}
+              selectedAnswers={selectedAnswer}
+              onSelectAnswer={selectAnswer}
+              isMarkedForReview={isMarkedForReview}
+              onToggleMarkForReview={toggleMarkForReview}
+              showCorrectAnswers={
+                mode === "training" &&
+                sessionState.test.show_correct_answers_in_training &&
+                selectedAnswer.length > 0 // Only show after answering
+              }
+              questionNumber={progress.current + 1}
+            />
+          )}
+
+          {/* Navigation */}
+          <div className="flex justify-between items-center mt-8">
+            <button
+              onClick={goToPrevious}
+              disabled={progress.current === 0}
+              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all ${
+                progress.current === 0
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : "bg-white border-2 border-gray-300 text-gray-700 hover:border-[#118B50] hover:text-[#118B50]"
+              }`}
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              <span>{t("previous")}</span>
+            </button>
+
+            {/* Question Navigator */}
+            <div className="flex items-center space-x-2">
+              {(() => {
+                const totalQuestions = progress.total;
+                const currentIndex = progress.current;
+
+                // Show up to 5 questions centered around current
+                const maxVisible = 5;
+                const halfWindow = Math.floor(maxVisible / 2);
+
+                // Calculate start and end indices
+                let start = Math.max(0, currentIndex - halfWindow);
+                let end = Math.min(totalQuestions - 1, start + maxVisible - 1);
+
+                // Adjust start if we're near the end
+                if (end - start + 1 < maxVisible) {
+                  start = Math.max(0, end - maxVisible + 1);
+                }
+
+                const buttons = [];
+
+                // Add "..." at the beginning if needed
+                if (start > 0) {
+                  buttons.push(
+                    <span key="dots-start" className="text-gray-500 px-1">
+                      ...
+                    </span>
+                  );
+                }
+
+                // Add question buttons
+                for (let i = start; i <= end; i++) {
+                  const question = sessionState.questions[i];
+                  if (!question) continue;
+
+                  const isAnswered =
+                    !!sessionState.answers[question.id]?.length;
+                  const isMarked = sessionState.markedForReview.has(
+                    question.id
+                  );
+                  const isCurrent = i === currentIndex;
+
+                  buttons.push(
+                    <button
+                      key={`q-${question.id}`} // Use question ID for unique key
+                      onClick={() => goToQuestion(i)}
+                      className={`w-10 h-10 rounded-lg font-medium transition-all ${
+                        isCurrent
+                          ? "bg-[#118B50] text-white"
+                          : isAnswered
+                          ? "bg-green-100 text-green-800 hover:bg-green-200"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      } ${isMarked ? "ring-2 ring-yellow-400" : ""}`}
+                      title={`${t("question")} ${i + 1}`}
+                    >
+                      {i + 1}
+                    </button>
+                  );
+                }
+
+                // Add "..." at the end if needed
+                if (end < totalQuestions - 1) {
+                  buttons.push(
+                    <span key="dots-end" className="text-gray-500 px-1">
+                      ... +{totalQuestions - end - 1}
+                    </span>
+                  );
+                }
+
+                return buttons;
+              })()}
             </div>
+
+            <button
+              onClick={goToNext}
+              disabled={progress.current === progress.total - 1}
+              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all ${
+                progress.current === progress.total - 1
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : "bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white hover:from-[#0A6B3B] hover:to-[#4A9B7E]"
+              }`}
+            >
+              <span>{t("next")}</span>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
+
+          {/* Keyboard shortcuts hint */}
+          <div className="mt-8 text-center text-sm text-gray-500">
+            {t("keyboard_shortcuts")}: ← {t("previous")} | → {t("next")} | M{" "}
+            {t("mark_for_review")}
           </div>
         </div>
+
+        {/* Submit Confirmation Modal */}
+        <ConfirmationModal
+          isOpen={showConfirmSubmit}
+          title={t("submit_exam")}
+          message={
+            progress.answered < progress.total
+              ? t("unanswered_warning", {
+                  count: (progress.total - progress.answered).toString(),
+                })
+              : t("submit_confirm")
+          }
+          confirmText={t("submit")}
+          cancelText={t("continue_exam")}
+          type="warning"
+          onConfirm={() => {
+            setShowConfirmSubmit(false);
+            submitExam();
+          }}
+          onCancel={() => setShowConfirmSubmit(false)}
+        />
+
+        {/* Exit Confirmation Modal */}
+        <ConfirmationModal
+          isOpen={showExitConfirm}
+          title={t("exit_exam_title")}
+          message={t("exit_exam_message")}
+          confirmText={t("exit")}
+          cancelText={t("stay")}
+          type="danger"
+          onConfirm={() => {
+            router.push(`/${locale}/exam-tests`);
+          }}
+          onCancel={() => setShowExitConfirm(false)}
+        />
       </div>
-    </div>
+    </ExamErrorBoundary>
   );
 }

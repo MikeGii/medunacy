@@ -688,6 +688,23 @@
     "exam_mode": "Eksami režiim",
     "training_mode": "Treeningu režiim",
 
+    "no_categories": "Kategooriaid pole veel lisatud",
+    "create_first_category": "Loo esimene kategooria",
+    "selected": "Valitud",
+    "to_pass": "läbimiseks",
+
+    "dismiss": "Sulge",
+    "loading": "Laadimine...",
+    "no_questions_in_test": "Testis pole küsimusi",
+    "keyboard_shortcuts": "Kiirklahvid",
+    "continue_exam": "Jätka eksamit",
+    "submit": "Esita",
+    "exit_exam": "Välju eksamist",
+    "exit_exam_title": "Kas soovid eksamist väljuda?",
+    "exit_exam_message": "Hoiatus: Kui väljud nüüd, lähevad kõik sinu vastused kaotsi!",
+    "exit": "Välju",
+    "stay": "Jää",
+
     "select_mode": "Vali režiim",
     "mode_description": "Vali sobiv režiim oma õppimiseks ja harjutamiseks",
     "modes": {
@@ -737,7 +754,39 @@
       "not_answered": "Vastamata",
       "explanation": "Selgitus",
       "points_earned": "Teenitud punktid",
-      "retake_test": "Tee test uuesti"
+      "retake_test": "Tee test uuesti",
+      "points": "punkti",
+      "question": "Küsimus"
+    },
+    "errors": {
+      "something_went_wrong": "Midagi läks valesti",
+      "unknown_error": "Tundmatu viga",
+      "try_again": "Proovi uuesti",
+      "reload_page": "Laadi leht uuesti",
+      "dismiss": "Sulge",
+      "unauthorized": "Teil puudub selleks õigus",
+      "session_not_found": "Eksami sessiooni ei leitud",
+      "not_found": "Ei leitud",
+      "network_error": "Võrguühenduse viga",
+      "validation_failed": "Valideerimine ebaõnnestus",
+      "test_not_found": "Testi ei leitud",
+      "question_not_found": "Küsimust ei leitud",
+      "session_expired": "Sessioon on aegunud",
+      "no_questions_in_test": "Testis pole küsimusi",
+      "already_submitted": "Test on juba esitatud",
+      "save_error": "Salvestamine ebaõnnestus",
+      "delete_error": "Kustutamine ebaõnnestus",
+      "load_error": "Laadimine ebaõnnestus",
+      "invalid_data": "Vigased andmed",
+      "required_fields": "Täida kõik kohustuslikud väljad",
+      "min_options": "Vähemalt 2 vastusevarianti on nõutud",
+      "min_correct": "Vähemalt üks õige vastus on nõutud",
+      "test_validation": {
+        "no_title": "Testi pealkiri on kohustuslik",
+        "no_category": "Kategooria on kohustuslik",
+        "invalid_passing_score": "Läbimisprotsent peab olema 0-100 vahel",
+        "no_questions": "Test peab sisaldama vähemalt ühte küsimust"
+      }
     }
   },
   "test_creation": {
@@ -833,6 +882,19 @@
     "back_to_tests": "Tagasi testide juurde",
     "test_management": "Testide haldamine",
     "question_management": "Küsimuste haldamine",
-    "create_question": "Loo küsimus"
+    "create_question": "Loo küsimus",
+    "delete_test_title": "Kustuta test",
+    "delete_test_message": "Kas oled kindel, et soovid testi '{title}' kustutada?",
+    "delete_question_title": "Kustuta küsimus",
+    "delete_question_message": "Kas oled kindel, et soovid selle küsimuse kustutada?",
+    "question": "Küsimus",
+    "save_question": "Salvesta küsimus",
+    "categories_tab": "Kategooriad",
+    "tests_tab": "Testid",
+    "minutes": "minutit",
+    "to_pass": "läbimiseks",
+    "duplicate": "Dubleeri",
+    "new_test": "Uus test",
+    "description": "Kirjeldus"
   }
 }

@@ -670,6 +670,23 @@
     "questions": "питань",
     "minutes": "хвилин",
 
+    "no_categories": "Категорії ще не додано",
+    "create_first_category": "Створити першу категорію",
+    "selected": "Вибрано",
+    "to_pass": "для проходження",
+
+    "dismiss": "Закрити",
+    "loading": "Завантаження...",
+    "no_questions_in_test": "У тесті немає питань",
+    "keyboard_shortcuts": "Гарячі клавіші",
+    "continue_exam": "Продовжити іспит",
+    "submit": "Надіслати",
+    "exit_exam": "Вийти з іспиту",
+    "exit_exam_title": "Ви хочете вийти з іспиту?",
+    "exit_exam_message": "Увага: Якщо ви вийдете зараз, всі ваші відповіді будуть втрачені!",
+    "exit": "Вийти",
+    "stay": "Залишитися",
+
     "explanation": "Пояснення",
     "multiple_answers_allowed": "Дозволено кілька відповідей",
     "points": "Бали",
@@ -733,7 +750,39 @@
       "not_answered": "Без відповіді",
       "explanation": "Пояснення",
       "points_earned": "Отримано балів",
-      "retake_test": "Повторити тест"
+      "retake_test": "Повторити тест",
+      "points": "punkti",
+      "question": "Питання"
+    },
+    "errors": {
+      "something_went_wrong": "Щось пішло не так",
+      "session_not_found": "Сесію іспиту не знайдено",
+      "unknown_error": "Невідома помилка",
+      "try_again": "Спробуйте ще раз",
+      "reload_page": "Перезавантажити сторінку",
+      "dismiss": "Закрити",
+      "unauthorized": "У вас немає дозволу на це",
+      "not_found": "Не знайдено",
+      "network_error": "Помилка мережі",
+      "validation_failed": "Помилка валідації",
+      "test_not_found": "Тест не знайдено",
+      "question_not_found": "Питання не знайдено",
+      "session_expired": "Сесія закінчилася",
+      "no_questions_in_test": "У тесті немає питань",
+      "already_submitted": "Тест вже надіслано",
+      "save_error": "Помилка збереження",
+      "delete_error": "Помилка видалення",
+      "load_error": "Помилка завантаження",
+      "invalid_data": "Недійсні дані",
+      "required_fields": "Заповніть всі обов'язкові поля",
+      "min_options": "Потрібно щонайменше 2 варіанти відповіді",
+      "min_correct": "Потрібна щонайменше одна правильна відповідь",
+      "test_validation": {
+        "no_title": "Назва тесту обов'язкова",
+        "no_category": "Категорія обов'язкова",
+        "invalid_passing_score": "Прохідний бал має бути між 0-100",
+        "no_questions": "Тест повинен містити хоча б одне питання"
+      }
     }
   },
   "test_creation": {
@@ -829,6 +878,19 @@
     "back_to_tests": "Повернутися до тестів",
     "test_management": "Керування тестами",
     "question_management": "Керування питаннями",
-    "create_question": "Створити питання"
+    "create_question": "Створити питання",
+    "delete_test_title": "Видалити тест",
+    "delete_test_message": "Ви впевнені, що хочете видалити тест '{title}'?",
+    "delete_question_title": "Видалити питання",
+    "delete_question_message": "Ви впевнені, що хочете видалити це питання?",
+    "question": "Питання",
+    "save_question": "Зберегти питання",
+    "categories_tab": "Категорії",
+    "tests_tab": "Тести",
+    "minutes": "хвилин",
+    "to_pass": "для проходження",
+    "duplicate": "Дублювати",
+    "new_test": "Новий тест",
+    "description": "Опис"
   }
 }
