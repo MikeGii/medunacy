@@ -1,4 +1,4 @@
-// src/components/exam-tests/creation/CategoryManagement.tsx
+// src/components/exam-tests/creation/CategoryManagement.tsx - SIMPLIFIED VERSION
 
 "use client";
 
@@ -6,6 +6,8 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { TestCategory, TestCategoryCreate } from "@/types/exam";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CategoryManagementProps {
   categories: TestCategory[];
@@ -17,6 +19,7 @@ export default function CategoryManagement({
   onRefresh,
 }: CategoryManagementProps) {
   const t = useTranslations("test_creation");
+  const { user } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
   const [editingCategory, setEditingCategory] = useState<TestCategory | null>(
     null
@@ -48,28 +51,45 @@ export default function CategoryManagement({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!user) {
+      setError("You must be logged in to create categories");
+      return;
+    }
+
+    // Check user role client-side
+    if (!["doctor", "admin"].includes(user.role || "")) {
+      setError("You don't have permission to create categories");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const url = editingCategory
-        ? `/api/test-categories/${editingCategory.id}`
-        : "/api/test-categories";
+      if (editingCategory) {
+        // Update existing category
+        const { error } = await supabase
+          .from("test_categories")
+          .update({
+            ...formData,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", editingCategory.id);
 
-      const method = editingCategory ? "PUT" : "POST";
+        if (error) throw error;
+      } else {
+        // Create new category
+        const slug = formData.slug || generateSlug(formData.name);
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+        const { error } = await supabase.from("test_categories").insert({
+          ...formData,
+          slug,
+          created_by: user.id,
+          is_active: true,
+        });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to save category");
+        if (error) throw error;
       }
 
       // Reset form and refresh
@@ -107,15 +127,18 @@ export default function CategoryManagement({
       return;
     }
 
-    try {
-      const response = await fetch(`/api/test-categories/${category.id}`, {
-        method: "DELETE",
-      });
+    if (!user || !["doctor", "admin"].includes(user.role || "")) {
+      setError("You don't have permission to delete categories");
+      return;
+    }
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to delete category");
-      }
+    try {
+      const { error } = await supabase
+        .from("test_categories")
+        .delete()
+        .eq("id", category.id);
+
+      if (error) throw error;
 
       onRefresh();
     } catch (err) {
@@ -126,11 +149,12 @@ export default function CategoryManagement({
     }
   };
 
+  // Rest of your component JSX remains the same...
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-[#118B50]">{t("categories")}</h2>
-        {!isCreating && (
+        {!isCreating && (user?.role === "doctor" || user?.role === "admin") && (
           <button
             onClick={() => setIsCreating(true)}
             className="px-6 py-3 bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white rounded-xl font-semibold hover:from-[#0A6B3B] hover:to-[#4A9B7E] transition-all duration-300 transform hover:scale-105"
@@ -285,54 +309,32 @@ export default function CategoryManagement({
                     {category.name}
                   </h3>
                   {category.description && (
-                    <p className="text-gray-600 mb-2">{category.description}</p>
+                    <p className="text-gray-600 mb-3">{category.description}</p>
                   )}
-                  <p className="text-sm text-gray-500">
-                    {t("slug")}: {category.slug}
-                  </p>
+                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                    <span>Slug: {category.slug}</span>
+                    <span>
+                      Created:{" "}
+                      {new Date(category.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
                 </div>
-
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleEdit(category)}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title={t("edit")}
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                {(user?.role === "doctor" || user?.role === "admin") && (
+                  <div className="flex space-x-2 ml-4">
+                    <button
+                      onClick={() => handleEdit(category)}
+                      className="px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      />
-                    </svg>
-                  </button>
-
-                  <button
-                    onClick={() => handleDelete(category)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title={t("delete")}
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                      {t("edit")}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(category)}
+                      className="px-3 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
-                  </button>
-                </div>
+                      {t("delete")}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))

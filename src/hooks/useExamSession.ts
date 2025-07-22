@@ -1,4 +1,4 @@
-// src/hooks/useExamSession.ts - COMPLETELY REWRITTEN
+// src/hooks/useExamSession.ts - UPDATED FOR CLIENT-SIDE CALLS
 
 "use client";
 
@@ -36,53 +36,64 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
     try {
       setLoading(true);
 
-      // Fetch test with questions and options
-      const response = await fetch(`/api/tests/${testId}`);
-      const data = await response.json();
+      // Fetch test with questions and options using Supabase
+      const { data: test, error: testError } = await supabase
+        .from("tests")
+        .select(
+          `
+          *,
+          category:test_categories(*),
+          questions:test_questions(
+            *,
+            options:question_options(*)
+          )
+        `
+        )
+        .eq("id", testId)
+        .eq("is_published", true)
+        .single();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch test");
-      }
+      if (testError) throw testError;
+      if (!test) throw new Error("Test not found");
 
-      if (!data.success || !data.data) {
-        throw new Error("Test not found");
-      }
-
-      const test: Test = data.data;
       const questions: TestQuestion[] = test.questions || [];
 
       if (questions.length === 0) {
         throw new Error("No questions found for this test");
       }
 
-      // Shuffle questions for randomization (optional - you might want to keep order for some tests)
-      const shuffledQuestions = [...questions].sort(() => Math.random() - 0.5);
+      // Sort questions and options by order
+      const sortedQuestions = questions
+        .sort((a, b) => a.question_order - b.question_order)
+        .map((question) => ({
+          ...question,
+          options: question.options.sort(
+            (a, b) => a.option_order - b.option_order
+          ),
+        }));
 
-      // Create session in database
-      const sessionResponse = await fetch("/api/exam-sessions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      // Create session in database using Supabase
+      const { data: session, error: sessionError } = await supabase
+        .from("exam_sessions")
+        .insert({
+          user_id: userId,
           test_id: testId,
           mode: mode,
-        }),
-      });
+          total_questions: questions.length,
+        })
+        .select()
+        .single();
 
-      const sessionData = await sessionResponse.json();
-      if (!sessionResponse.ok) {
-        throw new Error(sessionData.error || "Failed to create session");
-      }
+      if (sessionError) throw sessionError;
+      if (!session) throw new Error("Failed to create session");
 
-      const session: ExamSession = sessionData.data;
       sessionRef.current = session;
 
       // Initialize session state
       setSessionState({
         session,
         test,
-        questions: shuffledQuestions,
+        questions: sortedQuestions,
         currentQuestionIndex: 0,
         answers: {}, // questionId -> array of selected option IDs
         markedForReview: new Set(),
@@ -131,12 +142,11 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
 
   // Select answer(s) - supports multiple selections
   const selectAnswer = useCallback(
-    (questionId: string, optionId: string) => {
+    (optionId: string) => {
       if (!sessionState) return;
 
-      const currentQuestion = sessionState.questions.find(
-        (q) => q.id === questionId
-      );
+      const currentQuestion =
+        sessionState.questions[sessionState.currentQuestionIndex];
       if (!currentQuestion) return;
 
       // Check if question allows multiple correct answers
@@ -148,6 +158,7 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
       setSessionState((prev) => {
         if (!prev) return null;
 
+        const questionId = currentQuestion.id;
         const currentAnswers = prev.answers[questionId] || [];
         let newAnswers: string[];
 
@@ -204,15 +215,21 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
   }, [sessionState, goToQuestion]);
 
   // Mark for review
-  const toggleMarkForReview = useCallback((questionId: string) => {
+  const toggleMarkForReview = useCallback(() => {
+    if (!sessionState) return;
+
+    const currentQuestion =
+      sessionState.questions[sessionState.currentQuestionIndex];
+    if (!currentQuestion) return;
+
     setSessionState((prev) => {
       if (!prev) return null;
 
       const newMarked = new Set(prev.markedForReview);
-      if (newMarked.has(questionId)) {
-        newMarked.delete(questionId);
+      if (newMarked.has(currentQuestion.id)) {
+        newMarked.delete(currentQuestion.id);
       } else {
-        newMarked.add(questionId);
+        newMarked.add(currentQuestion.id);
       }
 
       return {
@@ -220,7 +237,7 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
         markedForReview: newMarked,
       };
     });
-  }, []);
+  }, [sessionState]);
 
   // Submit exam
   const submitExam = useCallback(async () => {
@@ -235,6 +252,7 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
       let earnedPoints = 0;
       const questionResults = [];
 
+      // Save all answers and calculate results
       for (const question of sessionState.questions) {
         const selectedOptionIds = sessionState.answers[question.id] || [];
         const correctOptionIds = question.options
@@ -263,18 +281,14 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
           pointsEarned: isCorrect ? question.points : 0,
         });
 
-        // Save individual answer to database
-        if (sessionRef.current) {
-          await fetch("/api/exam-answers", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              session_id: sessionRef.current.id,
-              question_id: question.id,
-              selected_option_ids: selectedOptionIds,
-            }),
+        // Save individual answer to database using Supabase
+        if (sessionRef.current && selectedOptionIds.length > 0) {
+          await supabase.from("exam_answers").upsert({
+            session_id: sessionRef.current.id,
+            question_id: question.id,
+            selected_option_ids: selectedOptionIds,
+            is_correct: isCorrect,
+            points_earned: isCorrect ? question.points : 0,
           });
         }
       }
@@ -283,22 +297,19 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
         totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
       const passed = scorePercentage >= (sessionState.test.passing_score || 70);
 
-      // Update session in database
+      // Update session in database using Supabase
       if (sessionRef.current) {
-        await fetch(`/api/exam-sessions/${sessionRef.current.id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
+        await supabase
+          .from("exam_sessions")
+          .update({
             completed_at: new Date().toISOString(),
             score_percentage: scorePercentage,
             correct_answers: correctAnswers,
             total_questions: sessionState.questions.length,
             time_spent: timeElapsed,
             passed,
-          }),
-        });
+          })
+          .eq("id", sessionRef.current.id);
       }
 
       // Navigate to results
@@ -356,7 +367,7 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
     error,
     sessionState,
     currentQuestion,
-    selectedAnswer, // Now array of option IDs
+    selectedAnswer, // Array of option IDs
     isMarkedForReview,
     progress,
     timeElapsed,

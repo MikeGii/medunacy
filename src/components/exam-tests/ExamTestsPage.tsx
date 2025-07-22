@@ -10,6 +10,7 @@ import Header from "../layout/Header";
 import { AuthModalProvider } from "@/contexts/AuthModalContext";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { TestCategory, Test } from "@/types/exam";
+import { supabase } from "@/lib/supabase";
 
 export default function ExamTestsPage() {
   const t = useTranslations("exam_tests");
@@ -36,16 +37,14 @@ export default function ExamTestsPage() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch("/api/test-categories");
-        const data = await response.json();
+        const { data, error } = await supabase
+          .from("test_categories")
+          .select("*")
+          .eq("is_active", true)
+          .order("name");
 
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to fetch categories");
-        }
-
-        if (data.success) {
-          setCategories(data.data);
-        }
+        if (error) throw error;
+        setCategories(data || []);
       } catch (err) {
         console.error("Error fetching categories:", err);
         setError(
@@ -69,18 +68,21 @@ export default function ExamTestsPage() {
 
       setLoadingTests(true);
       try {
-        const response = await fetch(
-          `/api/tests?category_id=${selectedCategory.id}`
-        );
-        const data = await response.json();
+        const { data, error } = await supabase
+          .from("tests")
+          .select(
+            `
+          *,
+          category:test_categories(*),
+          question_count:test_questions(count)
+        `
+          )
+          .eq("category_id", selectedCategory.id)
+          .eq("is_published", true)
+          .order("created_at", { ascending: false });
 
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to fetch tests");
-        }
-
-        if (data.success) {
-          setTests(data.data);
-        }
+        if (error) throw error;
+        setTests(data || []);
       } catch (err) {
         console.error("Error fetching tests:", err);
         setError(err instanceof Error ? err.message : "Failed to load tests");

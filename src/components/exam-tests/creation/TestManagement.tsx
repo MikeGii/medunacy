@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { Test, TestCategory, TestCreate } from "@/types/exam";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface TestManagementProps {
   tests: Test[];
@@ -22,6 +24,7 @@ export default function TestManagement({
   const t = useTranslations("test_creation");
   const router = useRouter();
   const locale = useLocale();
+  const { user } = useAuth();
 
   const [isCreating, setIsCreating] = useState(false);
   const [editingTest, setEditingTest] = useState<Test | null>(null);
@@ -39,26 +42,43 @@ export default function TestManagement({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!user) {
+      setError("You must be logged in to save tests");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const url = editingTest ? `/api/tests/${editingTest.id}` : "/api/tests";
+      if (editingTest) {
+        // Update existing test
+        const { error } = await supabase
+          .from("tests")
+          .update({
+            ...formData,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", editingTest.id);
 
-      const method = editingTest ? "PUT" : "POST";
+        if (error) throw error;
+      } else {
+        // Create new test
+        const { data, error } = await supabase
+          .from("tests")
+          .insert({
+            ...formData,
+            created_by: user.id,
+            is_published: false, // Default to unpublished
+          })
+          .select()
+          .single();
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+        if (error) throw error;
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to save test");
+        // If creating a new test, redirect to question management
+        router.push(`/${locale}/exam-tests/create/${data.id}/questions`);
       }
 
       // Reset form and refresh
@@ -74,11 +94,6 @@ export default function TestManagement({
       setIsCreating(false);
       setEditingTest(null);
       onRefresh();
-
-      // If creating a new test, redirect to question management
-      if (!editingTest) {
-        router.push(`/${locale}/exam-tests/create/${data.data.id}/questions`);
-      }
     } catch (err) {
       console.error("Error saving test:", err);
       setError(err instanceof Error ? err.message : "Failed to save test");
@@ -121,15 +136,45 @@ export default function TestManagement({
       return;
     }
 
-    try {
-      const response = await fetch(`/api/tests/${test.id}`, {
-        method: "DELETE",
-      });
+    if (!user || !["doctor", "admin"].includes(user.role || "")) {
+      setError("You don't have permission to delete tests");
+      return;
+    }
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to delete test");
+    try {
+      // First delete all related data (questions and their options)
+      // Get all questions for this test
+      const { data: questions, error: questionsError } = await supabase
+        .from("test_questions")
+        .select("id")
+        .eq("test_id", test.id);
+
+      if (questionsError) throw questionsError;
+
+      // Delete options for each question
+      if (questions && questions.length > 0) {
+        for (const question of questions) {
+          const { error: optionsError } = await supabase
+            .from("question_options")
+            .delete()
+            .eq("question_id", question.id);
+
+          if (optionsError) throw optionsError;
+        }
+
+        // Delete questions
+        const { error: deleteQuestionsError } = await supabase
+          .from("test_questions")
+          .delete()
+          .eq("test_id", test.id);
+
+        if (deleteQuestionsError) throw deleteQuestionsError;
       }
+
+      // Finally delete the test
+      const { error } = await supabase.from("tests").delete().eq("id", test.id);
+
+      if (error) throw error;
 
       onRefresh();
     } catch (err) {
@@ -138,22 +183,23 @@ export default function TestManagement({
     }
   };
 
+  // Replace the togglePublished function in TestManagement.tsx:
   const togglePublished = async (test: Test) => {
-    try {
-      const response = await fetch(`/api/tests/${test.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          is_published: !test.is_published,
-        }),
-      });
+    if (!user || !["doctor", "admin"].includes(user.role || "")) {
+      setError("You don't have permission to update tests");
+      return;
+    }
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to update test");
-      }
+    try {
+      const { error } = await supabase
+        .from("tests")
+        .update({
+          is_published: !test.is_published,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", test.id);
+
+      if (error) throw error;
 
       onRefresh();
     } catch (err) {

@@ -13,14 +13,17 @@ import { TestCategory, Test } from "@/types/exam";
 import CategoryManagement from "./creation/CategoryManagement";
 import TestManagement from "./creation/TestManagement";
 import { useAuthorization } from "@/hooks/useAuthorization";
+import { supabase } from "@/lib/supabase";
 
 export default function TestCreationPage() {
   const t = useTranslations("test_creation");
   const router = useRouter();
   const locale = useLocale();
   const { user } = useAuth();
-  
-  const [activeTab, setActiveTab] = useState<'categories' | 'tests'>('categories');
+
+  const [activeTab, setActiveTab] = useState<"categories" | "tests">(
+    "categories"
+  );
   const [categories, setCategories] = useState<TestCategory[]>([]);
   const [tests, setTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,22 +40,31 @@ export default function TestCreationPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
-        // Fetch categories
-        const categoriesResponse = await fetch("/api/test-categories");
-        const categoriesData = await categoriesResponse.json();
-        
-        if (categoriesData.success) {
-          setCategories(categoriesData.data);
-        }
+
+        // Fetch categories directly from Supabase
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .from("test_categories")
+          .select("*")
+          .eq("is_active", true)
+          .order("name");
+
+        if (categoriesError) throw categoriesError;
+        setCategories(categoriesData || []);
 
         // Fetch all tests (including unpublished for doctors/admins)
-        const testsResponse = await fetch("/api/tests?include_unpublished=true");
-        const testsData = await testsResponse.json();
-        
-        if (testsData.success) {
-          setTests(testsData.data);
-        }
+        const { data: testsData, error: testsError } = await supabase
+          .from("tests")
+          .select(
+            `
+            *,
+            category:test_categories(*),
+            question_count:test_questions(count)
+          `
+          )
+          .order("created_at", { ascending: false });
+
+        if (testsError) throw testsError;
+        setTests(testsData || []);
       } catch (err) {
         console.error("Error fetching data:", err);
         setError(err instanceof Error ? err.message : "Failed to load data");
@@ -68,11 +80,14 @@ export default function TestCreationPage() {
 
   const refreshCategories = async () => {
     try {
-      const response = await fetch("/api/test-categories");
-      const data = await response.json();
-      if (data.success) {
-        setCategories(data.data);
-      }
+      const { data, error } = await supabase
+        .from("test_categories")
+        .select("*")
+        .eq("is_active", true)
+        .order("name");
+
+      if (error) throw error;
+      setCategories(data || []);
     } catch (err) {
       console.error("Error refreshing categories:", err);
     }
@@ -80,11 +95,19 @@ export default function TestCreationPage() {
 
   const refreshTests = async () => {
     try {
-      const response = await fetch("/api/tests?include_unpublished=true");
-      const data = await response.json();
-      if (data.success) {
-        setTests(data.data);
-      }
+      const { data, error } = await supabase
+        .from("tests")
+        .select(
+          `
+          *,
+          category:test_categories(*),
+          question_count:test_questions(count)
+        `
+        )
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setTests(data || []);
     } catch (err) {
       console.error("Error refreshing tests:", err);
     }
@@ -115,9 +138,7 @@ export default function TestCreationPage() {
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
               <LoadingSpinner />
-              <p className="text-[#118B50] font-medium mt-4">
-                {t("loading")}
-              </p>
+              <p className="text-[#118B50] font-medium mt-4">{t("loading")}</p>
             </div>
           </div>
         </div>
@@ -149,8 +170,18 @@ export default function TestCreationPage() {
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
                 <div className="flex items-center">
-                  <svg className="w-6 h-6 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  <svg
+                    className="w-6 h-6 text-red-600 mr-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                    />
                   </svg>
                   <p className="text-red-800 font-medium">{error}</p>
                 </div>
@@ -162,32 +193,52 @@ export default function TestCreationPage() {
               <div className="border-b border-gray-200">
                 <nav className="flex space-x-8 px-8 pt-6">
                   <button
-                    onClick={() => setActiveTab('categories')}
+                    onClick={() => setActiveTab("categories")}
                     className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
-                      activeTab === 'categories'
-                        ? 'border-[#118B50] text-[#118B50]'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      activeTab === "categories"
+                        ? "border-[#118B50] text-[#118B50]"
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     }`}
                   >
                     <div className="flex items-center space-x-2">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                        />
                       </svg>
                       <span>{t("manage_categories")}</span>
                     </div>
                   </button>
-                  
+
                   <button
-                    onClick={() => setActiveTab('tests')}
+                    onClick={() => setActiveTab("tests")}
                     className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
-                      activeTab === 'tests'
-                        ? 'border-[#118B50] text-[#118B50]'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      activeTab === "tests"
+                        ? "border-[#118B50] text-[#118B50]"
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     }`}
                   >
                     <div className="flex items-center space-x-2">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
                       </svg>
                       <span>{t("manage_tests")}</span>
                     </div>
@@ -197,15 +248,15 @@ export default function TestCreationPage() {
 
               {/* Tab Content */}
               <div className="p-8">
-                {activeTab === 'categories' && (
-                  <CategoryManagement 
+                {activeTab === "categories" && (
+                  <CategoryManagement
                     categories={categories}
                     onRefresh={refreshCategories}
                   />
                 )}
-                
-                {activeTab === 'tests' && (
-                  <TestManagement 
+
+                {activeTab === "tests" && (
+                  <TestManagement
                     tests={tests}
                     categories={categories}
                     onRefresh={refreshTests}

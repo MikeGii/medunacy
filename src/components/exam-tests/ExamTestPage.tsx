@@ -222,16 +222,11 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-[#E3F0AF]/30 p-8 mb-6">
               <ExamQuestion
                 question={currentQuestion}
-                selectedAnswer={selectedAnswer} // Now array of option IDs
-                onSelectAnswer={
-                  (optionId: string) =>
-                    selectAnswer(currentQuestion.id, optionId, false) // Single selection for now
-                }
+                selectedAnswer={selectedAnswer} // Array of option IDs
+                onSelectAnswer={(optionId: string) => selectAnswer(optionId)} // Fixed: only 1 argument
                 showResult={mode === "training" && selectedAnswer.length > 0}
                 isMarkedForReview={isMarkedForReview}
-                onToggleMarkForReview={() =>
-                  toggleMarkForReview(currentQuestion.id)
-                }
+                onToggleMarkForReview={toggleMarkForReview} // Fixed: no arguments needed
               />
             </div>
 
