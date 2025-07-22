@@ -424,7 +424,9 @@
     "roles": "Rollid",
     "roles_description": "Halda kasutajate rolle ja õigusi",
     "forum_description": "Liitu kogukonna aruteludega",
-    "my_data_description": "Halda oma profiili andmeid"
+    "my_data_description": "Halda oma profiili andmeid",
+    "exam_tests": "Eksamitestid",
+    "exam_tests_description": "Harjuta ja valmista eksamiteks"
   },
 
   "forum": {
@@ -646,6 +648,40 @@
         "question": "Soovin samuti aidata teistel alustada oma karjääri tervisehoiuteenuse valdkonnas.",
         "answer": "Mida suurem on kogukond ja meie tiim seda paremat teenust suudame pakkuda. Anna meile oma soovist teada ja võtame Sinuga ühendust."
       }
+    }
+  },
+  "exam_tests": {
+    "title": "Eksamitestid",
+    "select_mode": "Vali režiim",
+    "select_year": "Vali aasta",
+    "modes": {
+      "training": "Treeningrežiim",
+      "training_desc": "Harjuta ilma ajapiiranguta",
+      "exam": "Eksamirežiim",
+      "exam_desc": "90 minutit, tulemused salvestatakse"
+    },
+    "start_test": "Alusta testi",
+    "question": "Küsimus",
+    "of": "/",
+    "time_remaining": "Aega jäänud",
+    "time_elapsed": "Aega kulunud",
+    "mark_for_review": "Märgi ülevaatamiseks",
+    "marked_for_review": "Märgitud ülevaatamiseks",
+    "previous": "Eelmine",
+    "next": "Järgmine",
+    "submit_exam": "Esita eksam",
+    "submit_confirm": "Kas oled kindel, et soovid eksami esitada?",
+    "unanswered_warning": "Sul on {{count}} vastamata küsimust!",
+    "results": {
+      "title": "Eksami tulemused",
+      "score": "Tulemus",
+      "correct": "Õiged vastused",
+      "incorrect": "Valed vastused",
+      "time_spent": "Ajakulu",
+      "question_review": "Küsimuste ülevaade",
+      "your_answer": "Sinu vastus",
+      "correct_answer": "Õige vastus",
+      "back_to_tests": "Tagasi testide juurde"
     }
   }
 }
