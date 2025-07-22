@@ -338,12 +338,15 @@
       "by": "Autor",
       "comments": "kommentaari",
       "likes": "meeldimist",
-      "no_posts_category": "Selles kategoorias pole veel postitusi"
+      "no_posts_category": "Selles kategoorias pole veel postitusi",
+      "no_posts_search": "Otsingule \"{query}\" ei leitud ühtegi postitust"
     },
     "search": {
       "placeholder": "Otsi postitusi...",
       "button": "Otsi",
-      "shortcut_hint": "kiirklahv"
+      "shortcut_hint": "kiirklahv",
+      "clear": "Tühista",
+      "searching": "Otsimine..."
     },
     "create_post": {
       "button": "Uus postitus",

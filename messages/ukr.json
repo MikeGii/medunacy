@@ -338,12 +338,15 @@
       "by": "Автор",
       "comments": "коментарів",
       "likes": "вподобань",
-      "no_posts_category": "У цій категорії ще немає публікацій"
+      "no_posts_category": "У цій категорії ще немає публікацій",
+      "no_posts_search": "За запитом \"{query}\" не знайдено жодної публікації"
     },
     "search": {
       "placeholder": "Пошук публікацій...",
       "button": "Пошук",
-      "shortcut_hint": "швидка клавіша"
+      "shortcut_hint": "швидка клавіша",
+      "clear": "Очистити",
+      "searching": "Пошук..."
     },
     "create_post": {
       "button": "Нова публікація",
