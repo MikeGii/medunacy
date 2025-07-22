@@ -4,13 +4,25 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run check-translations && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check-translations": "node scripts/check-translations.js",
+    "verify": "npm run lint && npm run check-translations",
+    "translations:watch": "node scripts/watch-translations.js",
+    
+    "// Git workflow scripts": "",
+    "pre-commit": "npm run lint && npm run check-translations",
+    "pre-push": "npm run verify",
+    
+    "// Convenience scripts": "",
+    "commit": "npm run pre-commit && echo 'All checks passed! Use git commit to continue'",
+    "push": "npm run pre-push && echo 'All checks passed! Use git push to continue'"
   },
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.52.0",
+    "chalk": "^5.4.1",
     "date-fns": "^4.1.0",
     "next": "15.4.2",
     "next-intl": "^4.3.4",
@@ -22,7 +34,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/estree": "^1.0.8",
     "@types/json-schema": "^7.0.15",
-    "@types/node": "^20",
+    "@types/node": "^20.19.9",
     "@types/phoenix": "^1.6.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -30,6 +42,8 @@
     "eslint": "^9",
     "eslint-config-next": "15.4.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
   }
 }
