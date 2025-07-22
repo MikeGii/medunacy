@@ -9,6 +9,7 @@ import {
 } from "react";
 import { usePathname } from "next/navigation";
 import { ForumPost, ForumCategory, ForumComment } from "@/types/forum.types";
+import { FORUM_CONSTANTS } from "@/utils/forum.constants";
 
 // State interface
 interface ForumState {
@@ -19,6 +20,11 @@ interface ForumState {
   isLoading: boolean;
   error: string | null;
   postsCache: Map<string, { data: ForumPost[]; timestamp: number }>;
+  // Pagination state
+  currentPage: number;
+  totalPages: number;
+  totalPosts: number;
+  hasMore: boolean;
 }
 
 // Action types
@@ -33,7 +39,19 @@ type ForumAction =
   | { type: "DELETE_POST"; payload: string }
   | { type: "ADD_POST"; payload: ForumPost }
   | { type: "CACHE_POSTS"; payload: { key: string; data: ForumPost[] } }
-  | { type: "CLEAR_CACHE" };
+  | { type: "CLEAR_CACHE" }
+  // Pagination actions
+  | {
+      type: "SET_PAGINATION";
+      payload: {
+        currentPage: number;
+        totalPages: number;
+        totalPosts: number;
+        hasMore: boolean;
+      };
+    }
+  | { type: "SET_PAGE"; payload: number }
+  | { type: "RESET_PAGINATION" };
 
 // Initial state
 const initialState: ForumState = {
@@ -44,6 +62,11 @@ const initialState: ForumState = {
   isLoading: false,
   error: null,
   postsCache: new Map(),
+  // Pagination
+  currentPage: 1,
+  totalPages: 1,
+  totalPosts: 0,
+  hasMore: false,
 };
 
 // Context
@@ -65,10 +88,18 @@ function forumReducer(state: ForumState, action: ForumAction): ForumState {
       return { ...state, categories: action.payload };
 
     case "SET_SELECTED_CATEGORY":
-      return { ...state, selectedCategory: action.payload };
+      return {
+        ...state,
+        selectedCategory: action.payload,
+        currentPage: 1, // Reset page when category changes
+      };
 
     case "SET_SEARCH_QUERY":
-      return { ...state, searchQuery: action.payload };
+      return {
+        ...state,
+        searchQuery: action.payload,
+        currentPage: 1, // Reset page when search changes
+      };
 
     case "SET_LOADING":
       return { ...state, isLoading: action.payload };
@@ -88,12 +119,17 @@ function forumReducer(state: ForumState, action: ForumAction): ForumState {
       return {
         ...state,
         posts: state.posts.filter((post) => post.id !== action.payload),
+        totalPosts: Math.max(0, state.totalPosts - 1),
       };
 
     case "ADD_POST":
       return {
         ...state,
-        posts: [action.payload, ...state.posts],
+        posts: [action.payload, ...state.posts].slice(
+          0,
+          FORUM_CONSTANTS.POSTS_PER_PAGE
+        ),
+        totalPosts: state.totalPosts + 1,
       };
 
     case "CACHE_POSTS":
@@ -108,6 +144,30 @@ function forumReducer(state: ForumState, action: ForumAction): ForumState {
       return {
         ...state,
         postsCache: new Map(),
+      };
+
+    case "SET_PAGINATION":
+      return {
+        ...state,
+        currentPage: action.payload.currentPage,
+        totalPages: action.payload.totalPages,
+        totalPosts: action.payload.totalPosts,
+        hasMore: action.payload.hasMore,
+      };
+
+    case "SET_PAGE":
+      return {
+        ...state,
+        currentPage: action.payload,
+      };
+
+    case "RESET_PAGINATION":
+      return {
+        ...state,
+        currentPage: 1,
+        totalPages: 1,
+        totalPosts: 0,
+        hasMore: false,
       };
 
     default:
