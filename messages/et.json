@@ -231,7 +231,9 @@
     "users_description": "Vaata ja halda kasutajaid",
     "admin_tools": "Administratiivsed tööriistad",
     "roles": "Rollid",
-    "roles_description": "Halda kasutajate rolle ja õigusi"
+    "roles_description": "Halda kasutajate rolle ja õigusi",
+    "forum_description": "Liitu kogukonna aruteludega",
+    "my_data_description": "Halda oma profiili andmeid"
   },
   "profile": {
     "title": "Minu profiil",
@@ -363,6 +365,15 @@
         "creating": "Avaldan...",
         "markdown_supported": "Markdown on toetatud"
       },
+      "validation": {
+        "title_required": "Pealkiri on kohustuslik",
+        "title_too_short": "Pealkiri peab olema vähemalt {min} tähemärki pikk",
+        "title_too_long": "Pealkiri ei tohi olla pikem kui {max} tähemärki",
+        "content_required": "Sisu on kohustuslik",
+        "content_too_short": "Sisu peab olema vähemalt {min} tähemärki pikk",
+        "content_too_long": "Sisu ei tohi olla pikem kui {max} tähemärki",
+        "category_required": "Kategooria on kohustuslik"
+      },
       "category": {
         "new": "Lisa uus kategooria",
         "modal_title": "Lisa uus kategooria",
@@ -370,7 +381,13 @@
         "name_placeholder": "Sisesta kategooria nimi...",
         "create": "Loo kategooria",
         "creating": "Loon...",
-        "cancel": "Tühista"
+        "cancel": "Tühista",
+        "validation": {
+          "name_required": "Kategooria nimi on kohustuslik",
+          "name_too_short": "Kategooria nimi peab olema vähemalt {min} tähemärki pikk",
+          "name_too_long": "Kategooria nimi ei tohi olla pikem kui {max} tähemärki",
+          "invalid_characters": "Kategooria nimi sisaldab lubamatuid tähemärke"
+        }
       }
     },
     "post_detail": {
