@@ -184,6 +184,7 @@ export default function ForumCommentsList({ postId }: ForumCommentsListProps) {
               comment={comment}
               onLike={handleLike}
               onDelete={handleDelete}
+              onUpdate={fetchComments}
             />
           ))
         )}

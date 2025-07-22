@@ -371,6 +371,11 @@
       "not_found": "Postitust ei leitud",
       "back": "Tagasi foorumisse",
       "edit": "Muuda",
+      "save": "Salvesta",
+      "cancel": "Tühista",
+      "editing": "Muudan...",
+      "edit_success": "Postitus edukalt uuendatud",
+      "edit_error": "Viga postituse uuendamisel",
       "delete": "Kustuta",
       "like": "Meeldib",
       "unlike": "Eemalda meeldimine",
@@ -381,8 +386,26 @@
         "placeholder": "Kirjuta oma kommentaar...",
         "submit": "Postita",
         "submitting": "Postitan...",
-        "delete": "Kustuta kommentaar"
+        "delete": "Kustuta kommentaar",
+        "edit": "Muuda",
+        "save": "Salvesta",
+        "cancel": "Tühista",
+        "editing": "Muudan...",
+        "edit_success": "Kommentaar edukalt uuendatud",
+        "edit_error": "Viga kommentaari uuendamisel"
       }
+    },
+    "edit_post": {
+      "title": "Muuda postitust",
+      "form": {
+        "title": "Pealkiri",
+        "category": "Kategooria",
+        "content": "Sisu",
+        "save": "Salvesta",
+        "saving": "Salvestan...",
+        "cancel": "Tühista"
+      },
+      "error": "Viga postituse uuendamisel"
     }
   },
   "roles": {

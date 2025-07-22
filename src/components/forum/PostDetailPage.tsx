@@ -12,6 +12,7 @@ import { formatDistanceToNow } from "date-fns";
 import { et, uk } from "date-fns/locale";
 import ForumCommentsList from "./ForumCommentsList";
 import { useAuthorization } from "@/hooks/useAuthorization";
+import EditPostModal from "./EditPostModal";
 
 interface PostDetailPageProps {
   postId: string;
@@ -52,6 +53,7 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
   const t = useTranslations("forum.post_detail");
   const [post, setPost] = useState<PostDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const currentLocale = pathname.includes("/ukr") ? "ukr" : "et";
   const dateLocale = currentLocale === "ukr" ? uk : et;
@@ -176,7 +178,11 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
   };
 
   const handleDelete = async () => {
-    if (!user || !post || user.role !== "admin") return;
+    if (!user || !post) return;
+
+    // Check if user can delete (owner or admin)
+    const canDelete = user.id === post.user.id || user.role === "admin";
+    if (!canDelete) return;
 
     if (confirm("Are you sure you want to delete this post?")) {
       try {
@@ -270,14 +276,25 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
                     <h1 className="text-2xl md:text-3xl font-bold text-[#118B50]">
                       {post.title}
                     </h1>
-                    {user?.role === "admin" && (
-                      <button
-                        onClick={handleDelete}
-                        className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-colors"
-                      >
-                        {t("delete")}
-                      </button>
-                    )}
+                    <div className="flex items-center space-x-2">
+                      {user?.id === post.user.id && (
+                        <button
+                          onClick={() => setShowEditModal(true)}
+                          className="px-3 py-1 bg-[#118B50] hover:bg-[#0F7A43] text-white text-sm rounded-lg transition-colors"
+                        >
+                          {t("edit")}
+                        </button>
+                      )}
+                      {(user?.id === post.user.id ||
+                        user?.role === "admin") && (
+                        <button
+                          onClick={handleDelete}
+                          className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-colors"
+                        >
+                          {t("delete")}
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#E3F0AF] text-[#118B50] text-sm font-medium">
@@ -356,6 +373,16 @@ export default function PostDetailPage({ postId }: PostDetailPageProps) {
                 <ForumCommentsList postId={postId} />
               </div>
             </>
+          )}
+
+          {/* Edit Post Modal */}
+          {post && (
+            <EditPostModal
+              isOpen={showEditModal}
+              onClose={() => setShowEditModal(false)}
+              post={post}
+              onUpdate={fetchPost}
+            />
           )}
         </main>
       </div>
