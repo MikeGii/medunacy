@@ -11,7 +11,6 @@ interface CreateCommentFormProps {
 }
 
 const CreateCommentForm = memo(function CreateCommentForm({
-  postId,
   onCommentCreated,
 }: CreateCommentFormProps) {
   const t = useTranslations("forum.post_detail.comments");

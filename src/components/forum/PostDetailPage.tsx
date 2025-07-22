@@ -6,7 +6,6 @@ import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { formatDistanceToNow } from "date-fns";
 import { et, uk } from "date-fns/locale";
-import { useAuth } from "@/contexts/AuthContext";
 import { usePost } from "@/hooks/usePost";
 import { useForumContext } from "@/contexts/ForumContext";
 import Header from "../layout/Header";

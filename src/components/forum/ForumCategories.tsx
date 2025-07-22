@@ -3,7 +3,6 @@
 
 import { useEffect, memo, useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { usePathname } from "next/navigation";
 import { useForum } from "@/hooks/useForum";
 import { useForumContext } from "@/contexts/ForumContext";
 
@@ -16,7 +15,6 @@ interface ForumCategoriesProps {
 const ForumCategories = memo(function ForumCategories({
   selectedCategory,
   onCategorySelect,
-  refreshTrigger,
 }: ForumCategoriesProps) {
   const t = useTranslations("forum.categories");
   const { state } = useForumContext();

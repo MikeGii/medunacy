@@ -50,6 +50,7 @@ const CreatePostModal = memo(function CreatePostModal({
     if (!isOpen) {
       resetForm();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const resetForm = useCallback(() => {

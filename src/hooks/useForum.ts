@@ -479,6 +479,7 @@ export function useForum() {
       fetchCategories();
       fetchPosts(1, false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, fetchCategories]); // Remove fetchPosts from deps to prevent loops
 
   return {

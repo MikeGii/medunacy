@@ -1,14 +1,8 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useReducer,
-  ReactNode,
-  useEffect,
-} from "react";
+import { createContext, useContext, useReducer, ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { ForumPost, ForumCategory, ForumComment } from "@/types/forum.types";
+import { ForumPost, ForumCategory } from "@/types/forum.types";
 import { FORUM_CONSTANTS } from "@/utils/forum.constants";
 
 // State interface
@@ -179,7 +173,7 @@ function forumReducer(state: ForumState, action: ForumAction): ForumState {
 export function ForumProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(forumReducer, initialState);
   const pathname = usePathname();
-  const locale = pathname.startsWith("/ukr") ? "ukr" : "et";
+  const _locale = pathname.startsWith("/ukr") ? "ukr" : "et";
 
   return (
     <ForumContext.Provider value={{ state, dispatch }}>
