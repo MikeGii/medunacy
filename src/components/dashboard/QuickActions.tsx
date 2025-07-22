@@ -25,7 +25,7 @@ export default function QuickActions() {
   const quickActions = [
     {
       title: t("forum"),
-      description: "Liitu kogukonna aruteludega",
+      description: t("forum_description"),
       icon: (
         <svg
           className="w-6 h-6 md:w-8 md:h-8"
@@ -48,7 +48,7 @@ export default function QuickActions() {
     },
     {
       title: t("my_data"),
-      description: "Halda oma profiili andmeid",
+      description: t("my_data_description"),
       icon: (
         <svg
           className="w-6 h-6 md:w-8 md:h-8"
