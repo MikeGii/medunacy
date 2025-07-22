@@ -151,11 +151,11 @@ export default function QuickActions() {
                     </div>
 
                     {/* Text Content */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-xl md:text-2xl font-bold text-[#118B50] mb-2 group-hover:text-[#0F7A43] transition-colors duration-300">
+                    <div className="flex-1 min-w-0 h-20 md:h-24 flex flex-col justify-center">
+                      <h3 className="text-xl md:text-2xl font-bold text-[#118B50] mb-2 group-hover:text-[#0F7A43] transition-colors duration-300 line-clamp-2">
                         {action.title}
                       </h3>
-                      <p className="text-gray-600 text-sm md:text-base leading-relaxed">
+                      <p className="text-gray-600 text-sm md:text-base leading-relaxed line-clamp-2">
                         {action.description}
                       </p>
                     </div>

@@ -428,7 +428,9 @@
     "forum_description": "Приєднуйтесь до обговорень спільноти",
     "my_data_description": "Керуйте даними свого профілю",
     "exam_tests": "Екзаменаційні тести",
-    "exam_tests_description": "Практикуйтеся та готуйтеся до іспитів"
+    "exam_tests_description": "Практикуйтеся та готуйтеся до іспитів",
+    "test_creation": "Створення тестів",
+    "test_creation_description": "Створюйте та керуйте категоріями та тестами іспитів"
   },
 
   "forum": {
@@ -708,6 +710,7 @@
     "submit_confirm": "Ви впевнені, що хочете здати екзамен?",
     "unanswered_warning": "У вас є {count} питань без відповіді!",
     "correct_answer": "Правильна відповідь",
+    "your_answer": "Ваша відповідь",
 
     "results": {
       "title": "Результати екзамену",
