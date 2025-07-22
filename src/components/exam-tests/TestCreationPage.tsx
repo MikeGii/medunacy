@@ -53,15 +53,23 @@ export default function TestCreationPage() {
           .from("tests")
           .select(
             `
-            *,
-            category:test_categories(*),
-            question_count:test_questions(count)
-          `
+          *,
+          category:test_categories(*),
+          test_questions(count)
+        `
           )
           .order("created_at", { ascending: false });
 
         if (testsError) throw testsError;
-        setTests(testsData || []);
+
+        // Transform the data to flatten the count
+        const transformedTests =
+          testsData?.map((test) => ({
+            ...test,
+            question_count: test.test_questions?.[0]?.count || 0,
+          })) || [];
+
+        setTests(transformedTests);
       } catch (err) {
         console.error("Error fetching data:", err);
         setError(err instanceof Error ? err.message : "Failed to load data");
@@ -96,15 +104,23 @@ export default function TestCreationPage() {
         .from("tests")
         .select(
           `
-          *,
-          category:test_categories(*),
-          question_count:test_questions(count)
-        `
+        *,
+        category:test_categories(*),
+        test_questions(count)
+      `
         )
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setTests(data || []);
+
+      // Transform the data to flatten the count
+      const transformedTests =
+        data?.map((test) => ({
+          ...test,
+          question_count: test.test_questions?.[0]?.count || 0,
+        })) || [];
+
+      setTests(transformedTests);
     } catch (err) {
       console.error("Error refreshing tests:", err);
     }
