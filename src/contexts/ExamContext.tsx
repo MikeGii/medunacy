@@ -1,5 +1,7 @@
 // src/contexts/ExamContext.tsx - FIXED VERSION (remove TestSession)
 
+"use client";
+
 import React, {
   createContext,
   useContext,
@@ -101,7 +103,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
             `
           *,
           category:test_categories(*),
-          question_count:test_questions(count)
+          questions:test_questions(id)
         `
           )
           .order("created_at", { ascending: false });
@@ -114,9 +116,11 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
 
         if (fetchError) throw fetchError;
 
+        // Transform the data to include question_count as a number
         const enrichedTests = (data || []).map((test) => ({
           ...test,
-          question_count: test.question_count?.[0]?.count || 0,
+          question_count: test.questions?.length || 0,
+          questions: undefined, // Remove the questions array from the final object
         }));
 
         setTests(enrichedTests);
@@ -152,13 +156,13 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
           .from("exam_tests")
           .select(
             `
+        *,
+        category:test_categories(*),
+        test_questions(
           *,
-          category:test_categories(*),
-          questions:test_questions(
-            *,
-            options:question_options(*)
-          )
-        `
+          question_options(*)
+        )
+      `
           )
           .eq("id", testId)
           .single();
@@ -167,7 +171,8 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
 
         const enrichedTest = {
           ...data,
-          question_count: data.questions?.length || 0,
+          question_count: data.test_questions?.length || 0,
+          questions: data.test_questions || [],
         };
 
         setCurrentTest(enrichedTest);

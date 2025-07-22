@@ -3,21 +3,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations, useLocale } from "next-intl";
-import { useAuth } from "@/contexts/AuthContext";
+import { useTranslations } from "next-intl";
 import { useExam } from "@/contexts/ExamContext";
-import { useTestCreation } from "@/hooks/useTestCreation";
 import Header from "../layout/Header";
 import { AuthModalProvider } from "@/contexts/AuthModalContext";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
-import { TestCategory, Test } from "@/types/exam";
 import CategoryManagement from "./creation/CategoryManagement";
 import TestManagement from "./creation/TestManagement";
 import { useAuthorization } from "@/hooks/useAuthorization";
 import ExamErrorBoundary from "@/components/exam-tests/common/ExamErrorBoundary";
 import ErrorDisplay from "./common/ErrorDisplay";
-import { CategoryCardSkeleton, TestCardSkeleton } from "./common/ExamSkeleton";
 
 export default function TestCreationPage() {
   const t = useTranslations("test_creation");
@@ -42,9 +37,24 @@ export default function TestCreationPage() {
 
   // Fetch initial data
   useEffect(() => {
-    fetchCategories();
-    fetchTests(); // Fetch all tests for management
-  }, [fetchCategories, fetchTests]);
+    let mounted = true;
+
+    const loadData = async () => {
+      if (!mounted) return;
+
+      try {
+        await Promise.all([fetchCategories(), fetchTests()]);
+      } catch (error) {
+        console.error("Failed to load initial data:", error);
+      }
+    };
+
+    loadData();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   if (isLoading || loading) {
     return (
