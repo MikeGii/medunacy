@@ -45,6 +45,7 @@ const ForumPostList = memo(function ForumPostList({
   // Fetch posts when dependencies change or refresh is triggered
   useEffect(() => {
     fetchPosts(1, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.selectedCategory, state.searchQuery, refreshTrigger]);
 
   const handlePostClick = useCallback(

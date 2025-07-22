@@ -240,9 +240,11 @@ export function useNotifications() {
       isMountedRef.current = false;
       subscription.unsubscribe();
 
+      // Store the timeout ref value in a variable
+      const timeoutId = fetchTimeoutRef.current;
       // Clear any pending timeouts
-      if (fetchTimeoutRef.current) {
-        clearTimeout(fetchTimeoutRef.current);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
       }
 
       // Clean up old cache entries

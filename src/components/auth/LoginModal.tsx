@@ -133,7 +133,7 @@ export default function LoginModal({
         }
       }
     },
-    [formData, signIn]
+    [formData, signIn, t]
   );
 
   // Prevent form submission while already loading or closing

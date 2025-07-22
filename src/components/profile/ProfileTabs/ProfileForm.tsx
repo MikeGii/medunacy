@@ -22,7 +22,7 @@ const LANGUAGE_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 export default function ProfileForm() {
   const t = useTranslations("profile.form");
   const tMessages = useTranslations("profile.messages");
-  const { professionalData, loading, error, updateProfessionalData } = useUserProfile();
+  const { professionalData, loading, updateProfessionalData } = useUserProfile();
 
   const [formData, setFormData] = useState<UserDataUpdate>({
     university: "",
