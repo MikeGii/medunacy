@@ -428,7 +428,9 @@
     "forum_description": "Liitu kogukonna aruteludega",
     "my_data_description": "Halda oma profiili andmeid",
     "exam_tests": "Eksamitestid",
-    "exam_tests_description": "Harjuta ja valmista eksamiteks"
+    "exam_tests_description": "Harjuta ja valmista eksamiteks",
+    "test_creation": "Testide loomine",
+    "test_creation_description": "Loo ja halda eksamikategooriaid ning teste"
   },
 
   "forum": {
@@ -712,6 +714,7 @@
     "submit_confirm": "Kas oled kindel, et soovid eksami esitada?",
     "unanswered_warning": "Sul on {count} vastamata küsimust!",
     "correct_answer": "Õige vastus",
+    "your_answer": "Sinu vastus",
 
     "results": {
       "title": "Eksami tulemused",

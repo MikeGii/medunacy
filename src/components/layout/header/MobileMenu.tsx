@@ -202,6 +202,30 @@ export default function MobileMenu({
               </svg>
               <span className="font-medium">{dashboardT("users")}</span>
             </Link>
+
+            {/* Test Creation Link */}
+            <Link
+              href={`${baseUrl}/exam-tests/create`}
+              onClick={onClose}
+              className="flex items-center space-x-3 w-full px-6 py-3 text-[#5DB996] hover:text-[#118B50] 
+   bg-gradient-to-r from-[#E3F0AF]/20 to-[#118B50]/20 hover:from-[#E3F0AF]/30 hover:to-[#118B50]/30 
+   rounded-full transition-all duration-300 border border-[#5DB996]/20"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              <span className="font-medium">{dashboardT("test_creation")}</span>
+            </Link>
           </div>
         )}
 
@@ -236,32 +260,6 @@ export default function MobileMenu({
                 />
               </svg>
               <span className="font-medium">{dashboardT("roles")}</span>
-            </Link>
-
-            {/* Import Exam Questions Link */}
-            <Link
-              href={`${baseUrl}/admin/import-exam-questions`}
-              onClick={onClose}
-              className="flex items-center space-x-3 w-full px-6 py-3 text-amber-700 hover:text-amber-800 
-   bg-gradient-to-r from-blue-500/20 to-indigo-600/20 hover:from-blue-500/30 hover:to-indigo-600/30 
-   rounded-full transition-all duration-300 border border-blue-500/20"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              <span className="font-medium">
-                {dashboardT("import_exam_questions")}
-              </span>
             </Link>
           </div>
         )}

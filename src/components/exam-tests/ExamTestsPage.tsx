@@ -1,7 +1,7 @@
 // src/components/exam-tests/ExamTestsPage.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,80 +33,105 @@ export default function ExamTestsPage() {
   const [loadingTests, setLoadingTests] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch categories on mount
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("test_categories")
-          .select("*")
-          .eq("is_active", true)
-          .order("name");
+  // Fetch categories on mount - STABLE REFERENCE
+  const fetchCategories = useCallback(async () => {
+    try {
+      setLoadingCategories(true);
+      const { data, error } = await supabase
+        .from("test_categories")
+        .select("*")
+        .eq("is_active", true)
+        .order("name");
 
-        if (error) throw error;
-        setCategories(data || []);
-      } catch (err) {
-        console.error("Error fetching categories:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to load categories"
-        );
-      } finally {
-        setLoadingCategories(false);
-      }
-    };
-
-    fetchCategories();
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to load categories"
+      );
+    } finally {
+      setLoadingCategories(false);
+    }
   }, []);
 
-  // Fetch tests when category is selected
-  useEffect(() => {
-    const fetchTests = async () => {
-      if (!selectedCategory) {
-        setTests([]);
-        return;
-      }
-
+  // Fetch tests for selected category - STABLE REFERENCE
+  const fetchTests = useCallback(async (categoryId: string) => {
+    try {
       setLoadingTests(true);
-      try {
-        const { data, error } = await supabase
-          .from("tests")
-          .select(
-            `
-        *,
-        category:test_categories(*),
-        test_questions(count)
-      `
-          )
-          .eq("category_id", selectedCategory.id)
-          .eq("is_published", true)
-          .order("created_at", { ascending: false });
+      setError(null); // Clear previous errors
 
-        if (error) throw error;
+      const { data, error } = await supabase
+        .from("tests")
+        .select(
+          `
+          *,
+          category:test_categories(*),
+          test_questions(count)
+        `
+        )
+        .eq("category_id", categoryId)
+        .eq("is_published", true)
+        .order("created_at", { ascending: false });
 
-        // Transform the data to extract the count properly
-        const transformedTests =
-          data?.map((test: any) => ({
-            ...test,
-            question_count: test.test_questions?.[0]?.count || 0,
-          })) || [];
+      if (error) throw error;
 
-        setTests(transformedTests);
-      } catch (err) {
-        console.error("Error fetching tests:", err);
-        setError(err instanceof Error ? err.message : "Failed to load tests");
-      } finally {
-        setLoadingTests(false);
-      }
-    };
+      // Transform the data to extract the count properly
+      const transformedTests =
+        data?.map((test: any) => ({
+          ...test,
+          question_count: test.test_questions?.[0]?.count || 0,
+        })) || [];
 
-    fetchTests();
-  }, [selectedCategory]);
+      setTests(transformedTests);
+    } catch (err) {
+      console.error("Error fetching tests:", err);
+      setError(err instanceof Error ? err.message : "Failed to load tests");
+    } finally {
+      setLoadingTests(false);
+    }
+  }, []);
 
-  const handleStartTest = () => {
+  // SINGLE useEffect for categories - runs once on mount
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  // CONTROLLED useEffect for tests - only runs when category is explicitly selected
+  useEffect(() => {
+    if (selectedCategory?.id) {
+      fetchTests(selectedCategory.id);
+    } else {
+      // Clear tests when no category is selected
+      setTests([]);
+      setSelectedTest(null);
+      setSelectedMode(null);
+    }
+  }, [selectedCategory?.id, fetchTests]);
+
+  // Handle category selection
+  const handleCategorySelect = useCallback((category: TestCategory) => {
+    setSelectedCategory(category);
+    setSelectedTest(null); // Reset test selection
+    setSelectedMode(null); // Reset mode selection
+  }, []);
+
+  // Handle test selection
+  const handleTestSelect = useCallback((test: Test) => {
+    setSelectedTest(test);
+    setSelectedMode(null); // Reset mode selection
+  }, []);
+
+  // Handle mode selection
+  const handleModeSelect = useCallback((mode: "training" | "exam") => {
+    setSelectedMode(mode);
+  }, []);
+
+  const handleStartTest = useCallback(() => {
     if (selectedTest && selectedMode && user) {
       router.push(`/${locale}/exam-tests/${selectedMode}/${selectedTest.id}`);
     }
-  };
+  }, [selectedTest, selectedMode, user, router, locale]);
 
   const canStart = selectedTest && selectedMode && user;
 
