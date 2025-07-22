@@ -1,25 +1,20 @@
-// src/hooks/useExamSession.ts
+// src/hooks/useExamSession.ts - FIXED ORDER
 
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ExamQuestion,
-  ExamSession,
-  ExamAnswer,
-  ExamSessionState,
-} from "@/types/exam";
+import { TestQuestion, ExamSession, ExamSessionState } from "@/types/exam";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "next-intl";
 
 interface UseExamSessionProps {
   mode: "training" | "exam";
-  year: number;
+  testId: string;
   userId: string;
 }
 
-export function useExamSession({ mode, year, userId }: UseExamSessionProps) {
+export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
   const router = useRouter();
   const locale = useLocale();
   const [loading, setLoading] = useState(true);
@@ -31,58 +26,170 @@ export function useExamSession({ mode, year, userId }: UseExamSessionProps) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const sessionRef = useRef<ExamSession | null>(null);
 
+  // DECLARE submitExam FIRST using useCallback
+  const submitExam = useCallback(async () => {
+    if (!sessionState) return;
+
+    try {
+      setLoading(true);
+
+      // Calculate results
+      let correctAnswers = 0;
+      let totalPoints = 0;
+      let earnedPoints = 0;
+      const questionResults = [];
+
+      // Save all answers and calculate results
+      for (const question of sessionState.questions) {
+        const selectedOptionIds = sessionState.answers[question.id] || [];
+        const correctOptionIds = question.options
+          .filter((option) => option.is_correct)
+          .map((option) => option.id);
+
+        // Check if answer is correct (all correct options selected, no incorrect ones)
+        const isCorrect =
+          selectedOptionIds.length === correctOptionIds.length &&
+          selectedOptionIds.every((id) => correctOptionIds.includes(id));
+
+        if (isCorrect) {
+          correctAnswers++;
+          earnedPoints += question.points;
+        }
+
+        totalPoints += question.points;
+
+        questionResults.push({
+          question,
+          selectedOptions: question.options.filter((opt) =>
+            selectedOptionIds.includes(opt.id)
+          ),
+          correctOptions: question.options.filter((opt) => opt.is_correct),
+          isCorrect,
+          pointsEarned: isCorrect ? question.points : 0,
+        });
+
+        // Save individual answer to database using Supabase
+        if (sessionRef.current && selectedOptionIds.length > 0) {
+          await supabase.from("exam_answers").upsert({
+            session_id: sessionRef.current.id,
+            question_id: question.id,
+            selected_option_ids: selectedOptionIds,
+            is_correct: isCorrect,
+            points_earned: isCorrect ? question.points : 0,
+          });
+        }
+      }
+
+      const scorePercentage =
+        totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
+      const passed = scorePercentage >= (sessionState.test.passing_score || 70);
+
+      // Update session in database using Supabase
+      if (sessionRef.current) {
+        await supabase
+          .from("exam_sessions")
+          .update({
+            completed_at: new Date().toISOString(),
+            score_percentage: scorePercentage,
+            correct_answers: correctAnswers,
+            total_questions: sessionState.questions.length,
+            time_spent: timeElapsed,
+            passed,
+          })
+          .eq("id", sessionRef.current.id);
+      }
+
+      // Navigate to results
+      const resultsData = {
+        sessionId: sessionState.session.id,
+        test: sessionState.test,
+        totalQuestions: sessionState.questions.length,
+        correctAnswers,
+        incorrectAnswers: sessionState.questions.length - correctAnswers,
+        scorePercentage,
+        timeSpent: timeElapsed,
+        passed,
+        questionResults,
+      };
+
+      // Store results in sessionStorage for viewing
+      sessionStorage.setItem("examResults", JSON.stringify(resultsData));
+
+      // Navigate to results page
+      router.push(`/${locale}/exam-tests/results/${sessionState.session.id}`);
+    } catch (err) {
+      console.error("Error submitting exam:", err);
+      setError(err instanceof Error ? err.message : "Failed to submit exam");
+    } finally {
+      setLoading(false);
+    }
+  }, [sessionState, timeElapsed, router, locale]);
+
   // Initialize session
   const initializeSession = useCallback(async () => {
     try {
       setLoading(true);
 
-      // Fetch questions for the selected year
-      const { data: questions, error: questionsError } = await supabase
-        .from("exam_questions")
-        .select("*")
-        .eq("year", year);
+      // Fetch test with questions and options using Supabase
+      const { data: test, error: testError } = await supabase
+        .from("tests")
+        .select(
+          `
+          *,
+          category:test_categories(*),
+          questions:test_questions(
+            *,
+            options:question_options(*)
+          )
+        `
+        )
+        .eq("id", testId)
+        .eq("is_published", true)
+        .single();
 
-      if (questionsError) throw questionsError;
-      if (!questions || questions.length === 0) {
-        throw new Error("No questions found for this year");
+      if (testError) throw testError;
+      if (!test) throw new Error("Test not found");
+
+      const questions: TestQuestion[] = test.questions || [];
+
+      if (questions.length === 0) {
+        throw new Error("No questions found for this test");
       }
 
-      // Shuffle questions for randomization
-      const shuffledQuestions = [...questions].sort(() => Math.random() - 0.5);
+      // Sort questions and options by order
+      const sortedQuestions = questions
+        .sort((a, b) => a.question_order - b.question_order)
+        .map((question) => ({
+          ...question,
+          options: question.options.sort(
+            (a, b) => a.option_order - b.option_order
+          ),
+        }));
 
-      // Create session in database (only for exam mode)
-      let sessionId = `temp-${Date.now()}`;
+      // Create session in database using Supabase
+      const { data: session, error: sessionError } = await supabase
+        .from("exam_sessions")
+        .insert({
+          user_id: userId,
+          test_id: testId,
+          mode: mode,
+          total_questions: questions.length,
+        })
+        .select()
+        .single();
 
-      if (mode === "exam") {
-        const { data: session, error: sessionError } = await supabase
-          .from("exam_sessions")
-          .insert({
-            user_id: userId,
-            exam_year: year,
-            mode: mode,
-            total_questions: shuffledQuestions.length,
-          })
-          .select()
-          .single();
+      if (sessionError) throw sessionError;
+      if (!session) throw new Error("Failed to create session");
 
-        if (sessionError) throw sessionError;
-        sessionId = session.id;
-        sessionRef.current = session;
-      }
+      sessionRef.current = session;
 
       // Initialize session state
       setSessionState({
-        session: {
-          id: sessionId,
-          userId,
-          mode,
-          examYear: year,
-          startedAt: new Date(),
-          totalQuestions: shuffledQuestions.length,
-        },
-        questions: shuffledQuestions,
+        session,
+        test,
+        questions: sortedQuestions,
         currentQuestionIndex: 0,
-        answers: {},
+        answers: {}, // questionId -> array of selected option IDs
         markedForReview: new Set(),
       });
     } catch (err) {
@@ -93,11 +200,18 @@ export function useExamSession({ mode, year, userId }: UseExamSessionProps) {
     } finally {
       setLoading(false);
     }
-  }, [mode, year, userId]);
+  }, [mode, testId, userId]);
 
-  // Timer management for exam mode
+  // Initialize on mount
   useEffect(() => {
-    if (mode === "exam" && sessionState && !sessionState.session.completedAt) {
+    if (userId) {
+      initializeSession();
+    }
+  }, [initializeSession, userId]);
+
+  // Timer management
+  useEffect(() => {
+    if (mode === "exam" && sessionState && !sessionState.session.completed_at) {
       timerRef.current = setInterval(() => {
         setTimeElapsed((prev) => prev + 1);
       }, 1000);
@@ -110,45 +224,60 @@ export function useExamSession({ mode, year, userId }: UseExamSessionProps) {
     }
   }, [mode, sessionState]);
 
-  // Auto-submit after 90 minutes for exam mode
+  // Auto-submit when time limit is reached - NOW submitExam is available
   useEffect(() => {
-    if (mode === "exam" && timeElapsed >= 5400) {
-      // 90 minutes = 5400 seconds
-      submitExam();
+    if (mode === "exam" && sessionState?.test.time_limit) {
+      const timeLimit = sessionState.test.time_limit * 60; // convert minutes to seconds
+      if (timeElapsed >= timeLimit) {
+        submitExam();
+      }
     }
-  }, [mode, timeElapsed]);
+  }, [mode, timeElapsed, sessionState, submitExam]);
 
-  // Select answer
+  // Select answer(s) - supports multiple selections
   const selectAnswer = useCallback(
-    async (questionId: string, optionIndex: number) => {
+    (optionId: string) => {
       if (!sessionState) return;
+
+      const currentQuestion =
+        sessionState.questions[sessionState.currentQuestionIndex];
+      if (!currentQuestion) return;
+
+      // Check if question allows multiple correct answers
+      const correctOptions = currentQuestion.options.filter(
+        (opt) => opt.is_correct
+      );
+      const allowMultiple = correctOptions.length > 1;
 
       setSessionState((prev) => {
         if (!prev) return null;
+
+        const questionId = currentQuestion.id;
+        const currentAnswers = prev.answers[questionId] || [];
+        let newAnswers: string[];
+
+        if (allowMultiple) {
+          // Toggle selection for multiple choice
+          if (currentAnswers.includes(optionId)) {
+            newAnswers = currentAnswers.filter((id) => id !== optionId);
+          } else {
+            newAnswers = [...currentAnswers, optionId];
+          }
+        } else {
+          // Single selection
+          newAnswers = [optionId];
+        }
 
         return {
           ...prev,
           answers: {
             ...prev.answers,
-            [questionId]: optionIndex,
+            [questionId]: newAnswers,
           },
         };
       });
-
-      // In training mode, check answer immediately
-      if (mode === "training") {
-        const question = sessionState.questions.find(
-          (q) => q.id === questionId
-        );
-        if (question) {
-          const isCorrect = question.options[optionIndex].isCorrect;
-          return { isCorrect };
-        }
-      }
-
-      return null;
     },
-    [sessionState, mode]
+    [sessionState]
   );
 
   // Navigate between questions
@@ -180,15 +309,21 @@ export function useExamSession({ mode, year, userId }: UseExamSessionProps) {
   }, [sessionState, goToQuestion]);
 
   // Mark for review
-  const toggleMarkForReview = useCallback((questionId: string) => {
+  const toggleMarkForReview = useCallback(() => {
+    if (!sessionState) return;
+
+    const currentQuestion =
+      sessionState.questions[sessionState.currentQuestionIndex];
+    if (!currentQuestion) return;
+
     setSessionState((prev) => {
       if (!prev) return null;
 
       const newMarked = new Set(prev.markedForReview);
-      if (newMarked.has(questionId)) {
-        newMarked.delete(questionId);
+      if (newMarked.has(currentQuestion.id)) {
+        newMarked.delete(currentQuestion.id);
       } else {
-        newMarked.add(questionId);
+        newMarked.add(currentQuestion.id);
       }
 
       return {
@@ -196,118 +331,38 @@ export function useExamSession({ mode, year, userId }: UseExamSessionProps) {
         markedForReview: newMarked,
       };
     });
-  }, []);
+  }, [sessionState]);
 
-  // Submit exam
-  const submitExam = useCallback(async () => {
-    if (!sessionState) return;
-
-    try {
-      setLoading(true);
-
-      // Calculate results
-      let correctAnswers = 0;
-      const questionResults = [];
-
-      for (const question of sessionState.questions) {
-        const selectedOption = sessionState.answers[question.id];
-        const isCorrect =
-          selectedOption !== undefined &&
-          question.options[selectedOption]?.isCorrect === true;
-
-        if (isCorrect) correctAnswers++;
-
-        questionResults.push({
-          question,
-          selectedOption: selectedOption ?? -1,
-          isCorrect,
-        });
-
-        // Save individual answer to database (for exam mode)
-        if (mode === "exam" && sessionRef.current) {
-          await supabase.from("exam_answers").insert({
-            session_id: sessionRef.current.id,
-            question_id: question.id,
-            selected_option: selectedOption ?? -1,
-            is_correct: isCorrect,
-          });
-        }
-      }
-
-      // Update session in database (for exam mode)
-      if (mode === "exam" && sessionRef.current) {
-        const { error: updateError } = await supabase
-          .from("exam_sessions")
-          .update({
-            completed_at: new Date().toISOString(),
-            correct_answers: correctAnswers,
-            time_spent: timeElapsed,
-          })
-          .eq("id", sessionRef.current.id);
-
-        if (updateError) throw updateError;
-      }
-
-      // Navigate to results
-      const resultsData = {
-        sessionId: sessionState.session.id,
-        totalQuestions: sessionState.questions.length,
-        correctAnswers,
-        incorrectAnswers: sessionState.questions.length - correctAnswers,
-        scorePercentage: (correctAnswers / sessionState.questions.length) * 100,
-        timeSpent: timeElapsed,
-        questionResults,
-      };
-
-      // Store results in sessionStorage for viewing
-      sessionStorage.setItem("examResults", JSON.stringify(resultsData));
-
-      // Navigate to results page
-      router.push(`/${locale}/exam-tests/results/${sessionState.session.id}`);
-    } catch (err) {
-      console.error("Error submitting exam:", err);
-      setError(err instanceof Error ? err.message : "Failed to submit exam");
-    } finally {
-      setLoading(false);
-    }
-  }, [sessionState, mode, timeElapsed, router, locale]);
-
-  // Get current question
+  // Helper computed values
   const currentQuestion =
-    sessionState?.questions[sessionState.currentQuestionIndex];
+    sessionState?.questions[sessionState.currentQuestionIndex] || null;
   const selectedAnswer = currentQuestion
-    ? sessionState.answers[currentQuestion.id]
-    : undefined;
+    ? sessionState?.answers[currentQuestion.id] || []
+    : [];
   const isMarkedForReview = currentQuestion
-    ? sessionState.markedForReview.has(currentQuestion.id)
+    ? sessionState?.markedForReview.has(currentQuestion.id) || false
     : false;
 
-  // Calculate progress
-  const answeredCount = Object.keys(sessionState?.answers || {}).length;
-  const progress = {
-    current: sessionState?.currentQuestionIndex ?? 0,
-    total: sessionState?.questions.length ?? 0,
-    answered: answeredCount,
-    markedForReview: sessionState?.markedForReview.size ?? 0,
-  };
-
-  // Initialize session on mount
-  useEffect(() => {
-    initializeSession();
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
+  const progress = sessionState
+    ? {
+        current: sessionState.currentQuestionIndex,
+        total: sessionState.questions.length,
+        answered: Object.keys(sessionState.answers).length,
+        markedForReview: sessionState.markedForReview.size,
       }
-    };
-  }, [initializeSession]);
+    : {
+        current: 0,
+        total: 0,
+        answered: 0,
+        markedForReview: 0,
+      };
 
   return {
     loading,
     error,
     sessionState,
     currentQuestion,
-    selectedAnswer,
+    selectedAnswer, // Array of option IDs
     isMarkedForReview,
     progress,
     timeElapsed,
