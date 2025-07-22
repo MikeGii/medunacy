@@ -23,7 +23,6 @@ export default function QuestionManagementPage({
   const t = useTranslations("test_creation");
   const router = useRouter();
   const locale = useLocale();
-  const { user } = useAuth();
 
   const [test, setTest] = useState<Test | null>(null);
   const [questions, setQuestions] = useState<TestQuestion[]>([]);

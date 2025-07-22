@@ -1,4 +1,4 @@
-// src/components/exam-tests/ExamTimer.tsx - UPDATED
+// src/components/exam-tests/ExamTimer.tsx - FIXED
 
 "use client";
 
@@ -19,32 +19,12 @@ export default function ExamTimer({
   const t = useTranslations("exam_tests");
   const [isWarning, setIsWarning] = useState(false);
 
-  if (!timeLimit) {
-    // No time limit - show elapsed time
-    const formatTime = (seconds: number) => {
-      const hours = Math.floor(seconds / 3600);
-      const minutes = Math.floor((seconds % 3600) / 60);
-      const secs = seconds % 60;
-
-      if (hours > 0) {
-        return `${hours}:${minutes.toString().padStart(2, "0")}:${secs
-          .toString()
-          .padStart(2, "0")}`;
-      }
-      return `${minutes}:${secs.toString().padStart(2, "0")}`;
-    };
-
-    return (
-      <div className="font-mono text-lg text-gray-700">
-        {t("time_elapsed")}: {formatTime(timeElapsed)}
-      </div>
-    );
-  }
-
-  // With time limit - show remaining time
-  const timeRemaining = Math.max(0, timeLimit - timeElapsed);
-
+  // ALWAYS call useEffect - never conditionally
   useEffect(() => {
+    if (!timeLimit) return; // Early return inside useEffect is fine
+
+    const timeRemaining = Math.max(0, timeLimit - timeElapsed);
+
     if (timeRemaining <= 300 && timeRemaining > 0) {
       // Last 5 minutes
       setIsWarning(true);
@@ -53,7 +33,7 @@ export default function ExamTimer({
     if (timeRemaining <= 0) {
       onTimeUp();
     }
-  }, [timeRemaining, onTimeUp]);
+  }, [timeLimit, timeElapsed, onTimeUp]);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -67,6 +47,18 @@ export default function ExamTimer({
     }
     return `${minutes}:${secs.toString().padStart(2, "0")}`;
   };
+
+  if (!timeLimit) {
+    // No time limit - show elapsed time
+    return (
+      <div className="font-mono text-lg text-gray-700">
+        {t("time_elapsed")}: {formatTime(timeElapsed)}
+      </div>
+    );
+  }
+
+  // With time limit - show remaining time
+  const timeRemaining = Math.max(0, timeLimit - timeElapsed);
 
   return (
     <div

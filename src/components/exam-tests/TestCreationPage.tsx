@@ -17,9 +17,6 @@ import { supabase } from "@/lib/supabase";
 
 export default function TestCreationPage() {
   const t = useTranslations("test_creation");
-  const router = useRouter();
-  const locale = useLocale();
-  const { user } = useAuth();
 
   const [activeTab, setActiveTab] = useState<"categories" | "tests">(
     "categories"
