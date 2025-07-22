@@ -3,16 +3,19 @@ import PostDetailPage from '@/components/forum/PostDetailPage';
 import { ForumProvider } from '@/contexts/ForumContext';
 
 interface PostPageProps {
-  params: {
+  params: Promise<{
     postId: string;
     locale: string;
-  };
+  }>;
 }
 
-export default function PostPage({ params }: PostPageProps) {
+export default async function PostPage({ params }: PostPageProps) {
+  // Await the params as required by Next.js 15
+  const { postId } = await params;
+  
   return (
     <ForumProvider>
-      <PostDetailPage postId={params.postId} />
+      <PostDetailPage postId={postId} />
     </ForumProvider>
   );
 }
