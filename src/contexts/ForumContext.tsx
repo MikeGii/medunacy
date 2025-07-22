@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useContext, useReducer, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useReducer,
+  ReactNode,
+  useEffect,
+} from "react";
+import { usePathname } from "next/navigation";
 import { ForumPost, ForumCategory, ForumComment } from "@/types/forum.types";
 
 // State interface
@@ -25,7 +32,8 @@ type ForumAction =
   | { type: "UPDATE_POST"; payload: ForumPost }
   | { type: "DELETE_POST"; payload: string }
   | { type: "ADD_POST"; payload: ForumPost }
-  | { type: "CACHE_POSTS"; payload: { key: string; data: ForumPost[] } };
+  | { type: "CACHE_POSTS"; payload: { key: string; data: ForumPost[] } }
+  | { type: "CLEAR_CACHE" };
 
 // Initial state
 const initialState: ForumState = {
@@ -96,6 +104,12 @@ function forumReducer(state: ForumState, action: ForumAction): ForumState {
       });
       return { ...state, postsCache: newCache };
 
+    case "CLEAR_CACHE":
+      return {
+        ...state,
+        postsCache: new Map(),
+      };
+
     default:
       return state;
   }
@@ -104,6 +118,8 @@ function forumReducer(state: ForumState, action: ForumAction): ForumState {
 // Provider component
 export function ForumProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(forumReducer, initialState);
+  const pathname = usePathname();
+  const locale = pathname.startsWith("/ukr") ? "ukr" : "et";
 
   return (
     <ForumContext.Provider value={{ state, dispatch }}>

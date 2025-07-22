@@ -1,10 +1,18 @@
+// src/app/[locale]/forum/[postId]/page.tsx
 import PostDetailPage from '@/components/forum/PostDetailPage';
+import { ForumProvider } from '@/contexts/ForumContext';
 
-export default async function PostDetail({ 
-  params 
-}: { 
-  params: Promise<{ postId: string; locale: string }> 
-}) {
-  const { postId } = await params;
-  return <PostDetailPage postId={postId} />;
+interface PostPageProps {
+  params: {
+    postId: string;
+    locale: string;
+  };
+}
+
+export default function PostPage({ params }: PostPageProps) {
+  return (
+    <ForumProvider>
+      <PostDetailPage postId={params.postId} />
+    </ForumProvider>
+  );
 }
