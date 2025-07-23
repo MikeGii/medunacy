@@ -693,6 +693,8 @@
     "selected": "Valitud",
     "to_pass": "läbimiseks",
 
+    "unmark_for_review": "Eemalda ülevaatamise märge",
+
     "dismiss": "Sulge",
     "loading": "Laadimine...",
     "no_questions_in_test": "Testis pole küsimusi",
@@ -704,6 +706,9 @@
     "exit_exam_message": "Hoiatus: Kui väljud nüüd, lähevad kõik sinu vastused kaotsi!",
     "exit": "Välju",
     "stay": "Jää",
+
+    "question_navigation": "Küsimuste navigeerimine",
+    "cancel": "Tühista",
 
     "select_mode": "Vali režiim",
     "mode_description": "Vali sobiv režiim oma õppimiseks ja harjutamiseks",
@@ -758,7 +763,6 @@
       "points": "punkti",
       "question": "Küsimus",
       "click_to_see_details": "Klõpsa mis tahes küsimuse numbril, et näha üksikasju"
-
     },
     "errors": {
       "something_went_wrong": "Midagi läks valesti",
@@ -783,6 +787,7 @@
       "required_fields": "Täida kõik kohustuslikud väljad",
       "min_options": "Vähemalt 2 vastusevarianti on nõutud",
       "min_correct": "Vähemalt üks õige vastus on nõutud",
+      "error_details": "Vea üksikasjad",
       "test_validation": {
         "no_title": "Testi pealkiri on kohustuslik",
         "no_category": "Kategooria on kohustuslik",

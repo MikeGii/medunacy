@@ -378,18 +378,31 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
     ? sessionState?.markedForReview.has(currentQuestion.id) || false
     : false;
 
+  // Calculate progress with overlapping marked & answered questions
   const progress = sessionState
-    ? {
-        current: sessionState.currentQuestionIndex,
-        total: sessionState.questions.length,
-        answered: Object.keys(sessionState.answers).length,
-        markedForReview: sessionState.markedForReview.size,
-      }
+    ? (() => {
+        const answeredQuestions = Object.keys(sessionState.answers);
+        const markedQuestions = Array.from(sessionState.markedForReview);
+
+        // Count questions that are both answered AND marked
+        const markedAndAnswered = markedQuestions.filter((questionId) =>
+          answeredQuestions.includes(questionId)
+        ).length;
+
+        return {
+          current: sessionState.currentQuestionIndex,
+          total: sessionState.questions.length,
+          answered: answeredQuestions.length,
+          markedForReview: markedQuestions.length,
+          markedAndAnswered: markedAndAnswered,
+        };
+      })()
     : {
         current: 0,
         total: 0,
         answered: 0,
         markedForReview: 0,
+        markedAndAnswered: 0,
       };
 
   return {
