@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { AuthModalProvider } from "@/contexts/AuthModalContext";
 import { ForumProvider } from "@/contexts/ForumContext";
 import { ExamProvider } from "@/contexts/ExamContext";
+import LanguageTransitionOverlay from "@/components/layout/LanguageTransitionOverlay";
 
 export const metadata: Metadata = {
   title: "Medunacy",
@@ -39,6 +40,7 @@ export default async function LocaleLayout({
         className={`${inter.variable} antialiased`}
         style={{ backgroundColor: "#FBF6E9" }}
       >
+        <LanguageTransitionOverlay />
         <NextIntlClientProvider messages={messages}>
           <AuthProvider>
             <AuthModalProvider>

@@ -2,12 +2,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #FBF6E9;
-  --foreground: #118B50;
-  --medical-cream: #FBF6E9;
-  --medical-light-green: #E3F0AF;
-  --medical-medium-green: #5DB996;
-  --medical-dark-green: #118B50;
+  --background: #fbf6e9;
+  --foreground: #118b50;
+  --medical-cream: #fbf6e9;
+  --medical-light-green: #e3f0af;
+  --medical-medium-green: #5db996;
+  --medical-dark-green: #118b50;
 }
 
 @theme inline {
@@ -15,44 +15,48 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  
+
   /* Custom medical colors */
-  --color-medical-cream: #FBF6E9;
-  --color-medical-light: #E3F0AF;
-  --color-medical-medium: #5DB996;
-  --color-medical-dark: #118B50;
+  --color-medical-cream: #fbf6e9;
+  --color-medical-light: #e3f0af;
+  --color-medical-medium: #5db996;
+  --color-medical-dark: #118b50;
 }
 
 /* Enhanced Custom Animations */
 @keyframes float {
-  0%, 100% { 
-    transform: translateY(0px) rotate(0deg); 
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
   }
-  50% { 
-    transform: translateY(-20px) rotate(5deg); 
+  50% {
+    transform: translateY(-20px) rotate(5deg);
   }
 }
 
 @keyframes float-slow {
-  0%, 100% { 
-    transform: translateY(0px) rotate(0deg) scale(1); 
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg) scale(1);
   }
-  50% { 
-    transform: translateY(-15px) rotate(-3deg) scale(1.05); 
+  50% {
+    transform: translateY(-15px) rotate(-3deg) scale(1.05);
   }
 }
 
 @keyframes float-delayed {
-  0%, 100% { 
-    transform: translateY(0px) rotate(0deg); 
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
   }
-  50% { 
-    transform: translateY(-25px) rotate(8deg); 
+  50% {
+    transform: translateY(-25px) rotate(8deg);
   }
 }
 
 @keyframes gradient-shift {
-  0%, 100% {
+  0%,
+  100% {
     background-position: 0% 50%;
   }
   50% {
@@ -61,7 +65,8 @@
 }
 
 @keyframes gradient-shift-delayed {
-  0%, 100% {
+  0%,
+  100% {
     background-position: 100% 50%;
   }
   50% {
@@ -167,4 +172,12 @@ html {
   outline: 2px solid var(--medical-dark-green);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+.language-transitioning * {
+  transition: opacity 150ms ease-out !important;
+}
+
+.language-transitioning {
+  pointer-events: none;
 }
