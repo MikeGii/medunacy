@@ -3,10 +3,9 @@
 
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import NotificationBadge from "../ui/NotificationBadge";
+import DashboardActionButton from "../ui/DashboardActionButton";
 
 export default function QuickActions() {
   const t = useTranslations("dashboard");
@@ -28,7 +27,7 @@ export default function QuickActions() {
       description: t("forum_description"),
       icon: (
         <svg
-          className="w-6 h-6 md:w-8 md:h-8"
+          className="w-full h-full"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -51,7 +50,7 @@ export default function QuickActions() {
       description: t("my_data_description"),
       icon: (
         <svg
-          className="w-6 h-6 md:w-8 md:h-8"
+          className="w-full h-full"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -67,14 +66,15 @@ export default function QuickActions() {
       href: `${baseUrl}/profile`,
       gradient: "from-[#5DB996] to-[#E3F0AF]",
       bgGradient: "from-[#5DB996]/10 to-[#E3F0AF]/10",
-      showNotification: !loading && !profileCompletion.isComplete,
+      showNotification:
+        profileCompletion && !loading && !profileCompletion.isComplete,
     },
     {
       title: t("exam_tests"),
       description: t("exam_tests_description"),
       icon: (
         <svg
-          className="w-6 h-6 md:w-8 md:h-8"
+          className="w-full h-full"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -110,8 +110,8 @@ export default function QuickActions() {
           </h2>
         </div>
 
-        {/* Quick Action Buttons */}
-        <div className="grid md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
+        {/* Quick Action Buttons - 2 column layout that wraps naturally */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 max-w-4xl mx-auto">
           {quickActions.map((action, index) => (
             <div
               key={index}
@@ -121,72 +121,11 @@ export default function QuickActions() {
                   : "translate-y-10 opacity-0"
               }`}
               style={{
-                animationDelay: `${index * 0.2}s`,
-                transitionDelay: `${index * 0.2}s`,
+                animationDelay: `${index * 0.1}s`,
+                transitionDelay: `${index * 0.1}s`,
               }}
             >
-              <NotificationBadge showBadge={action.showNotification}>
-                <Link
-                  href={action.href}
-                  className={`group relative bg-white/40 backdrop-blur-md rounded-2xl md:rounded-3xl p-6 md:p-8 
-                     border border-white/50 hover:border-[#5DB996]/50 
-                     shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 
-                     overflow-hidden block`}
-                >
-                  {/* Background gradient on hover */}
-                  <div
-                    className={`absolute inset-0 bg-gradient-to-br ${action.bgGradient} opacity-0 
-                         group-hover:opacity-100 transition-opacity duration-500 rounded-2xl md:rounded-3xl`}
-                  />
-
-                  {/* Content */}
-                  <div className="relative flex items-center space-x-4 md:space-x-6">
-                    {/* Icon */}
-                    <div
-                      className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-xl md:rounded-2xl 
-                         bg-gradient-to-br ${action.gradient} text-white flex items-center justify-center 
-                         shadow-lg group-hover:scale-110 transition-transform duration-300`}
-                    >
-                      {action.icon}
-                    </div>
-
-                    {/* Text Content */}
-                    <div className="flex-1 min-w-0 h-20 md:h-24 flex flex-col justify-center">
-                      <h3 className="text-xl md:text-2xl font-bold text-[#118B50] mb-2 group-hover:text-[#0F7A43] transition-colors duration-300 line-clamp-2">
-                        {action.title}
-                      </h3>
-                      <p className="text-gray-600 text-sm md:text-base leading-relaxed line-clamp-2">
-                        {action.description}
-                      </p>
-                    </div>
-
-                    {/* Arrow Icon */}
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-r from-[#E3F0AF] to-[#5DB996] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <svg
-                          className="w-4 h-4 md:w-5 md:h-5 text-[#118B50] group-hover:translate-x-1 transition-transform duration-300"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Hover indicator line */}
-                  <div
-                    className="absolute bottom-0 left-6 right-6 h-1 bg-gradient-to-r from-[#118B50] to-[#5DB996] rounded-full 
-                       transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"
-                  />
-                </Link>
-              </NotificationBadge>
+              <DashboardActionButton {...action} colorScheme="green" />
             </div>
           ))}
         </div>
