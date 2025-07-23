@@ -1,4 +1,4 @@
-// src/contexts/ExamContext.tsx - FIXED VERSION (remove TestSession)
+// src/contexts/ExamContext.tsx - FIXED VERSION with memory leak prevention
 
 "use client";
 
@@ -15,6 +15,15 @@ import { Test, TestCategory, TestCreate, TestUpdate } from "@/types/exam";
 import { RealtimeChannel } from "@supabase/realtime-js";
 import { useAuth } from "@/contexts/AuthContext";
 
+// Cache configuration
+const MAX_CACHE_SIZE = 50;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+interface CachedTest {
+  data: Test;
+  timestamp: number;
+}
+
 interface ExamContextType {
   // State
   categories: TestCategory[];
@@ -22,14 +31,13 @@ interface ExamContextType {
   currentTest: Test | null;
   loading: boolean;
   error: string | null;
-  testCache: Map<string, Test>;
 
   // Actions
   fetchCategories: () => Promise<void>;
   fetchTests: (categoryId?: string) => Promise<void>;
   fetchTestById: (testId: string) => Promise<Test | null>;
   createCategory: (
-    data: Omit<TestCategory, "id" | "created_at">
+    data: Omit<TestCategory, "id" | "created_at" | "updated_at" | "is_active">
   ) => Promise<TestCategory | null>;
   updateCategory: (id: string, data: Partial<TestCategory>) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
@@ -39,6 +47,7 @@ interface ExamContextType {
   publishTest: (id: string) => Promise<void>;
   unpublishTest: (id: string) => Promise<void>;
   clearError: () => void;
+  clearCache: () => void;
 
   // Collaborative features
   subscribeToTestUpdates: (testId: string) => () => void;
@@ -54,7 +63,10 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
   const [currentTest, setCurrentTest] = useState<Test | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [testCache] = useState(new Map<string, Test>());
+
+  // Improved cache with TTL and size limit
+  const testCache = useRef<Map<string, CachedTest>>(new Map());
+  const cacheCleanupTimer = useRef<NodeJS.Timeout | null>(null);
 
   const categoriesSubscription = useRef<RealtimeChannel | null>(null);
   const testsSubscription = useRef<RealtimeChannel | null>(null);
@@ -62,12 +74,86 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     new Map()
   );
 
+  // Cache management functions
+  const addToCache = useCallback((test: Test) => {
+    const cache = testCache.current;
+
+    // Remove expired entries first
+    const now = Date.now();
+    for (const [key, value] of cache.entries()) {
+      if (now - value.timestamp > CACHE_TTL) {
+        cache.delete(key);
+      }
+    }
+
+    // Implement LRU: Remove oldest if at capacity
+    if (cache.size >= MAX_CACHE_SIZE) {
+      let oldestKey = "";
+      let oldestTime = Infinity;
+
+      for (const [key, value] of cache.entries()) {
+        if (value.timestamp < oldestTime) {
+          oldestTime = value.timestamp;
+          oldestKey = key;
+        }
+      }
+
+      if (oldestKey) {
+        cache.delete(oldestKey);
+      }
+    }
+
+    // Add new entry
+    cache.set(test.id, {
+      data: test,
+      timestamp: Date.now(),
+    });
+  }, []);
+
+  const getFromCache = useCallback((testId: string): Test | null => {
+    const cached = testCache.current.get(testId);
+
+    if (!cached) return null;
+
+    // Check if expired
+    if (Date.now() - cached.timestamp > CACHE_TTL) {
+      testCache.current.delete(testId);
+      return null;
+    }
+
+    return cached.data;
+  }, []);
+
+  const clearCache = useCallback(() => {
+    testCache.current.clear();
+  }, []);
+
+  // Periodic cache cleanup
+  useEffect(() => {
+    cacheCleanupTimer.current = setInterval(() => {
+      const now = Date.now();
+      const cache = testCache.current;
+
+      for (const [key, value] of cache.entries()) {
+        if (now - value.timestamp > CACHE_TTL) {
+          cache.delete(key);
+        }
+      }
+    }, 60000); // Run every minute
+
+    return () => {
+      if (cacheCleanupTimer.current) {
+        clearInterval(cacheCleanupTimer.current);
+      }
+    };
+  }, []);
+
   // Clear error
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
-  // Fetch categories with caching
+  // Fetch categories
   const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
@@ -125,9 +211,9 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
 
         setTests(enrichedTests);
 
-        // Update cache
+        // Update cache with new tests
         enrichedTests.forEach((test) => {
-          testCache.set(test.id, test);
+          addToCache(test);
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch tests");
@@ -135,7 +221,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     },
-    [testCache]
+    [addToCache]
   );
 
   // Fetch single test by ID with caching
@@ -143,8 +229,8 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     async (testId: string): Promise<Test | null> => {
       try {
         // Check cache first
-        if (testCache.has(testId)) {
-          const cached = testCache.get(testId)!;
+        const cached = getFromCache(testId);
+        if (cached) {
           setCurrentTest(cached);
           return cached;
         }
@@ -176,7 +262,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         };
 
         setCurrentTest(enrichedTest);
-        testCache.set(testId, enrichedTest);
+        addToCache(enrichedTest);
 
         return enrichedTest;
       } catch (err) {
@@ -186,13 +272,13 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     },
-    [testCache]
+    [getFromCache, addToCache]
   );
 
   // Create category
   const createCategory = useCallback(
     async (
-      data: Omit<TestCategory, "id" | "created_at">
+      data: Omit<TestCategory, "id" | "created_at" | "updated_at" | "is_active">
     ): Promise<TestCategory | null> => {
       try {
         setLoading(true);
@@ -275,7 +361,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Create test with optimistic update
+  // Create test
   const createTest = useCallback(
     async (data: TestCreate): Promise<Test | null> => {
       try {
@@ -283,7 +369,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         setError(null);
 
         const { data: newTest, error: createError } = await supabase
-          .from("exam_tests")
+          .from("tests")
           .insert([
             {
               ...data,
@@ -307,7 +393,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
 
         // Optimistic update
         setTests((prev) => [enrichedTest, ...prev]);
-        testCache.set(enrichedTest.id, enrichedTest);
+        addToCache(enrichedTest);
 
         return enrichedTest;
       } catch (err) {
@@ -317,10 +403,10 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     },
-    [user, testCache]
+    [user, addToCache]
   );
 
-  // Update test with optimistic update
+  // Update test with cache invalidation
   const updateTest = useCallback(
     async (id: string, data: TestUpdate) => {
       try {
@@ -328,7 +414,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         setError(null);
 
         const { error: updateError } = await supabase
-          .from("exam_tests")
+          .from("tests")
           .update(data)
           .eq("id", id);
 
@@ -339,10 +425,12 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
           prev.map((test) => (test.id === id ? { ...test, ...data } : test))
         );
 
-        // Update cache
-        const cachedTest = testCache.get(id);
-        if (cachedTest) {
-          testCache.set(id, { ...cachedTest, ...data });
+        // Invalidate cache for this test
+        testCache.current.delete(id);
+
+        // If it's the current test, update it
+        if (currentTest?.id === id) {
+          setCurrentTest((prev) => (prev ? { ...prev, ...data } : null));
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to update test");
@@ -350,10 +438,10 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     },
-    [testCache]
+    [currentTest]
   );
 
-  // Delete test
+  // Delete test with cache cleanup
   const deleteTest = useCallback(
     async (id: string) => {
       try {
@@ -361,7 +449,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         setError(null);
 
         const { error: deleteError } = await supabase
-          .from("exam_tests")
+          .from("tests")
           .delete()
           .eq("id", id);
 
@@ -369,14 +457,21 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
 
         // Optimistic update
         setTests((prev) => prev.filter((test) => test.id !== id));
-        testCache.delete(id);
+
+        // Remove from cache
+        testCache.current.delete(id);
+
+        // Clear current test if it's the deleted one
+        if (currentTest?.id === id) {
+          setCurrentTest(null);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to delete test");
       } finally {
         setLoading(false);
       }
     },
-    [testCache]
+    [currentTest]
   );
 
   // Publish test
@@ -405,7 +500,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
           {
             event: "*",
             schema: "public",
-            table: "exam_tests",
+            table: "tests",
             filter: `id=eq.${testId}`,
           },
           (payload) => {
@@ -417,11 +512,8 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
                 )
               );
 
-              // Update cache
-              const cachedTest = testCache.get(testId);
-              if (cachedTest) {
-                testCache.set(testId, { ...cachedTest, ...updatedTest });
-              }
+              // Invalidate cache
+              testCache.current.delete(testId);
 
               if (currentTest?.id === testId) {
                 setCurrentTest((prev) =>
@@ -440,10 +532,10 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         testUpdateSubscriptions.current.delete(testId);
       };
     },
-    [currentTest, testCache]
+    [currentTest]
   );
 
-  // Notify when editing a test (for collaborative indicators)
+  // Notify when editing a test
   const notifyTestEdit = useCallback(async (testId: string, userId: string) => {
     const channel = supabase.channel(`test-editors-${testId}`);
 
@@ -454,8 +546,8 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // Set up real-time subscriptions
-  useEffect(() => {
+  // Set up real-time subscriptions with stable callback
+  const setupSubscriptions = useCallback(() => {
     // Subscribe to categories changes
     categoriesSubscription.current = supabase
       .channel("categories-changes")
@@ -487,14 +579,11 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
       .channel("tests-changes")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "exam_tests" },
-        async (payload) => {
+        { event: "*", schema: "public", table: "tests" },
+        (payload) => {
           if (payload.eventType === "INSERT") {
-            // Fetch full test data with relations
-            const newTest = await fetchTestById(payload.new.id);
-            if (newTest) {
-              setTests((prev) => [newTest, ...prev]);
-            }
+            // Invalidate cache for new test
+            testCache.current.delete(payload.new.id);
           } else if (payload.eventType === "UPDATE") {
             setTests((prev) =>
               prev.map((test) =>
@@ -503,16 +592,24 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
                   : test
               )
             );
+            // Invalidate cache
+            testCache.current.delete(payload.old.id);
           } else if (payload.eventType === "DELETE") {
             setTests((prev) =>
               prev.filter((test) => test.id !== payload.old.id)
             );
+            // Remove from cache
+            testCache.current.delete(payload.old.id);
           }
         }
       )
       .subscribe();
+  }, []);
 
-    // Cleanup subscriptions
+  // Set up subscriptions once
+  useEffect(() => {
+    setupSubscriptions();
+
     return () => {
       if (categoriesSubscription.current) {
         supabase.removeChannel(categoriesSubscription.current);
@@ -520,11 +617,27 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
       if (testsSubscription.current) {
         supabase.removeChannel(testsSubscription.current);
       }
+    };
+  }, [setupSubscriptions]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Clear all subscriptions
       testUpdateSubscriptions.current.forEach((channel) => {
         channel.unsubscribe();
       });
+      testUpdateSubscriptions.current.clear();
+
+      // Clear cache
+      testCache.current.clear();
+
+      // Clear timer
+      if (cacheCleanupTimer.current) {
+        clearInterval(cacheCleanupTimer.current);
+      }
     };
-  }, [fetchTestById]);
+  }, []);
 
   const value: ExamContextType = {
     categories,
@@ -532,7 +645,6 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     currentTest,
     loading,
     error,
-    testCache,
     fetchCategories,
     fetchTests,
     fetchTestById,
@@ -545,6 +657,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     publishTest,
     unpublishTest,
     clearError,
+    clearCache,
     subscribeToTestUpdates,
     notifyTestEdit,
   };

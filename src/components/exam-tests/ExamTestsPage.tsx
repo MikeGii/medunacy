@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,6 +37,27 @@ export default function ExamTestsPage() {
   const [selectedMode, setSelectedMode] = useState<"training" | "exam" | null>(
     null
   );
+
+  // After getting tests from context, filter based on user role
+  const filteredTests = useMemo(() => {
+    // Only show published tests to regular users
+    if (!user || user.role === "user") {
+      return tests.filter((test) => test.is_published);
+    }
+
+    // Doctors and admins can see all tests (but this page is for taking tests, not managing)
+    // So even for them, only show published tests on this page
+    return tests.filter((test) => test.is_published);
+  }, [tests, user]);
+
+  // Filter tests by selected category
+  const categoryTests = useMemo(() => {
+    if (!selectedCategory) return [];
+
+    return filteredTests.filter(
+      (test) => test.category_id === selectedCategory.id
+    );
+  }, [filteredTests, selectedCategory]);
 
   // Fetch categories on mount
   useEffect(() => {
@@ -246,7 +267,7 @@ export default function ExamTestsPage() {
                   <div className="flex justify-center py-8">
                     <LoadingSpinner />
                   </div>
-                ) : tests.length === 0 ? (
+                ) : categoryTests.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <svg
@@ -282,7 +303,7 @@ export default function ExamTestsPage() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {tests.map((test) => (
+                    {categoryTests.map((test) => (
                       <button
                         key={test.id}
                         onClick={() => handleTestSelect(test)}

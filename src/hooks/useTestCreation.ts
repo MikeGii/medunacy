@@ -217,7 +217,7 @@ export function useTestCreation(): UseTestCreationReturn {
       try {
         // Fetch the original test with questions
         const { data: originalTest, error: fetchError } = await supabase
-          .from("exam_tests")
+          .from("tests")
           .select(
             `
             *,
@@ -304,7 +304,7 @@ export function useTestCreation(): UseTestCreationReturn {
       try {
         // Fetch test with questions
         const { data: test, error: fetchError } = await supabase
-          .from("exam_tests")
+          .from("tests")
           .select(
             `
             *,
