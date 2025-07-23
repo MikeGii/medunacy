@@ -756,7 +756,9 @@
       "points_earned": "Teenitud punktid",
       "retake_test": "Tee test uuesti",
       "points": "punkti",
-      "question": "Küsimus"
+      "question": "Küsimus",
+      "click_to_see_details": "Klõpsa mis tahes küsimuse numbril, et näha üksikasju"
+
     },
     "errors": {
       "something_went_wrong": "Midagi läks valesti",

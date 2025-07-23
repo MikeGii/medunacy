@@ -108,6 +108,27 @@ export default function DesktopUserMenu({
               </span>
             </Link>
 
+            {/* Exam Tests Link */}
+            <Link
+              href={`${baseUrl}/exam-tests`}
+              onClick={onClose}
+              className="flex items-center space-x-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 group"
+            >
+              <div className="w-5 h-5 text-[#118B50] group-hover:text-[#5DB996]">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                  />
+                </svg>
+              </div>
+              <span className="text-sm font-medium text-gray-700 group-hover:text-[#118B50]">
+                {dashboardT("exam_tests")}
+              </span>
+            </Link>
+
             {/* Healthcare Tools Section - for doctors and admins */}
             {(user.role === "doctor" || user.role === "admin") && (
               <>

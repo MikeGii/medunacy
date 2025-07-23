@@ -174,6 +174,17 @@ export interface ExamAnswerCreate {
 }
 
 // ================================
+// QUESTION RESULT (for display)
+// ================================
+export interface QuestionResult {
+  question: TestQuestion;
+  selectedOptions: QuestionOption[];
+  correctOptions: QuestionOption[];
+  isCorrect: boolean;
+  pointsEarned: number;
+}
+
+// ================================
 // EXAM TAKING STATE (Client-side)
 // ================================
 export interface ExamSessionState {
