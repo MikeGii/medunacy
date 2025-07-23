@@ -1,4 +1,4 @@
-// src/contexts/AuthContext.tsx - Fixed version
+// src/contexts/AuthContext.tsx - Fixed version with language transition support
 "use client";
 
 import {
@@ -40,6 +40,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Helper function to check for language transitions
+  const checkLanguageTransition = useCallback(() => {
+    if (typeof window === "undefined") return null;
+
+    const transitionData = sessionStorage.getItem("medunacy_lang_transition");
+    if (!transitionData) return null;
+
+    try {
+      const data = JSON.parse(transitionData);
+      // Check if transition is recent (within 2 seconds)
+      if (Date.now() - data.timestamp < 2000) {
+        return data;
+      }
+    } catch {
+      // Invalid data
+    }
+
+    sessionStorage.removeItem("medunacy_lang_transition");
+    return null;
+  }, []);
+
   // Memoize the user fetch function to prevent recreating it
   const fetchUserData = useCallback(async (userId: string) => {
     try {
@@ -70,6 +91,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initializeAuth = async () => {
       try {
+        // Check if we're in a language transition
+        const transition = checkLanguageTransition();
+        if (transition && transition.isAuthenticated) {
+          // During language switch, maintain loading state briefly
+          // but don't clear the user to prevent flash
+          setLoading(true);
+        }
+
         // Get initial session
         const {
           data: { session },
@@ -80,7 +109,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (error) {
           console.error("Error getting session:", error);
-          setUser(null);
+          // Only clear user if not in transition
+          if (!transition || !transition.isAuthenticated) {
+            setUser(null);
+          }
           return;
         }
 
@@ -96,18 +128,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           setUser(userWithRole);
         } else {
-          setUser(null);
+          // Only clear user if not in transition
+          if (!transition || !transition.isAuthenticated) {
+            setUser(null);
+          }
         }
       } catch (error) {
         console.error("Error in initializeAuth:", error);
         if (mounted) {
-          setUser(null);
+          const transition = checkLanguageTransition();
+          if (!transition || !transition.isAuthenticated) {
+            setUser(null);
+          }
         }
       } finally {
         if (mounted) {
           setLoading(false);
           setIsInitialized(true);
-          setIsHydrating(false); // Add this
+          setIsHydrating(false);
         }
       }
     };
@@ -122,6 +160,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Skip if we're still initializing to prevent loops
       if (!isInitialized && event !== "INITIAL_SESSION") return;
+
+      // Check if we're in a language transition
+      const transition = checkLanguageTransition();
 
       console.log("Auth event:", event);
 
@@ -138,8 +179,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           setUser(userWithRole);
 
-          // Handle language redirect only on SIGNED_IN event
-          if (event === "SIGNED_IN" && userData.preferred_language) {
+          // Handle language redirect only on SIGNED_IN event and not during language switch
+          if (
+            event === "SIGNED_IN" &&
+            userData.preferred_language &&
+            !transition
+          ) {
             const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
 
             if (userData.preferred_language !== currentLocale) {
@@ -157,13 +202,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         } else {
           if (mounted) {
-            setUser(null);
+            // Only clear user if not in transition
+            if (!transition || !transition.isAuthenticated) {
+              setUser(null);
+            }
           }
         }
       } catch (error) {
         console.error("Error in auth state change:", error);
         if (mounted) {
-          setUser(null);
+          const transition = checkLanguageTransition();
+          if (!transition || !transition.isAuthenticated) {
+            setUser(null);
+          }
         }
       }
 
@@ -177,7 +228,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [isInitialized, fetchUserData, pathname, router]);
+  }, [isInitialized, fetchUserData, pathname, router, checkLanguageTransition]);
 
   const signOut = useCallback(async () => {
     try {
