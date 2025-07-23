@@ -430,7 +430,9 @@
     "exam_tests": "Екзаменаційні тести",
     "exam_tests_description": "Практикуйтеся та готуйтеся до іспитів",
     "test_creation": "Створення тестів",
-    "test_creation_description": "Створюйте та керуйте категоріями та тестами іспитів"
+    "test_creation_description": "Створюйте та керуйте категоріями та тестами іспитів",
+    "exam_session_results": "Результати іспитів",
+    "exam_session_results_description": "Переглядайте та аналізуйте результати іспитових сесій"
   },
 
   "forum": {
@@ -899,5 +901,29 @@
     "duplicate": "Дублювати",
     "new_test": "Новий тест",
     "description": "Опис"
+  },
+  "exam_session_results": {
+    "page_title": "Результати іспитової сесії",
+    "page_subtitle": "Переглядайте та аналізуйте детальні результати іспитів",
+    "search_placeholder": "Шукати за іменем, тестом або категорією...",
+    "no_sessions": "Іспитові сесії не знайдено",
+    "no_results_search": "Результати пошуку не знайдено",
+    "passed": "Пройдено",
+    "failed": "Не пройдено",
+    "view_details": "Переглянути деталі",
+    "previous": "Попередня",
+    "next": "Наступна",
+    "showing": "Показано",
+    "to": "до",
+    "of": "з",
+    "results": "результатів",
+    "table": {
+      "category_test": "Категорія / Тест",
+      "user_name": "Ім'я користувача",
+      "exam_date": "Дата іспиту",
+      "result": "Результат",
+      "score": "Бал",
+      "actions": "Дії"
+    }
   }
 }

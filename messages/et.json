@@ -430,7 +430,9 @@
     "exam_tests": "Eksamitestid",
     "exam_tests_description": "Harjuta ja valmista eksamiteks",
     "test_creation": "Testide loomine",
-    "test_creation_description": "Loo ja halda eksamikategooriaid ning teste"
+    "test_creation_description": "Loo ja halda eksamikategooriaid ning teste",
+    "exam_session_results": "Eksami tulemused",
+    "exam_session_results_description": "Vaata ja analüüsi eksami seansi tulemusi"
   },
 
   "forum": {
@@ -903,5 +905,29 @@
     "duplicate": "Dubleeri",
     "new_test": "Uus test",
     "description": "Kirjeldus"
+  },
+  "exam_session_results": {
+    "page_title": "Eksami seansi tulemused",
+    "page_subtitle": "Vaata ja analüüsi üksikasjalikke eksami tulemusi",
+    "search_placeholder": "Otsi nime, testi või kategooria järgi...",
+    "no_sessions": "Eksami seansse ei leitud",
+    "no_results_search": "Otsingu tulemusi ei leitud",
+    "passed": "Läbitud",
+    "failed": "Ebaõnnestunud",
+    "view_details": "Vaata üksikasju",
+    "previous": "Eelmine",
+    "next": "Järgmine",
+    "showing": "Näitan",
+    "to": "kuni",
+    "of": "kokku",
+    "results": "tulemust",
+    "table": {
+      "category_test": "Kategooria / Test",
+      "user_name": "Kasutaja nimi",
+      "exam_date": "Eksami kuupäev",
+      "result": "Tulemus",
+      "score": "Skoor",
+      "actions": "Tegevused"
+    }
   }
 }
