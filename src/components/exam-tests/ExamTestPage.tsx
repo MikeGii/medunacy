@@ -9,6 +9,7 @@ import { useExamSession } from "@/hooks/useExamSession";
 import ExamQuestion from "./ExamQuestion";
 import ExamProgress from "./ExamProgress";
 import ExamTimer from "./ExamTimer";
+import QuestionNavigationGrid from "./exam/QuestionNavigationGrid";
 import { useTranslations, useLocale } from "next-intl";
 import ExamErrorBoundary from "@/components/exam-tests/common/ExamErrorBoundary";
 import ErrorDisplay from "./common/ErrorDisplay";
@@ -197,6 +198,7 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
                   total={progress.total}
                   answered={progress.answered}
                   markedForReview={progress.markedForReview}
+                  markedQuestions={progress.markedAndAnswered}
                 />
               </div>
 
@@ -221,166 +223,183 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          {/* Error Display */}
-          {error && (
-            <ErrorDisplay error={error} type="error" className="mb-6" />
-          )}
+        {/* Main Content - Two Column Layout */}
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="flex gap-6">
+            {/* Left Column - Question (80% width) */}
+            <div className="flex-1">
+              {/* Error Display */}
+              {error && (
+                <ErrorDisplay error={error} type="error" className="mb-6" />
+              )}
 
-          {/* Question Card */}
-          {currentQuestion && (
-            <ExamQuestion
-              question={currentQuestion}
-              selectedAnswers={selectedAnswer}
-              onSelectAnswer={selectAnswer}
-              isMarkedForReview={isMarkedForReview}
-              onToggleMarkForReview={toggleMarkForReview}
-              showCorrectAnswers={
-                mode === "training" &&
-                sessionState.test.show_correct_answers_in_training &&
-                selectedAnswer.length > 0 // Only show after answering
-              }
-              questionNumber={progress.current + 1}
-            />
-          )}
-
-          {/* Navigation */}
-          <div className="flex justify-between items-center mt-8">
-            <button
-              onClick={goToPrevious}
-              disabled={progress.current === 0}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all ${
-                progress.current === 0
-                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  : "bg-white border-2 border-gray-300 text-gray-700 hover:border-[#118B50] hover:text-[#118B50]"
-              }`}
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
+              {/* Question Card */}
+              {currentQuestion && (
+                <ExamQuestion
+                  question={currentQuestion}
+                  selectedAnswers={selectedAnswer}
+                  onSelectAnswer={selectAnswer}
+                  isMarkedForReview={isMarkedForReview}
+                  onToggleMarkForReview={toggleMarkForReview}
+                  showCorrectAnswers={
+                    mode === "training" &&
+                    sessionState.test.show_correct_answers_in_training &&
+                    selectedAnswer.length > 0 // Only show after answering
+                  }
+                  questionNumber={progress.current + 1}
                 />
-              </svg>
-              <span>{t("previous")}</span>
-            </button>
+              )}
 
-            {/* Question Navigator */}
-            <div className="flex items-center space-x-2">
-              {(() => {
-                const totalQuestions = progress.total;
-                const currentIndex = progress.current;
+              {/* Navigation */}
+              <div className="flex justify-between items-center mt-8">
+                <button
+                  onClick={goToPrevious}
+                  disabled={progress.current === 0}
+                  className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all ${
+                    progress.current === 0
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-white border-2 border-gray-300 text-gray-700 hover:border-[#118B50] hover:text-[#118B50]"
+                  }`}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                  <span>{t("previous")}</span>
+                </button>
 
-                // Show up to 5 questions centered around current
-                const maxVisible = 5;
-                const halfWindow = Math.floor(maxVisible / 2);
+                {/* Question Navigator */}
+                <div className="flex items-center space-x-2">
+                  {(() => {
+                    const totalQuestions = progress.total;
+                    const currentIndex = progress.current;
 
-                // Calculate start and end indices
-                let start = Math.max(0, currentIndex - halfWindow);
-                const end = Math.min(
-                  totalQuestions - 1,
-                  start + maxVisible - 1
-                );
+                    // Show up to 5 questions centered around current
+                    const maxVisible = 5;
+                    const halfWindow = Math.floor(maxVisible / 2);
 
-                // Adjust start if we're near the end
-                if (end - start + 1 < maxVisible) {
-                  start = Math.max(0, end - maxVisible + 1);
-                }
+                    // Calculate start and end indices
+                    let start = Math.max(0, currentIndex - halfWindow);
+                    const end = Math.min(
+                      totalQuestions - 1,
+                      start + maxVisible - 1
+                    );
 
-                const buttons = [];
+                    // Adjust start if we're near the end
+                    if (end - start + 1 < maxVisible) {
+                      start = Math.max(0, end - maxVisible + 1);
+                    }
 
-                // Add "..." at the beginning if needed
-                if (start > 0) {
-                  buttons.push(
-                    <span key="dots-start" className="text-gray-500 px-1">
-                      ...
-                    </span>
-                  );
-                }
+                    const buttons = [];
 
-                // Add question buttons
-                for (let i = start; i <= end; i++) {
-                  const question = sessionState.questions[i];
-                  if (!question) continue;
+                    // Add "..." at the beginning if needed
+                    if (start > 0) {
+                      buttons.push(
+                        <span key="dots-start" className="text-gray-500 px-1">
+                          ...
+                        </span>
+                      );
+                    }
 
-                  const isAnswered =
-                    !!sessionState.answers[question.id]?.length;
-                  const isMarked = sessionState.markedForReview.has(
-                    question.id
-                  );
-                  const isCurrent = i === currentIndex;
+                    // Add question buttons
+                    for (let i = start; i <= end; i++) {
+                      const question = sessionState.questions[i];
+                      if (!question) continue;
 
-                  buttons.push(
-                    <button
-                      key={`q-${question.id}`} // Use question ID for unique key
-                      onClick={() => goToQuestion(i)}
-                      className={`w-10 h-10 rounded-lg font-medium transition-all ${
-                        isCurrent
-                          ? "bg-[#118B50] text-white"
-                          : isAnswered
-                          ? "bg-green-100 text-green-800 hover:bg-green-200"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      } ${isMarked ? "ring-2 ring-yellow-400" : ""}`}
-                      title={`${t("question")} ${i + 1}`}
-                    >
-                      {i + 1}
-                    </button>
-                  );
-                }
+                      const isAnswered =
+                        !!sessionState.answers[question.id]?.length;
+                      const isMarked = sessionState.markedForReview.has(
+                        question.id
+                      );
+                      const isCurrent = i === currentIndex;
 
-                // Add "..." at the end if needed
-                if (end < totalQuestions - 1) {
-                  buttons.push(
-                    <span key="dots-end" className="text-gray-500 px-1">
-                      ... +{totalQuestions - end - 1}
-                    </span>
-                  );
-                }
+                      buttons.push(
+                        <button
+                          key={`q-${question.id}`} // Use question ID for unique key
+                          onClick={() => goToQuestion(i)}
+                          className={`w-10 h-10 rounded-lg font-medium transition-all ${
+                            isCurrent
+                              ? "bg-[#118B50] text-white"
+                              : isAnswered
+                              ? "bg-green-100 text-green-800 hover:bg-green-200"
+                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          } ${isMarked ? "ring-2 ring-yellow-400" : ""}`}
+                          title={`${t("question")} ${i + 1}`}
+                        >
+                          {i + 1}
+                        </button>
+                      );
+                    }
 
-                return buttons;
-              })()}
+                    // Add "..." at the end if needed
+                    if (end < totalQuestions - 1) {
+                      buttons.push(
+                        <span key="dots-end" className="text-gray-500 px-1">
+                          ... +{totalQuestions - end - 1}
+                        </span>
+                      );
+                    }
+
+                    return buttons;
+                  })()}
+                </div>
+
+                <button
+                  onClick={goToNext}
+                  disabled={progress.current === progress.total - 1}
+                  className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all ${
+                    progress.current === progress.total - 1
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white hover:from-[#0A6B3B] hover:to-[#4A9B7E]"
+                  }`}
+                >
+                  <span>{t("next")}</span>
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Keyboard shortcuts hint */}
+              <div className="mt-8 text-center text-sm text-gray-500">
+                {t("keyboard_shortcuts")}: ← {t("previous")} | → {t("next")} | M{" "}
+                {t("mark_for_review")}
+              </div>
             </div>
 
-            <button
-              onClick={goToNext}
-              disabled={progress.current === progress.total - 1}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all ${
-                progress.current === progress.total - 1
-                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  : "bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white hover:from-[#0A6B3B] hover:to-[#4A9B7E]"
-              }`}
-            >
-              <span>{t("next")}</span>
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
+            {/* Right Column - Question Grid (20% width) */}
+            <div className="w-64 flex-shrink-0">
+              <div className="sticky top-24">
+                <QuestionNavigationGrid
+                  questions={sessionState.questions}
+                  currentIndex={sessionState.currentQuestionIndex}
+                  answers={sessionState.answers}
+                  markedForReview={sessionState.markedForReview}
+                  onQuestionClick={goToQuestion}
                 />
-              </svg>
-            </button>
-          </div>
-
-          {/* Keyboard shortcuts hint */}
-          <div className="mt-8 text-center text-sm text-gray-500">
-            {t("keyboard_shortcuts")}: ← {t("previous")} | → {t("next")} | M{" "}
-            {t("mark_for_review")}
+              </div>
+            </div>
           </div>
         </div>
-
         {/* Submit Confirmation Modal */}
         <ConfirmationModal
           isOpen={showConfirmSubmit}
@@ -401,7 +420,6 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
           }}
           onCancel={() => setShowConfirmSubmit(false)}
         />
-
         {/* Exit Confirmation Modal */}
         <ConfirmationModal
           isOpen={showExitConfirm}
