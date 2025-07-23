@@ -53,7 +53,7 @@ export function useUserProfile() {
       try {
         setError(null);
 
-        // Fetch professional data
+        // Fetch professional data - now returns null instead of throwing
         const profData = await getUserData(user.id);
         setProfessionalData(profData);
 
@@ -65,8 +65,10 @@ export function useUserProfile() {
           .eq("user_id", user.id)
           .single();
 
+        // Handle missing user data gracefully
         if (dbError && dbError.code !== "PGRST116") {
-          throw dbError;
+          console.error("Error fetching user data:", dbError);
+          // Don't throw, just log
         }
 
         setPersonalData({
@@ -77,9 +79,9 @@ export function useUserProfile() {
           language: userData?.preferred_language || "et",
         });
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch user data"
-        );
+        // This should rarely happen now since getUserData doesn't throw
+        console.error("Unexpected error fetching user data:", err);
+        setError(null); // Don't show error to user for missing data
       } finally {
         setLoading(false);
       }
