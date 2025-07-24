@@ -977,7 +977,8 @@
       "unenroll": "Tühista registreerumine",
       "enrolled": "Registreeritud",
       "view_details": "Vaata lähemalt",
-      "back_to_courses": "Tagasi koolituste juurde"
+      "back_to_courses": "Tagasi koolituste juurde",
+      "loading": "Laadimine..."
     },
 
     "messages": {

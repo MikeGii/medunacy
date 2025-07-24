@@ -93,19 +93,12 @@ export async function getCourses(filters?: {
   // Ensure we have an array even if data is null
   const courses = data || [];
 
-  // Add computed status and filter if needed
+  // Add computed status for ALL courses
   const coursesWithStatus = courses.map((course) => ({
     ...course,
     status: getCourseStatus(course.start_date),
     enrollment_count: course.enrollments?.[0]?.count || 0,
   }));
-
-  // Filter by status if specified
-  if (filters?.status) {
-    return coursesWithStatus.filter(
-      (course) => course.status === filters.status
-    );
-  }
 
   // Check enrollment status for specific user
   if (filters?.user_id) {

@@ -7,6 +7,7 @@ import { Course } from "@/types/course.types";
 import { format } from "date-fns";
 import { et, uk } from "date-fns/locale";
 import CourseDetailsModal from "./CourseDetailsModal";
+import { usePathname } from "next/navigation";
 
 interface CourseCardProps {
   course: Course;
@@ -23,7 +24,8 @@ export default function CourseCard({
 }: CourseCardProps) {
   const t = useTranslations("courses");
   const tMessages = useTranslations("courses.messages");
-  const locale = useTranslations()("_locale") as "et" | "ukr";
+  const pathname = usePathname();
+  const locale = pathname.startsWith("/ukr") ? "ukr" : "et";
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showDetails, setShowDetails] = useState(false);

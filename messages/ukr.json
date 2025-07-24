@@ -973,7 +973,8 @@
       "unenroll": "Скасувати реєстрацію",
       "enrolled": "Зареєстровано",
       "view_details": "Детальніше",
-      "back_to_courses": "Назад до курсів"
+      "back_to_courses": "Назад до курсів",
+      "loading": "Завантаження..."
     },
 
     "messages": {

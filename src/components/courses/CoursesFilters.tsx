@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { CourseCategory } from "@/types/course.types";
+import { usePathname } from "next/navigation";
 
 interface CoursesFiltersProps {
   categories: CourseCategory[];
@@ -19,7 +20,8 @@ export default function CoursesFilters({
   onSearchChange,
 }: CoursesFiltersProps) {
   const t = useTranslations("courses.filters");
-  const locale = useTranslations()("_locale") as "et" | "ukr";
+  const pathname = usePathname();
+  const locale = pathname.startsWith("/ukr") ? "ukr" : "et";
 
   return (
     <div className="flex flex-col sm:flex-row gap-4 mb-6">
