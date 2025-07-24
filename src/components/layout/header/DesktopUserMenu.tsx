@@ -129,6 +129,27 @@ export default function DesktopUserMenu({
               </span>
             </Link>
 
+            {/* Courses Link */}
+            <Link
+              href={`${baseUrl}/courses`}
+              onClick={onClose}
+              className="flex items-center space-x-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 group"
+            >
+              <div className="w-5 h-5 text-[#118B50] group-hover:text-[#5DB996]">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                  />
+                </svg>
+              </div>
+              <span className="text-sm font-medium text-gray-700 group-hover:text-[#118B50]">
+                {dashboardT("courses")}
+              </span>
+            </Link>
+
             {/* Healthcare Tools Section - for doctors and admins */}
             {(user.role === "doctor" || user.role === "admin") && (
               <>
@@ -138,7 +159,6 @@ export default function DesktopUserMenu({
                       {dashboardT("healthcare_tools")}
                     </p>
                   </div>
-
                   <Link
                     href={`${baseUrl}/users`}
                     onClick={onClose}
@@ -162,7 +182,6 @@ export default function DesktopUserMenu({
                       {dashboardT("users")}
                     </span>
                   </Link>
-
                   <Link
                     href={`${baseUrl}/exam-tests/create`}
                     onClick={onClose}
@@ -184,6 +203,56 @@ export default function DesktopUserMenu({
                     </div>
                     <span className="text-sm font-medium text-gray-700 group-hover:text-[#118B50]">
                       {dashboardT("test_creation")}
+                    </span>
+                  </Link>
+
+                  {/* Exam Results Link */}
+                  <Link
+                    href={`${baseUrl}/exam-results`}
+                    onClick={onClose}
+                    className="flex items-center space-x-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 group"
+                  >
+                    <div className="w-5 h-5 text-emerald-600 group-hover:text-emerald-700">
+                      <svg
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 group-hover:text-emerald-600">
+                      {dashboardT("exam_results")}
+                    </span>
+                  </Link>
+
+                  {/* Courses Panel Link */}
+                  <Link
+                    href={`${baseUrl}/courses-panel`}
+                    onClick={onClose}
+                    className="flex items-center space-x-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors duration-200 group"
+                  >
+                    <div className="w-5 h-5 text-emerald-600 group-hover:text-emerald-700">
+                      <svg
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                        />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 group-hover:text-emerald-600">
+                      {dashboardT("courses_panel")}
                     </span>
                   </Link>
                 </div>

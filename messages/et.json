@@ -432,7 +432,13 @@
     "test_creation": "Testide loomine",
     "test_creation_description": "Loo ja halda eksamikategooriaid ning teste",
     "exam_session_results": "Eksami tulemused",
-    "exam_session_results_description": "Vaata ja analüüsi eksami seansi tulemusi"
+    "exam_session_results_description": "Vaata ja analüüsi eksami seansi tulemusi",
+    "courses": "Koolitused",
+    "courses_description": "Vaata ja registreeru meditsiinilistele koolitustele",
+    "courses_panel": "Koolituste haldus",
+    "courses_panel_description": "Halda koolitusi ja vaata registreerunuid",
+    "exam_results": "Eksami tulemused",
+    "exam_results_description": "Vaata ja halda eksami tulemusi"
   },
 
   "forum": {
@@ -928,6 +934,155 @@
       "result": "Tulemus",
       "score": "Skoor",
       "actions": "Tegevused"
+    }
+  },
+  "courses": {
+    "title": "Koolitused",
+    "description": "Registreeru meditsiinilistele koolitustele ja kursustele",
+
+    "tabs": {
+      "upcoming": "Tulevased",
+      "past": "Toimunud",
+      "my_courses": "Minu koolitused"
+    },
+
+    "filters": {
+      "all_categories": "Kõik kategooriad",
+      "search_placeholder": "Otsi koolitusi..."
+    },
+
+    "course": {
+      "provider": "Korraldaja",
+      "date": "Kuupäev",
+      "location": "Asukoht",
+      "type": "Tüüp",
+      "category": "Kategooria",
+      "enrolled_count": "{count} registreerunud",
+      "description": "Kirjeldus"
+    },
+
+    "location_types": {
+      "online": "E-koolitus",
+      "hybrid": "Hübriidkoolitus",
+      "in_person": "Kohapeal"
+    },
+
+    "course_types": {
+      "paid": "Tasuline",
+      "free": "Tasuta"
+    },
+
+    "actions": {
+      "enroll": "Registreeru",
+      "unenroll": "Tühista registreerumine",
+      "enrolled": "Registreeritud",
+      "view_details": "Vaata lähemalt",
+      "back_to_courses": "Tagasi koolituste juurde"
+    },
+
+    "messages": {
+      "no_courses": "Koolitusi ei leitud",
+      "no_upcoming": "Tulevasi koolitusi ei ole",
+      "no_past": "Toimunud koolitusi ei ole",
+      "no_enrolled": "Sa pole veel ühelegi koolitusele registreerunud",
+      "enroll_success": "Edukalt registreeritud!",
+      "enroll_error": "Registreerumine ebaõnnestus",
+      "unenroll_success": "Registreerumine tühistatud",
+      "unenroll_error": "Tühistamine ebaõnnestus",
+      "already_enrolled": "Oled juba registreerunud"
+    },
+
+    "loading": "Laadin koolitusi...",
+    "error": "Viga koolituste laadimisel"
+  },
+
+  "courses_panel": {
+    "title": "Koolituste haldus",
+    "description": "Halda koolitusi ja kategooriaid",
+
+    "tabs": {
+      "courses": "Koolitused",
+      "categories": "Kategooriad",
+      "enrollments": "Registreerunud"
+    },
+
+    "table": {
+      "name": "Nimi",
+      "provider": "Korraldaja",
+      "date": "Kuupäev",
+      "location": "Asukoht",
+      "type": "Tüüp",
+      "category": "Kategooria",
+      "enrolled": "Registreerunud",
+      "actions": "Tegevused",
+      "created_at": "Loodud",
+      "updated_at": "Uuendatud"
+    },
+
+    "form": {
+      "create_course": "Lisa uus koolitus",
+      "edit_course": "Muuda koolitust",
+      "create_category": "Lisa uus kategooria",
+      "edit_category": "Muuda kategooriat",
+
+      "fields": {
+        "name": "Koolituse nimi",
+        "name_placeholder": "Sisesta koolituse nimi",
+        "provider": "Korraldaja",
+        "provider_placeholder": "Sisesta korraldaja nimi",
+        "description": "Kirjeldus",
+        "description_placeholder": "Sisesta koolituse kirjeldus",
+        "start_date": "Alguskuupäev",
+        "end_date": "Lõppkuupäev (valikuline)",
+        "category": "Kategooria",
+        "select_category": "Vali kategooria",
+        "location_type": "Koolituse tüüp",
+        "course_type": "Maksumus",
+        "category_name_et": "Kategooria nimi (eesti)",
+        "category_name_uk": "Kategooria nimi (ukraina)",
+        "category_name_placeholder": "Sisesta kategooria nimi"
+      },
+
+      "validation": {
+        "name_required": "Koolituse nimi on kohustuslik",
+        "provider_required": "Korraldaja on kohustuslik",
+        "start_date_required": "Alguskuupäev on kohustuslik",
+        "category_required": "Kategooria on kohustuslik",
+        "category_name_required": "Kategooria nimi on kohustuslik"
+      },
+      "actions": {
+        "edit": "Muuda",
+        "delete": "Kustuta",
+        "save": "Salvesta",
+        "cancel": "Tühista",
+        "saving": "Salvestamine...",
+        "loading": "Laadimine...",
+        "create": "Loo",
+        "update": "Uuenda"
+      }
+    },
+
+    "messages": {
+      "create_success": "Koolitus edukalt lisatud",
+      "update_success": "Koolitus edukalt uuendatud",
+      "delete_success": "Koolitus edukalt kustutatud",
+      "create_error": "Viga koolituse lisamisel",
+      "update_error": "Viga koolituse uuendamisel",
+      "delete_error": "Viga koolituse kustutamisel",
+      "delete_confirm": "Kas oled kindel, et soovid selle koolituse kustutada?",
+      "category_create_success": "Kategooria edukalt lisatud",
+      "category_update_success": "Kategooria edukalt uuendatud",
+      "category_delete_success": "Kategooria edukalt kustutatud",
+      "category_delete_confirm": "Kas oled kindel, et soovid selle kategooria kustutada?"
+    },
+
+    "enrollments": {
+      "title": "Registreerunud kasutajad",
+      "no_enrollments": "Sellele koolitusele pole veel keegi registreerunud",
+      "user": "Kasutaja",
+      "enrolled_at": "Registreerus",
+      "select_course": "Vali koolitus",
+      "select_course_to_view": "Vali koolitus registreerunute vaatamiseks"
     }
   }
 }
