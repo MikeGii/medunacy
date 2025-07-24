@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { createPortal } from "react-dom";
 import { Course, CourseCategory } from "@/types/course.types";
+import { usePathname } from "next/navigation";
 
 interface CourseFormProps {
   course: Course | null;
@@ -22,6 +23,8 @@ export default function CourseForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const tCourses = useTranslations("courses");
+  const pathname = usePathname();
+  const locale = pathname.startsWith("/ukr") ? "ukr" : "et";
 
   const [formData, setFormData] = useState({
     name: "",
@@ -54,15 +57,29 @@ export default function CourseForm({
     setLoading(true);
     setError(null);
 
-    const result = await onSubmit(formData);
+    try {
+      // Log the data being sent
+      console.log("Submitting course data:", formData);
 
-    if (!result.success) {
-      setError(result.error || t(course ? "update_error" : "create_error"));
-    } else {
-      onClose();
+      const result = await onSubmit(formData);
+
+      if (!result.success) {
+        console.error("Submit failed:", result.error);
+        setError(
+          result.error ||
+            t(course ? "messages.update_error" : "messages.create_error")
+        );
+      } else {
+        onClose();
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      setError(
+        err instanceof Error ? err.message : "An unexpected error occurred"
+      );
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const modalContent = (
@@ -146,7 +163,7 @@ export default function CourseForm({
                   <option value="">{t("fields.select_category")}</option>
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
-                      {cat.name}
+                      {locale === "ukr" ? cat.name_uk : cat.name_et}
                     </option>
                   ))}
                 </select>

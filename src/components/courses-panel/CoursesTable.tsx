@@ -18,6 +18,7 @@ export default function CoursesTable({
   onDelete,
 }: CoursesTableProps) {
   const t = useTranslations("courses_panel.table");
+  const t2 = useTranslations("courses_panel.form");
   const tCourses = useTranslations("courses");
   const locale = usePathname().startsWith("/ukr") ? "ukr" : "et";
   const dateLocale = locale === "ukr" ? uk : et;
@@ -86,13 +87,13 @@ export default function CoursesTable({
                     onClick={() => onEdit(course)}
                     className="text-indigo-600 hover:text-indigo-900 mr-4"
                   >
-                    {t("actions.edit")}
+                    {t2("actions.edit")}
                   </button>
                   <button
                     onClick={() => onDelete(course.id)}
                     className="text-red-600 hover:text-red-900"
                   >
-                    {t("actions.delete")}
+                    {t2("actions.delete")}
                   </button>
                 </td>
               </tr>

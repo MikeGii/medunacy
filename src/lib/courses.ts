@@ -169,16 +169,25 @@ export async function createCourse(
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Clean up the data before sending
+  const courseData = {
+    ...course,
+    created_by: user?.id,
+    // Convert empty string to null for optional date field
+    end_date: course.end_date || null,
+  };
+
   const { data, error } = await supabase
     .from("courses")
-    .insert({
-      ...course,
-      created_by: user?.id,
-    })
+    .insert(courseData)
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("Supabase error:", error);
+    throw error;
+  }
+
   return data as Course;
 }
 
@@ -198,14 +207,25 @@ export async function updateCourse(
     >
   >
 ) {
+  // Clean up the data before sending
+  const updateData = {
+    ...updates,
+    // Convert empty string to null for optional date field
+    end_date: updates.end_date || null,
+  };
+
   const { data, error } = await supabase
     .from("courses")
-    .update(updates)
+    .update(updateData)
     .eq("id", id)
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("Supabase error:", error);
+    throw error;
+  }
+
   return data as Course;
 }
 
