@@ -1,0 +1,136 @@
+{
+  "courses": {
+    "title": "Навчання",
+    "description": "Реєструйтесь на медичні тренінги та курси",
+    "tabs": {
+      "upcoming": "Майбутні",
+      "past": "Завершені",
+      "my_courses": "Мої курси"
+    },
+    "filters": {
+      "all_categories": "Всі категорії",
+      "search_placeholder": "Пошук курсів..."
+    },
+    "course": {
+      "provider": "Організатор",
+      "date": "Дата",
+      "location": "Місце проведення",
+      "type": "Тип",
+      "category": "Категорія",
+      "enrolled_count": "{count} зареєстровано",
+      "description": "Опис"
+    },
+    "location_types": {
+      "online": "Онлайн",
+      "hybrid": "Гібридний",
+      "in_person": "Очно"
+    },
+    "course_types": {
+      "paid": "Платний",
+      "free": "Безкоштовний"
+    },
+    "actions": {
+      "enroll": "Зареєструватися",
+      "unenroll": "Скасувати реєстрацію",
+      "enrolled": "Зареєстровано",
+      "view_details": "Детальніше",
+      "back_to_courses": "Назад до курсів",
+      "loading": "Завантаження..."
+    },
+    "messages": {
+      "no_courses": "Курси не знайдено",
+      "no_upcoming": "Немає майбутніх курсів",
+      "no_past": "Немає завершених курсів",
+      "no_enrolled": "Ви ще не зареєстровані на жоден курс",
+      "enroll_success": "Успішно зареєстровано!",
+      "enroll_error": "Помилка реєстрації",
+      "unenroll_success": "Реєстрацію скасовано",
+      "unenroll_error": "Помилка скасування",
+      "already_enrolled": "Ви вже зареєстровані"
+    },
+    "loading": "Завантаження курсів...",
+    "error": "Помилка завантаження курсів"
+  },
+  "courses_panel": {
+    "title": "Управління курсами",
+    "description": "Керуйте курсами та категоріями",
+    "tabs": {
+      "courses": "Курси",
+      "categories": "Категорії",
+      "enrollments": "Зареєстровані"
+    },
+    "table": {
+      "name": "Назва",
+      "provider": "Організатор",
+      "date": "Дата",
+      "location": "Місце",
+      "type": "Тип",
+      "category": "Категорія",
+      "enrolled": "Зареєстровано",
+      "actions": "Дії",
+      "created_at": "Створено",
+      "updated_at": "Оновлено"
+    },
+    "form": {
+      "create_course": "Додати новий курс",
+      "edit_course": "Редагувати курс",
+      "create_category": "Додати нову категорію",
+      "edit_category": "Редагувати категорію",
+      "fields": {
+        "name": "Назва курсу",
+        "name_placeholder": "Введіть назву курсу",
+        "provider": "Організатор",
+        "provider_placeholder": "Введіть назву організатора",
+        "description": "Опис",
+        "description_placeholder": "Введіть опис курсу",
+        "start_date": "Дата початку",
+        "end_date": "Дата завершення (необов'язково)",
+        "category": "Категорія",
+        "select_category": "Оберіть категорію",
+        "location_type": "Тип курсу",
+        "course_type": "Вартість",
+        "category_name_et": "Назва категорії (естонська)",
+        "category_name_uk": "Назва категорії (українська)",
+        "category_name_placeholder": "Введіть назву категорії"
+      },
+      "validation": {
+        "name_required": "Назва курсу є обов'язковою",
+        "provider_required": "Організатор є обов'язковим",
+        "start_date_required": "Дата початку є обов'язковою",
+        "category_required": "Категорія є обов'язковою",
+        "category_name_required": "Назва категорії є обов'язковою"
+      },
+      "actions": {
+        "edit": "Редагувати",
+        "delete": "Видалити",
+        "save": "Зберегти",
+        "cancel": "Скасувати",
+        "saving": "Збереження...",
+        "loading": "Завантаження...",
+        "create": "Створити",
+        "update": "Оновити"
+      }
+    },
+    "messages": {
+      "create_success": "Курс успішно додано",
+      "update_success": "Курс успішно оновлено",
+      "delete_success": "Курс успішно видалено",
+      "create_error": "Помилка при додаванні курсу",
+      "update_error": "Помилка при оновленні курсу",
+      "delete_error": "Помилка при видаленні курсу",
+      "delete_confirm": "Ви впевнені, що хочете видалити цей курс?",
+      "category_create_success": "Категорію успішно додано",
+      "category_update_success": "Категорію успішно оновлено",
+      "category_delete_success": "Категорію успішно видалено",
+      "category_delete_confirm": "Ви впевнені, що хочете видалити цю категорію?"
+    },
+    "enrollments": {
+      "title": "Зареєстровані користувачі",
+      "no_enrollments": "На цей курс ще ніхто не зареєструвався",
+      "user": "Користувач",
+      "enrolled_at": "Зареєструвався",
+      "select_course": "Оберіть курс",
+      "select_course_to_view": "Оберіть курс для перегляду реєстрацій"
+    }
+  }
+}
