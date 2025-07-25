@@ -43,8 +43,9 @@
       "button": "Uus postitus",
       "modal_title": "Loo uus postitus",
       "error": {
-        "rate_limit": "Liiga palju postitusi. Proovige uuesti {{minutes}} minuti pärast.",
-        "create_failed_with_attempts": "Postituse loomine ebaõnnestus. {{attempts}} katset jäänud."
+        "create_failed": "Postituse loomine ebaõnnestus. Palun proovige uuesti.",
+        "rate_limit": "Liiga palju postitusi. Palun proovige {minutes} minuti pärast uuesti.",
+        "create_failed_with_attempts": "Postituse loomine ebaõnnestus. Katseid jäänud: {attempts}."
       },
       "form": {
         "title": "Pealkiri",
