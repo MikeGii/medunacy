@@ -27,14 +27,14 @@ function ErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
         if (genericError && !genericError.includes("errors.generic.")) {
           return genericError;
         }
-      } catch (e) {
+      } catch (_e) {
         // If that fails, try errors.key
         try {
           const directError = t(key);
           if (directError && !directError.includes("errors.")) {
             return directError;
           }
-        } catch (e2) {
+        } catch (_e2) {
           // Both failed
         }
       }

@@ -1,8 +1,10 @@
 // src/utils/loadTranslations.ts
 export async function loadTranslations(locale: string) {
-  const modules = [
+  const moduleNames = [
     'common',
     'auth',
+    'landing',
+    'profile',
     'forum',
     'exam',
     'courses',
@@ -12,12 +14,12 @@ export async function loadTranslations(locale: string) {
   const translations: Record<string, any> = {};
   
   // Load all translation modules for the locale
-  for (const module of modules) {
+  for (const moduleName of moduleNames) {
     try {
-      const moduleTranslations = await import(`../../messages/${locale}/${module}.json`);
+      const moduleTranslations = await import(`../../messages/${locale}/${moduleName}.json`);
       Object.assign(translations, moduleTranslations.default);
-    } catch (error) {
-      console.warn(`Failed to load ${module} translations for ${locale}`);
+    } catch (_error) {
+      console.warn(`Failed to load ${moduleName} translations for ${locale}`);
     }
   }
   

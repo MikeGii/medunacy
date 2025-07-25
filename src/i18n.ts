@@ -14,7 +14,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
   // Check if we're using the new modular structure
   try {
     // Try to load from modular structure
-    const modules = [
+    const moduleNames = [
       "common",
       "auth",
       "landing",
@@ -26,15 +26,14 @@ export default getRequestConfig(async ({ requestLocale }) => {
     ];
     const messages: Record<string, any> = {};
 
-    for (const module of modules) {
+    for (const moduleName of moduleNames) {
       try {
         const moduleMessages = await import(
-          `../messages/${locale}/${module}.json`
+          `../messages/${locale}/${moduleName}.json`
         );
         Object.assign(messages, moduleMessages.default || moduleMessages);
-      } catch (error) {
-        // Module doesn't exist yet, skip it
-        console.warn(`Module ${module} not found for ${locale}, skipping...`);
+      } catch (_error) {
+        console.warn(`Failed to load ${moduleName} translations for ${locale}`);
       }
     }
 
