@@ -160,5 +160,13 @@
   "search": {
     "placeholder": "Otsi...",
     "clear": "Tühjenda"
+  },
+  "pagination": {
+    "previous": "Eelmine",
+    "next": "Järgmine",
+    "page_number": "Lehekülg {page}",
+    "pagination_nav": "Lehekülgede navigeerimine",
+    "previous_page": "Eelmine lehekülg",
+    "next_page": "Järgmine lehekülg"
   }
 }

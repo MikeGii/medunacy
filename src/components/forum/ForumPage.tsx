@@ -11,6 +11,7 @@ import CreatePostModal from "./CreatePostModal";
 import { AuthModalProvider } from "@/contexts/AuthModalContext";
 import { useTranslations } from "next-intl";
 import { useAuthorization } from "@/hooks/useAuthorization";
+import ForumSettings from "./ForumSettings";
 
 const ForumPageContent = memo(function ForumPageContent() {
   const t = useTranslations("forum");
@@ -18,6 +19,15 @@ const ForumPageContent = memo(function ForumPageContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const [useInfiniteScroll, setUseInfiniteScroll] = useState(false);
+
+  const handleSettingsChange = useCallback(
+    (settings: { useInfiniteScroll: boolean }) => {
+      setUseInfiniteScroll(settings.useInfiniteScroll);
+    },
+    []
+  );
 
   // Handle post creation
   const handlePostCreated = useCallback(() => {
@@ -63,9 +73,9 @@ const ForumPageContent = memo(function ForumPageContent() {
             <button
               onClick={() => setShowCreatePost(true)}
               className="px-6 py-3 bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white font-semibold 
-                       rounded-xl hover:from-[#0F7A43] hover:to-[#4FA384] transition-all duration-300 
-                       shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center space-x-2
-                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#118B50]"
+                     rounded-xl hover:from-[#0F7A43] hover:to-[#4FA384] transition-all duration-300 
+                     shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center space-x-2
+                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#118B50]"
               aria-label={t("create_post.button")}
             >
               <svg
@@ -101,6 +111,7 @@ const ForumPageContent = memo(function ForumPageContent() {
                 selectedCategory={selectedCategory}
                 searchQuery={searchQuery}
                 refreshTrigger={refreshTrigger}
+                useInfiniteScrollMode={useInfiniteScroll}
               />
             </section>
           </div>
