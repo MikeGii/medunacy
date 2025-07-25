@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { TestQuestion, ExamSession, ExamSessionState } from "@/types/exam";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "next-intl";
+import { useSubmissionGuard } from "@/hooks/useSubmissionGuard";
 
 interface UseExamSessionProps {
   mode: "training" | "exam";
@@ -31,6 +32,10 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
   const timeElapsedRef = useRef<number>(0);
   const isSubmittingRef = useRef<boolean>(false);
 
+  const { guardedSubmit, isSubmitting } = useSubmissionGuard({
+    cooldownMs: 2000, // 2 second cooldown for exam submission
+  });
+
   // Keep refs synchronized with state
   useEffect(() => {
     sessionStateRef.current = sessionState;
@@ -39,31 +44,44 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
   useEffect(() => {
     timeElapsedRef.current = timeElapsed;
   }, [timeElapsed]);
-
-  // DECLARE submitExam FIRST using useCallback
+  
   const submitExam = useCallback(async () => {
     // Prevent double submission
     if (
       isSubmittingRef.current ||
       !sessionStateRef.current ||
       !sessionRef.current
-    )
+    ) {
+      console.warn("Cannot submit: already submitting or missing session data");
       return;
+    }
 
+    // Set submitting flag immediately
     isSubmittingRef.current = true;
+
+    // Capture current state to avoid race conditions
     const currentSessionState = sessionStateRef.current;
+    const currentSession = sessionRef.current;
     const currentTimeElapsed = timeElapsedRef.current;
 
     try {
       setLoading(true);
+      setError(null);
+
+      // Clear timer immediately to prevent further updates
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
 
       // Calculate results
       let correctAnswers = 0;
       let totalPoints = 0;
       let earnedPoints = 0;
+      const answersToSave = [];
       const questionResults = [];
 
-      // Save all answers and calculate results
+      // Process all questions
       for (const question of currentSessionState.questions) {
         const selectedOptionIds =
           currentSessionState.answers[question.id] || [];
@@ -71,10 +89,12 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
           .filter((option) => option.is_correct)
           .map((option) => option.id);
 
-        // Check if answer is correct (all correct options selected, no incorrect ones)
+        // Check if answer is correct
         const isCorrect =
+          selectedOptionIds.length > 0 &&
           selectedOptionIds.length === correctOptionIds.length &&
-          selectedOptionIds.every((id) => correctOptionIds.includes(id));
+          selectedOptionIds.every((id) => correctOptionIds.includes(id)) &&
+          correctOptionIds.every((id) => selectedOptionIds.includes(id));
 
         if (isCorrect) {
           correctAnswers++;
@@ -83,6 +103,16 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
 
         totalPoints += question.points;
 
+        // Prepare answer for batch insert
+        answersToSave.push({
+          session_id: currentSession.id,
+          question_id: question.id,
+          selected_option_ids: selectedOptionIds,
+          is_correct: isCorrect,
+          points_earned: isCorrect ? question.points : 0,
+        });
+
+        // Prepare result for display
         questionResults.push({
           question,
           selectedOptions: question.options.filter((opt) =>
@@ -92,26 +122,27 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
           isCorrect,
           pointsEarned: isCorrect ? question.points : 0,
         });
-
-        // Save individual answer to database using Supabase
-        if (selectedOptionIds.length > 0) {
-          await supabase.from("exam_answers").upsert({
-            session_id: sessionRef.current.id,
-            question_id: question.id,
-            selected_option_ids: selectedOptionIds,
-            is_correct: isCorrect,
-            points_earned: isCorrect ? question.points : 0,
-          });
-        }
       }
 
+      // Calculate final scores
       const scorePercentage =
         totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
       const passed =
         scorePercentage >= (currentSessionState.test.passing_score || 70);
 
-      // Update session in database using Supabase
-      await supabase
+      // Save all answers in one batch (more efficient)
+      if (answersToSave.length > 0) {
+        const { error: answersError } = await supabase
+          .from("exam_answers")
+          .insert(answersToSave);
+
+        if (answersError) {
+          throw new Error(`Failed to save answers: ${answersError.message}`);
+        }
+      }
+
+      // Update session with results
+      const { error: updateError } = await supabase
         .from("exam_sessions")
         .update({
           completed_at: new Date().toISOString(),
@@ -121,17 +152,15 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
           time_spent: currentTimeElapsed,
           passed,
         })
-        .eq("id", sessionRef.current.id);
+        .eq("id", currentSession.id);
 
-      // Clear timer before navigation
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
+      if (updateError) {
+        throw new Error(`Failed to update session: ${updateError.message}`);
       }
 
-      // Navigate to results
+      // Prepare results data for viewing
       const resultsData = {
-        sessionId: currentSessionState.session.id,
+        sessionId: currentSession.id,
         test: currentSessionState.test,
         totalQuestions: currentSessionState.questions.length,
         correctAnswers,
@@ -142,21 +171,29 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
         questionResults,
       };
 
-      // Store results in sessionStorage for viewing
+      // Store results temporarily for immediate viewing
       sessionStorage.setItem("examResults", JSON.stringify(resultsData));
 
       // Navigate to results page
-      router.push(
-        `/${locale}/exam-tests/results/${currentSessionState.session.id}`
-      );
+      router.push(`/${locale}/exam-tests/results/${currentSession.id}`);
     } catch (err) {
       console.error("Error submitting exam:", err);
       setError(err instanceof Error ? err.message : "Failed to submit exam");
-      isSubmittingRef.current = false; // Reset flag on error
+
+      // Reset submission flag on error to allow retry
+      isSubmittingRef.current = false;
+
+      // Restart timer if submission failed
+      if (mode === "exam" && !timerRef.current) {
+        timerRef.current = setInterval(() => {
+          timeElapsedRef.current += 1;
+          setTimeElapsed((prev) => prev + 1);
+        }, 1000);
+      }
     } finally {
       setLoading(false);
     }
-  }, [router, locale]); // Remove sessionState and timeElapsed from dependencies
+  }, [router, locale, mode]);
 
   // Initialize session
   const initializeSession = useCallback(async () => {
