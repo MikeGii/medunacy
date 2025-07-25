@@ -9,6 +9,7 @@ import { AuthModalProvider } from "@/contexts/AuthModalContext";
 import { ForumProvider } from "@/contexts/ForumContext";
 import { ExamProvider } from "@/contexts/ExamContext";
 import LanguageTransitionOverlay from "@/components/layout/LanguageTransitionOverlay";
+import GlobalErrorBoundary from "@/components/common/GlobalErrorBoundary";
 
 export const metadata: Metadata = {
   title: "Medunacy",
@@ -42,13 +43,15 @@ export default async function LocaleLayout({
       >
         <LanguageTransitionOverlay />
         <NextIntlClientProvider messages={messages}>
-          <AuthProvider>
-            <AuthModalProvider>
-              <ForumProvider>
-                <ExamProvider>{children}</ExamProvider>
-              </ForumProvider>
-            </AuthModalProvider>
-          </AuthProvider>
+          <GlobalErrorBoundary>
+            <AuthProvider>
+              <AuthModalProvider>
+                <ForumProvider>
+                  <ExamProvider>{children}</ExamProvider>
+                </ForumProvider>
+              </AuthModalProvider>
+            </AuthProvider>
+          </GlobalErrorBoundary>
         </NextIntlClientProvider>
       </body>
     </html>
