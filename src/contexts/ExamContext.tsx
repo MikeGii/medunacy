@@ -1,4 +1,4 @@
-// src/contexts/ExamContext.tsx - FIXED VERSION with memory leak prevention
+// src/contexts/ExamContext.tsx - COMPLETE MEMORY LEAK FIXED VERSION
 
 "use client";
 
@@ -14,6 +14,7 @@ import { supabase } from "@/lib/supabase";
 import { Test, TestCategory, TestCreate, TestUpdate } from "@/types/exam";
 import { RealtimeChannel } from "@supabase/realtime-js";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCleanup } from "@/hooks/useCleanup";
 
 // Cache configuration
 const MAX_CACHE_SIZE = 50;
@@ -58,13 +59,15 @@ const ExamContext = createContext<ExamContextType | undefined>(undefined);
 
 export function ExamProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const { addCleanup, isMounted } = useCleanup();
+
   const [categories, setCategories] = useState<TestCategory[]>([]);
   const [tests, setTests] = useState<Test[]>([]);
   const [currentTest, setCurrentTest] = useState<Test | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Improved cache with TTL and size limit
+  // Cache with TTL and size limit
   const testCache = useRef<Map<string, CachedTest>>(new Map());
   const cacheCleanupTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -128,9 +131,16 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     testCache.current.clear();
   }, []);
 
-  // Periodic cache cleanup
+  // Periodic cache cleanup with mount check
   useEffect(() => {
     const timerId = setInterval(() => {
+      if (!isMounted()) {
+        if (cacheCleanupTimer.current) {
+          clearInterval(cacheCleanupTimer.current);
+        }
+        return;
+      }
+
       const now = Date.now();
       const cache = testCache.current;
 
@@ -139,10 +149,17 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
           cache.delete(key);
         }
       }
-    }, 60000);
+    }, 60000); // Run every minute
 
-    // ⚡ CRITICAL: Store timer ID properly
     cacheCleanupTimer.current = timerId;
+
+    // Add to cleanup registry
+    addCleanup(() => {
+      if (cacheCleanupTimer.current) {
+        clearInterval(cacheCleanupTimer.current);
+        cacheCleanupTimer.current = null;
+      }
+    });
 
     return () => {
       if (cacheCleanupTimer.current) {
@@ -150,10 +167,12 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         cacheCleanupTimer.current = null;
       }
     };
-  }, []);
+  }, [isMounted, addCleanup]);
 
-  // Fetch categories
+  // Fetch categories with mount check
   const fetchCategories = useCallback(async () => {
+    if (!isMounted()) return;
+
     try {
       setLoading(true);
       setError(null);
@@ -163,21 +182,31 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         .select("*")
         .order("name");
 
+      if (!isMounted()) return;
+
       if (fetchError) throw fetchError;
 
-      setCategories(data || []);
+      if (isMounted()) {
+        setCategories(data || []);
+      }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to fetch categories"
-      );
+      if (isMounted()) {
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch categories"
+        );
+      }
     } finally {
-      setLoading(false);
+      if (isMounted()) {
+        setLoading(false);
+      }
     }
-  }, []);
+  }, [isMounted]);
 
-  // Fetch tests with optional category filter
+  // Fetch tests with mount check
   const fetchTests = useCallback(
     async (categoryId?: string) => {
+      if (!isMounted()) return;
+
       try {
         setLoading(true);
         setError(null);
@@ -199,37 +228,49 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
 
         const { data, error: fetchError } = await query;
 
+        if (!isMounted()) return;
+
         if (fetchError) throw fetchError;
 
-        // Transform the data to include question_count as a number
+        // Transform the data to include question_count
         const enrichedTests = (data || []).map((test) => ({
           ...test,
           question_count: test.questions?.length || 0,
-          questions: undefined, // Remove the questions array from the final object
+          questions: undefined,
         }));
 
-        setTests(enrichedTests);
+        if (isMounted()) {
+          setTests(enrichedTests);
 
-        // Update cache with new tests
-        enrichedTests.forEach((test) => {
-          addToCache(test);
-        });
+          // Update cache with new tests
+          enrichedTests.forEach((test) => {
+            addToCache(test);
+          });
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch tests");
+        if (isMounted()) {
+          setError(
+            err instanceof Error ? err.message : "Failed to fetch tests"
+          );
+        }
       } finally {
-        setLoading(false);
+        if (isMounted()) {
+          setLoading(false);
+        }
       }
     },
-    [addToCache]
+    [addToCache, isMounted]
   );
 
-  // Fetch single test by ID with caching
+  // Fetch single test with mount check
   const fetchTestById = useCallback(
     async (testId: string): Promise<Test | null> => {
+      if (!isMounted()) return null;
+
       try {
         // Check cache first
         const cached = getFromCache(testId);
-        if (cached) {
+        if (cached && isMounted()) {
           setCurrentTest(cached);
           return cached;
         }
@@ -252,6 +293,8 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
           .eq("id", testId)
           .single();
 
+        if (!isMounted()) return null;
+
         if (fetchError) throw fetchError;
 
         const enrichedTest = {
@@ -260,25 +303,33 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
           questions: data.test_questions || [],
         };
 
-        setCurrentTest(enrichedTest);
-        addToCache(enrichedTest);
+        if (isMounted()) {
+          setCurrentTest(enrichedTest);
+          addToCache(enrichedTest);
+        }
 
         return enrichedTest;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch test");
+        if (isMounted()) {
+          setError(err instanceof Error ? err.message : "Failed to fetch test");
+        }
         return null;
       } finally {
-        setLoading(false);
+        if (isMounted()) {
+          setLoading(false);
+        }
       }
     },
-    [getFromCache, addToCache]
+    [getFromCache, addToCache, isMounted]
   );
 
-  // Create category
+  // Create category with mount check
   const createCategory = useCallback(
     async (
       data: Omit<TestCategory, "id" | "created_at" | "updated_at" | "is_active">
     ): Promise<TestCategory | null> => {
+      if (!isMounted()) return null;
+
       try {
         setLoading(true);
         setError(null);
@@ -289,27 +340,36 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
           .select()
           .single();
 
+        if (!isMounted()) return null;
+
         if (createError) throw createError;
 
-        // Optimistic update
-        setCategories((prev) => [...prev, newCategory]);
+        if (isMounted()) {
+          setCategories((prev) => [...prev, newCategory]);
+        }
 
         return newCategory;
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to create category"
-        );
+        if (isMounted()) {
+          setError(
+            err instanceof Error ? err.message : "Failed to create category"
+          );
+        }
         return null;
       } finally {
-        setLoading(false);
+        if (isMounted()) {
+          setLoading(false);
+        }
       }
     },
-    []
+    [isMounted]
   );
 
-  // Update category
+  // Update category with mount check
   const updateCategory = useCallback(
     async (id: string, data: Partial<TestCategory>) => {
+      if (!isMounted()) return;
+
       try {
         setLoading(true);
         setError(null);
@@ -319,50 +379,71 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
           .update(data)
           .eq("id", id);
 
+        if (!isMounted()) return;
+
         if (updateError) throw updateError;
 
-        // Optimistic update
-        setCategories((prev) =>
-          prev.map((cat) => (cat.id === id ? { ...cat, ...data } : cat))
-        );
+        if (isMounted()) {
+          setCategories((prev) =>
+            prev.map((cat) => (cat.id === id ? { ...cat, ...data } : cat))
+          );
+        }
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to update category"
-        );
+        if (isMounted()) {
+          setError(
+            err instanceof Error ? err.message : "Failed to update category"
+          );
+        }
       } finally {
-        setLoading(false);
+        if (isMounted()) {
+          setLoading(false);
+        }
       }
     },
-    []
+    [isMounted]
   );
 
-  // Delete category
-  const deleteCategory = useCallback(async (id: string) => {
-    try {
-      setLoading(true);
-      setError(null);
+  // Delete category with mount check
+  const deleteCategory = useCallback(
+    async (id: string) => {
+      if (!isMounted()) return;
 
-      const { error: deleteError } = await supabase
-        .from("test_categories")
-        .delete()
-        .eq("id", id);
+      try {
+        setLoading(true);
+        setError(null);
 
-      if (deleteError) throw deleteError;
+        const { error: deleteError } = await supabase
+          .from("test_categories")
+          .delete()
+          .eq("id", id);
 
-      // Optimistic update
-      setCategories((prev) => prev.filter((cat) => cat.id !== id));
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to delete category"
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        if (!isMounted()) return;
 
-  // Create test
+        if (deleteError) throw deleteError;
+
+        if (isMounted()) {
+          setCategories((prev) => prev.filter((cat) => cat.id !== id));
+        }
+      } catch (err) {
+        if (isMounted()) {
+          setError(
+            err instanceof Error ? err.message : "Failed to delete category"
+          );
+        }
+      } finally {
+        if (isMounted()) {
+          setLoading(false);
+        }
+      }
+    },
+    [isMounted]
+  );
+
+  // Create test with mount check
   const createTest = useCallback(
     async (data: TestCreate): Promise<Test | null> => {
+      if (!isMounted()) return null;
+
       try {
         setLoading(true);
         setError(null);
@@ -383,6 +464,8 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
           )
           .single();
 
+        if (!isMounted()) return null;
+
         if (createError) throw createError;
 
         const enrichedTest = {
@@ -390,24 +473,33 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
           question_count: 0,
         };
 
-        // Optimistic update
-        setTests((prev) => [enrichedTest, ...prev]);
-        addToCache(enrichedTest);
+        if (isMounted()) {
+          setTests((prev) => [enrichedTest, ...prev]);
+          addToCache(enrichedTest);
+        }
 
         return enrichedTest;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to create test");
+        if (isMounted()) {
+          setError(
+            err instanceof Error ? err.message : "Failed to create test"
+          );
+        }
         return null;
       } finally {
-        setLoading(false);
+        if (isMounted()) {
+          setLoading(false);
+        }
       }
     },
-    [user, addToCache]
+    [user, addToCache, isMounted]
   );
 
-  // Update test with cache invalidation
+  // Update test with mount check
   const updateTest = useCallback(
     async (id: string, data: TestUpdate) => {
+      if (!isMounted()) return;
+
       try {
         setLoading(true);
         setError(null);
@@ -417,32 +509,42 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
           .update(data)
           .eq("id", id);
 
+        if (!isMounted()) return;
+
         if (updateError) throw updateError;
 
-        // Optimistic update
-        setTests((prev) =>
-          prev.map((test) => (test.id === id ? { ...test, ...data } : test))
-        );
+        if (isMounted()) {
+          setTests((prev) =>
+            prev.map((test) => (test.id === id ? { ...test, ...data } : test))
+          );
 
-        // Invalidate cache for this test
-        testCache.current.delete(id);
+          // Invalidate cache
+          testCache.current.delete(id);
 
-        // If it's the current test, update it
-        if (currentTest?.id === id) {
-          setCurrentTest((prev) => (prev ? { ...prev, ...data } : null));
+          if (currentTest?.id === id) {
+            setCurrentTest((prev) => (prev ? { ...prev, ...data } : null));
+          }
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to update test");
+        if (isMounted()) {
+          setError(
+            err instanceof Error ? err.message : "Failed to update test"
+          );
+        }
       } finally {
-        setLoading(false);
+        if (isMounted()) {
+          setLoading(false);
+        }
       }
     },
-    [currentTest]
+    [currentTest, isMounted]
   );
 
-  // Delete test with cache cleanup
+  // Delete test with mount check
   const deleteTest = useCallback(
     async (id: string) => {
+      if (!isMounted()) return;
+
       try {
         setLoading(true);
         setError(null);
@@ -452,28 +554,34 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
           .delete()
           .eq("id", id);
 
+        if (!isMounted()) return;
+
         if (deleteError) throw deleteError;
 
-        // Optimistic update
-        setTests((prev) => prev.filter((test) => test.id !== id));
+        if (isMounted()) {
+          setTests((prev) => prev.filter((test) => test.id !== id));
+          testCache.current.delete(id);
 
-        // Remove from cache
-        testCache.current.delete(id);
-
-        // Clear current test if it's the deleted one
-        if (currentTest?.id === id) {
-          setCurrentTest(null);
+          if (currentTest?.id === id) {
+            setCurrentTest(null);
+          }
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to delete test");
+        if (isMounted()) {
+          setError(
+            err instanceof Error ? err.message : "Failed to delete test"
+          );
+        }
       } finally {
-        setLoading(false);
+        if (isMounted()) {
+          setLoading(false);
+        }
       }
     },
-    [currentTest]
+    [currentTest, isMounted]
   );
 
-  // Publish test
+  // Publish/unpublish delegated to updateTest
   const publishTest = useCallback(
     async (id: string) => {
       await updateTest(id, { is_published: true });
@@ -481,7 +589,6 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     [updateTest]
   );
 
-  // Unpublish test
   const unpublishTest = useCallback(
     async (id: string) => {
       await updateTest(id, { is_published: false });
@@ -489,9 +596,11 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     [updateTest]
   );
 
-  // Subscribe to test updates for collaborative editing
+  // Subscribe to test updates with cleanup
   const subscribeToTestUpdates = useCallback(
     (testId: string) => {
+      if (!isMounted()) return () => {};
+
       const channel = supabase
         .channel(`test-updates-${testId}`)
         .on(
@@ -503,6 +612,8 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
             filter: `id=eq.${testId}`,
           },
           (payload) => {
+            if (!isMounted()) return;
+
             if (payload.eventType === "UPDATE") {
               const updatedTest = payload.new as Test;
               setTests((prev) =>
@@ -511,7 +622,6 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
                 )
               );
 
-              // Invalidate cache
               testCache.current.delete(testId);
 
               if (currentTest?.id === testId) {
@@ -531,22 +641,29 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         testUpdateSubscriptions.current.delete(testId);
       };
     },
-    [currentTest]
+    [currentTest, isMounted]
   );
 
   // Notify when editing a test
-  const notifyTestEdit = useCallback(async (testId: string, userId: string) => {
-    const channel = supabase.channel(`test-editors-${testId}`);
+  const notifyTestEdit = useCallback(
+    async (testId: string, userId: string) => {
+      if (!isMounted()) return;
 
-    await channel.send({
-      type: "broadcast",
-      event: "user_editing",
-      payload: { userId, timestamp: new Date().toISOString() },
-    });
-  }, []);
+      const channel = supabase.channel(`test-editors-${testId}`);
 
-  // Set up real-time subscriptions with stable callback
+      await channel.send({
+        type: "broadcast",
+        event: "user_editing",
+        payload: { userId, timestamp: new Date().toISOString() },
+      });
+    },
+    [isMounted]
+  );
+
+  // Set up real-time subscriptions with mount check
   const setupSubscriptions = useCallback(() => {
+    if (!isMounted()) return;
+
     // Subscribe to categories changes
     categoriesSubscription.current = supabase
       .channel("categories-changes")
@@ -554,6 +671,8 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         "postgres_changes",
         { event: "*", schema: "public", table: "test_categories" },
         (payload) => {
+          if (!isMounted()) return;
+
           if (payload.eventType === "INSERT") {
             setCategories((prev) => [...prev, payload.new as TestCategory]);
           } else if (payload.eventType === "UPDATE") {
@@ -580,8 +699,9 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         "postgres_changes",
         { event: "*", schema: "public", table: "tests" },
         (payload) => {
+          if (!isMounted()) return;
+
           if (payload.eventType === "INSERT") {
-            // Invalidate cache for new test
             testCache.current.delete(payload.new.id);
           } else if (payload.eventType === "UPDATE") {
             setTests((prev) =>
@@ -591,19 +711,29 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
                   : test
               )
             );
-            // Invalidate cache
             testCache.current.delete(payload.old.id);
           } else if (payload.eventType === "DELETE") {
             setTests((prev) =>
               prev.filter((test) => test.id !== payload.old.id)
             );
-            // Remove from cache
             testCache.current.delete(payload.old.id);
           }
         }
       )
       .subscribe();
-  }, []);
+
+    // Add subscriptions to cleanup
+    addCleanup(() => {
+      if (categoriesSubscription.current) {
+        categoriesSubscription.current.unsubscribe();
+        categoriesSubscription.current = null;
+      }
+      if (testsSubscription.current) {
+        testsSubscription.current.unsubscribe();
+        testsSubscription.current = null;
+      }
+    });
+  }, [isMounted, addCleanup]);
 
   // Set up subscriptions once
   useEffect(() => {
@@ -619,25 +749,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     };
   }, [setupSubscriptions]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      // Clear all subscriptions
-      testUpdateSubscriptions.current.forEach((channel) => {
-        channel.unsubscribe();
-      });
-      testUpdateSubscriptions.current.clear();
-
-      // Clear cache
-      testCache.current.clear();
-
-      // Clear timer
-      if (cacheCleanupTimer.current) {
-        clearInterval(cacheCleanupTimer.current);
-      }
-    };
-  }, []);
-
+  // Comprehensive cleanup
   const cleanup = useCallback(() => {
     // Clean up all subscriptions
     if (categoriesSubscription.current) {
@@ -661,17 +773,24 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
       clearInterval(cacheCleanupTimer.current);
       cacheCleanupTimer.current = null;
     }
+
+    // Clear cache
+    testCache.current.clear();
   }, []);
 
-  // Add cleanup to provider's useEffect:
+  // Cleanup on unmount
   useEffect(() => {
-    return cleanup;
+    return () => {
+      cleanup();
+    };
   }, [cleanup]);
 
-  // Clear error
+  // Clear error with mount check
   const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+    if (isMounted()) {
+      setError(null);
+    }
+  }, [isMounted]);
 
   const value: ExamContextType = {
     categories,

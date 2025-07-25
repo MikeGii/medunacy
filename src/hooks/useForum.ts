@@ -1,14 +1,16 @@
-// src/hooks/useForum.ts
+// src/hooks/useForum.ts - WITH MEMORY LEAK FIXES
 import { useCallback, useEffect, useRef } from "react";
 import { useForumContext } from "@/contexts/ForumContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { ForumPost, ForumCategory } from "@/types/forum.types";
 import { FORUM_CONSTANTS } from "@/utils/forum.constants";
+import { useCleanup } from "@/hooks/useCleanup";
 
 export function useForum() {
   const { state, dispatch } = useForumContext();
   const { user } = useAuth();
+  const { addCleanup, isMounted } = useCleanup();
 
   // Abort controller for request cancellation
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -21,13 +23,17 @@ export function useForum() {
     }
   }, []);
 
-  // Fetch categories (unchanged)
+  // Fetch categories with mount check
   const fetchCategories = useCallback(async () => {
+    if (!isMounted()) return;
+
     try {
       const { data, error } = await supabase
         .from("forum_categories")
         .select("*")
         .order("name");
+
+      if (!isMounted()) return;
 
       if (error) throw error;
 
@@ -36,6 +42,8 @@ export function useForum() {
         .from("forum_posts")
         .select("category_id")
         .eq("is_deleted", false);
+
+      if (!isMounted()) return;
 
       const postCounts =
         postsData?.reduce(
@@ -51,20 +59,24 @@ export function useForum() {
         post_count: postCounts[cat.id] || 0,
       }));
 
-      dispatch({ type: "SET_CATEGORIES", payload: categoriesWithCount });
+      if (isMounted()) {
+        dispatch({ type: "SET_CATEGORIES", payload: categoriesWithCount });
+      }
     } catch (error) {
       console.error("Error fetching categories:", error);
-      dispatch({
-        type: "SET_ERROR",
-        payload: FORUM_CONSTANTS.ERROR_KEYS.FETCH_POSTS,
-      });
+      if (isMounted()) {
+        dispatch({
+          type: "SET_ERROR",
+          payload: FORUM_CONSTANTS.ERROR_KEYS.FETCH_POSTS,
+        });
+      }
     }
-  }, [dispatch]);
+  }, [dispatch, isMounted]);
 
-  // Fetch posts with pagination
+  // Fetch posts with pagination and mount checks
   const fetchPosts = useCallback(
     async (page: number, append: boolean = false) => {
-      if (!user) return;
+      if (!user || !isMounted()) return;
 
       // Cancel any existing request
       cleanup();
@@ -80,17 +92,21 @@ export function useForum() {
         cached &&
         Date.now() - cached.timestamp < FORUM_CONSTANTS.CACHE_DURATION
       ) {
-        dispatch({ type: "SET_POSTS", payload: cached.data });
+        if (isMounted()) {
+          dispatch({ type: "SET_POSTS", payload: cached.data });
+        }
         return;
       }
 
       // Create new abort controller
       abortControllerRef.current = new AbortController();
 
-      if (!append) {
+      if (!append && isMounted()) {
         dispatch({ type: "SET_LOADING", payload: true });
       }
-      dispatch({ type: "SET_ERROR", payload: null });
+      if (isMounted()) {
+        dispatch({ type: "SET_ERROR", payload: null });
+      }
 
       try {
         // Calculate offset
@@ -132,8 +148,8 @@ export function useForum() {
 
         const { data: postsData, error, count } = await query;
 
-        // Check if request was cancelled
-        if (abortControllerRef.current?.signal.aborted) {
+        // Check if request was cancelled or component unmounted
+        if (abortControllerRef.current?.signal.aborted || !isMounted()) {
           return;
         }
 
@@ -163,8 +179,8 @@ export function useForum() {
               .eq("is_deleted", false),
           ]);
 
-          // Check if request was cancelled
-          if (abortControllerRef.current?.signal.aborted) {
+          // Check if request was cancelled or component unmounted
+          if (abortControllerRef.current?.signal.aborted || !isMounted()) {
             return;
           }
 
@@ -197,45 +213,49 @@ export function useForum() {
             })
           );
 
-          // Update state
-          if (append && state.posts.length > 0) {
-            // For infinite scroll - use APPEND_POSTS action
-            dispatch({ type: "APPEND_POSTS", payload: transformedPosts });
-          } else {
-            // For page navigation - replace all posts
-            dispatch({ type: "SET_POSTS", payload: transformedPosts });
-          }
+          // Update state only if still mounted
+          if (isMounted()) {
+            if (append && state.posts.length > 0) {
+              // For infinite scroll - use APPEND_POSTS action
+              dispatch({ type: "APPEND_POSTS", payload: transformedPosts });
+            } else {
+              // For page navigation - replace all posts
+              dispatch({ type: "SET_POSTS", payload: transformedPosts });
+            }
 
-          // Update pagination info
-          dispatch({
-            type: "SET_PAGINATION",
-            payload: {
-              currentPage: page,
-              totalPages,
-              totalPosts,
-              hasMore,
-            },
-          });
-
-          // Cache the results for page 1
-          if (page === 1) {
+            // Update pagination info
             dispatch({
-              type: "CACHE_POSTS",
-              payload: { key: cacheKey, data: transformedPosts },
+              type: "SET_PAGINATION",
+              payload: {
+                currentPage: page,
+                totalPages,
+                totalPosts,
+                hasMore,
+              },
             });
+
+            // Cache the results for page 1
+            if (page === 1) {
+              dispatch({
+                type: "CACHE_POSTS",
+                payload: { key: cacheKey, data: transformedPosts },
+              });
+            }
           }
         } else {
-          // No posts found
-          dispatch({ type: "SET_POSTS", payload: [] });
-          dispatch({
-            type: "SET_PAGINATION",
-            payload: {
-              currentPage: page,
-              totalPages: 0,
-              totalPosts: 0,
-              hasMore: false,
-            },
-          });
+          // No posts found - only update if mounted
+          if (isMounted()) {
+            dispatch({ type: "SET_POSTS", payload: [] });
+            dispatch({
+              type: "SET_PAGINATION",
+              payload: {
+                currentPage: page,
+                totalPages: 0,
+                totalPosts: 0,
+                hasMore: false,
+              },
+            });
+          }
         }
       } catch (error: any) {
         // Ignore abort errors
@@ -244,12 +264,14 @@ export function useForum() {
         }
 
         console.error("Error fetching posts:", error);
-        dispatch({
-          type: "SET_ERROR",
-          payload: FORUM_CONSTANTS.ERROR_KEYS.FETCH_POSTS,
-        });
+        if (isMounted()) {
+          dispatch({
+            type: "SET_ERROR",
+            payload: FORUM_CONSTANTS.ERROR_KEYS.FETCH_POSTS,
+          });
+        }
       } finally {
-        if (!append) {
+        if (!append && isMounted()) {
           dispatch({ type: "SET_LOADING", payload: false });
         }
       }
@@ -259,40 +281,54 @@ export function useForum() {
       state.selectedCategory,
       state.searchQuery,
       state.postsCache,
+      state.posts.length,
       dispatch,
       cleanup,
+      isMounted,
     ]
   );
 
   // Load more posts (for infinite scroll)
   const loadMorePosts = useCallback(async () => {
-    if (state.hasMore && !state.isLoading) {
+    if (state.hasMore && !state.isLoading && isMounted()) {
       await fetchPosts(state.currentPage + 1, true);
     }
-  }, [state.hasMore, state.isLoading, state.currentPage, fetchPosts]);
+  }, [
+    state.hasMore,
+    state.isLoading,
+    state.currentPage,
+    fetchPosts,
+    isMounted,
+  ]);
 
   // Go to specific page
   const goToPage = useCallback(
     async (page: number) => {
-      if (page >= 1 && page <= state.totalPages && page !== state.currentPage) {
+      if (
+        page >= 1 &&
+        page <= state.totalPages &&
+        page !== state.currentPage &&
+        isMounted()
+      ) {
         await fetchPosts(page, false);
       }
     },
-    [state.totalPages, state.currentPage, fetchPosts]
+    [state.totalPages, state.currentPage, fetchPosts, isMounted]
   );
 
   // Reset and fetch first page
   const resetAndFetch = useCallback(async () => {
+    if (!isMounted()) return;
+
     dispatch({ type: "RESET_PAGINATION" });
     await fetchPosts(1, false);
-  }, [fetchPosts, dispatch]);
+  }, [fetchPosts, dispatch, isMounted]);
 
-  // Other functions remain the same but with cache clearing updates...
-
-  // Create post with pagination reset
+  // Create post with pagination reset and mount checks
   const createPost = useCallback(
     async (title: string, content: string, categoryId: string) => {
       if (!user) throw new Error("User not authenticated");
+      if (!isMounted()) return { success: false, error: "Component unmounted" };
 
       dispatch({ type: "SET_LOADING", payload: true });
       dispatch({ type: "SET_ERROR", payload: null });
@@ -323,6 +359,10 @@ export function useForum() {
           )
           .single();
 
+        if (!isMounted()) {
+          return { success: false, error: "Component unmounted" };
+        }
+
         if (error) throw error;
 
         const newPost: ForumPost = {
@@ -334,35 +374,42 @@ export function useForum() {
           user_has_liked: false,
         };
 
-        // Add post and reset to first page
-        dispatch({ type: "ADD_POST", payload: newPost });
-        dispatch({ type: "CLEAR_CACHE" });
+        if (isMounted()) {
+          // Add post and reset to first page
+          dispatch({ type: "ADD_POST", payload: newPost });
+          dispatch({ type: "CLEAR_CACHE" });
 
-        // Refresh to show new post at the top
-        await resetAndFetch();
+          // Refresh to show new post at the top
+          await resetAndFetch();
+        }
 
         return { success: true, data: newPost };
       } catch (error) {
         console.error("Error creating post:", error);
-        dispatch({
-          type: "SET_ERROR",
-          payload: FORUM_CONSTANTS.ERROR_KEYS.CREATE_POST,
-        });
+        if (isMounted()) {
+          dispatch({
+            type: "SET_ERROR",
+            payload: FORUM_CONSTANTS.ERROR_KEYS.CREATE_POST,
+          });
+        }
         return { success: false, error };
       } finally {
-        dispatch({ type: "SET_LOADING", payload: false });
+        if (isMounted()) {
+          dispatch({ type: "SET_LOADING", payload: false });
+        }
       }
     },
-    [user, dispatch, resetAndFetch]
+    [user, dispatch, resetAndFetch, isMounted]
   );
 
-  // Update other functions to maintain current implementations...
+  // Update post with mount checks
   const updatePost = useCallback(
     async (
       postId: string,
       updates: { title?: string; content?: string; category_id?: string }
     ) => {
       if (!user) throw new Error("User not authenticated");
+      if (!isMounted()) return { success: false, error: "Component unmounted" };
 
       try {
         const { data, error } = await supabase
@@ -389,6 +436,10 @@ export function useForum() {
           )
           .single();
 
+        if (!isMounted()) {
+          return { success: false, error: "Component unmounted" };
+        }
+
         if (error) throw error;
 
         const currentPost = state.posts.find((p) => p.id === postId);
@@ -401,30 +452,40 @@ export function useForum() {
           user_has_liked: currentPost?.user_has_liked || false,
         };
 
-        dispatch({ type: "UPDATE_POST", payload: updatedPost });
-        dispatch({ type: "CLEAR_CACHE" });
+        if (isMounted()) {
+          dispatch({ type: "UPDATE_POST", payload: updatedPost });
+          dispatch({ type: "CLEAR_CACHE" });
+        }
 
         return { success: true, data: updatedPost };
       } catch (error) {
         console.error("Error updating post:", error);
-        dispatch({
-          type: "SET_ERROR",
-          payload: FORUM_CONSTANTS.ERROR_KEYS.UPDATE_POST,
-        });
+        if (isMounted()) {
+          dispatch({
+            type: "SET_ERROR",
+            payload: FORUM_CONSTANTS.ERROR_KEYS.UPDATE_POST,
+          });
+        }
         return { success: false, error };
       }
     },
-    [user, state.posts, dispatch]
+    [user, state.posts, dispatch, isMounted]
   );
 
+  // Delete post with mount checks
   const deletePost = useCallback(
     async (postId: string) => {
       if (!user) throw new Error("User not authenticated");
+      if (!isMounted()) return { success: false, error: "Component unmounted" };
 
       try {
         const { data, error } = await supabase.rpc("soft_delete_post", {
           post_id: postId,
         });
+
+        if (!isMounted()) {
+          return { success: false, error: "Component unmounted" };
+        }
 
         if (error) throw error;
 
@@ -432,51 +493,61 @@ export function useForum() {
           throw new Error(data.error || "Failed to delete post");
         }
 
-        dispatch({ type: "DELETE_POST", payload: postId });
-        dispatch({ type: "CLEAR_CACHE" });
+        if (isMounted()) {
+          dispatch({ type: "DELETE_POST", payload: postId });
+          dispatch({ type: "CLEAR_CACHE" });
 
-        // If we deleted the last post on this page, go to previous page
-        if (state.posts.length === 1 && state.currentPage > 1) {
-          await goToPage(state.currentPage - 1);
+          // If we deleted the last post on this page, go to previous page
+          if (state.posts.length === 1 && state.currentPage > 1) {
+            await goToPage(state.currentPage - 1);
+          }
         }
 
         return { success: true };
       } catch (error) {
         console.error("Error deleting post:", error);
-        dispatch({
-          type: "SET_ERROR",
-          payload: FORUM_CONSTANTS.ERROR_KEYS.DELETE_POST,
-        });
+        if (isMounted()) {
+          dispatch({
+            type: "SET_ERROR",
+            payload: FORUM_CONSTANTS.ERROR_KEYS.DELETE_POST,
+          });
+        }
         return { success: false, error };
       }
     },
-    [user, dispatch, state.posts.length, state.currentPage, goToPage]
+    [user, dispatch, state.posts.length, state.currentPage, goToPage, isMounted]
   );
 
+  // Search posts with mount check
   const searchPosts = useCallback(
     (query: string) => {
+      if (!isMounted()) return;
+
       dispatch({ type: "SET_SEARCH_QUERY", payload: query });
       dispatch({ type: "SET_POSTS", payload: [] });
       dispatch({ type: "RESET_PAGINATION" });
     },
-    [dispatch]
+    [dispatch, isMounted]
   );
 
   // Clean up on unmount
   useEffect(() => {
+    // Add cleanup to the cleanup hook
+    addCleanup(cleanup);
+
     return () => {
       cleanup();
     };
-  }, [cleanup]);
+  }, [cleanup, addCleanup]);
 
   // Load initial data
   useEffect(() => {
-    if (user) {
+    if (user && isMounted()) {
       fetchCategories();
       fetchPosts(1, false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, fetchCategories]); // Remove fetchPosts from deps to prevent loops
+  }, [user, fetchCategories, isMounted]); // Remove fetchPosts from deps to prevent loops
 
   return {
     // State
@@ -504,9 +575,15 @@ export function useForum() {
     goToPage,
     resetAndFetch,
     setSelectedCategory: (id: string | null) => {
-      dispatch({ type: "SET_SELECTED_CATEGORY", payload: id });
+      if (isMounted()) {
+        dispatch({ type: "SET_SELECTED_CATEGORY", payload: id });
+      }
     },
-    clearError: () => dispatch({ type: "SET_ERROR", payload: null }),
+    clearError: () => {
+      if (isMounted()) {
+        dispatch({ type: "SET_ERROR", payload: null });
+      }
+    },
     cleanup,
   };
 }

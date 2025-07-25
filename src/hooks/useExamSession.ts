@@ -1,5 +1,4 @@
-// src/hooks/useExamSession.ts - FIXED ORDER
-
+// src/hooks/useExamSession.ts - FIXED ORDER WITH MEMORY LEAK PREVENTION
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -8,6 +7,7 @@ import { TestQuestion, ExamSession, ExamSessionState } from "@/types/exam";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "next-intl";
 import { useSubmissionGuard } from "@/hooks/useSubmissionGuard";
+import { useCleanup } from "@/hooks/useCleanup";
 
 interface UseExamSessionProps {
   mode: "training" | "exam";
@@ -32,6 +32,8 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
   const timeElapsedRef = useRef<number>(0);
   const isSubmittingRef = useRef<boolean>(false);
 
+  const { addCleanup, isMounted } = useCleanup();
+
   const { guardedSubmit, isSubmitting } = useSubmissionGuard({
     cooldownMs: 2000, // 2 second cooldown for exam submission
   });
@@ -44,8 +46,14 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
   useEffect(() => {
     timeElapsedRef.current = timeElapsed;
   }, [timeElapsed]);
-  
+
   const submitExam = useCallback(async () => {
+    // Check if component is still mounted
+    if (!isMounted()) {
+      console.warn("Component unmounted, cancelling submission");
+      return;
+    }
+
     // Prevent double submission
     if (
       isSubmittingRef.current ||
@@ -130,6 +138,12 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
       const passed =
         scorePercentage >= (currentSessionState.test.passing_score || 70);
 
+      // Check if still mounted before API calls
+      if (!isMounted()) {
+        console.warn("Component unmounted before submission");
+        return;
+      }
+
       // Save all answers in one batch (more efficient)
       if (answersToSave.length > 0) {
         const { error: answersError } = await supabase
@@ -139,6 +153,12 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
         if (answersError) {
           throw new Error(`Failed to save answers: ${answersError.message}`);
         }
+      }
+
+      // Check if still mounted
+      if (!isMounted()) {
+        console.warn("Component unmounted during submission");
+        return;
       }
 
       // Update session with results
@@ -156,6 +176,12 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
 
       if (updateError) {
         throw new Error(`Failed to update session: ${updateError.message}`);
+      }
+
+      // Check if still mounted before navigation
+      if (!isMounted()) {
+        console.warn("Component unmounted after submission");
+        return;
       }
 
       // Prepare results data for viewing
@@ -178,25 +204,42 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
       router.push(`/${locale}/exam-tests/results/${currentSession.id}`);
     } catch (err) {
       console.error("Error submitting exam:", err);
-      setError(err instanceof Error ? err.message : "Failed to submit exam");
 
-      // Reset submission flag on error to allow retry
-      isSubmittingRef.current = false;
+      // Only update state if still mounted
+      if (isMounted()) {
+        setError(err instanceof Error ? err.message : "Failed to submit exam");
 
-      // Restart timer if submission failed
-      if (mode === "exam" && !timerRef.current) {
-        timerRef.current = setInterval(() => {
-          timeElapsedRef.current += 1;
-          setTimeElapsed((prev) => prev + 1);
-        }, 1000);
+        // Reset submission flag on error to allow retry
+        isSubmittingRef.current = false;
+
+        // Restart timer if submission failed and still mounted
+        if (mode === "exam" && !timerRef.current && isMounted()) {
+          timerRef.current = setInterval(() => {
+            if (isMounted()) {
+              timeElapsedRef.current += 1;
+              setTimeElapsed((prev) => prev + 1);
+            }
+          }, 1000);
+
+          // Add cleanup for the restarted timer
+          addCleanup(() => {
+            if (timerRef.current) {
+              clearInterval(timerRef.current);
+            }
+          });
+        }
       }
     } finally {
-      setLoading(false);
+      if (isMounted()) {
+        setLoading(false);
+      }
     }
-  }, [router, locale, mode]);
+  }, [router, locale, mode, isMounted, addCleanup]);
 
   // Initialize session
   const initializeSession = useCallback(async () => {
+    if (!isMounted()) return;
+
     try {
       setLoading(true);
 
@@ -217,6 +260,8 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
         .eq("is_published", true)
         .single();
 
+      if (!isMounted()) return;
+
       if (testError) throw testError;
       if (!test) throw new Error("Test not found");
 
@@ -236,6 +281,9 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
           ),
         }));
 
+      // Check if still mounted before creating session
+      if (!isMounted()) return;
+
       // Create session in database using Supabase
       const { data: session, error: sessionError } = await supabase
         .from("exam_sessions")
@@ -247,6 +295,8 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
         })
         .select()
         .single();
+
+      if (!isMounted()) return;
 
       if (sessionError) throw sessionError;
       if (!session) throw new Error("Failed to create session");
@@ -263,16 +313,22 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
         markedForReview: new Set<string>(),
       };
 
-      setSessionState(newSessionState);
+      if (isMounted()) {
+        setSessionState(newSessionState);
+      }
     } catch (err) {
       console.error("Error initializing session:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to initialize session"
-      );
+      if (isMounted()) {
+        setError(
+          err instanceof Error ? err.message : "Failed to initialize session"
+        );
+      }
     } finally {
-      setLoading(false);
+      if (isMounted()) {
+        setLoading(false);
+      }
     }
-  }, [mode, testId, userId]);
+  }, [mode, testId, userId, isMounted]);
 
   // Initialize on mount
   useEffect(() => {
@@ -281,12 +337,21 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
     }
   }, [initializeSession, userId]);
 
-  // Timer management
+  // Timer management with cleanup
   useEffect(() => {
     if (mode === "exam" && sessionState && !sessionState.session.completed_at) {
-      timerRef.current = setInterval(() => {
-        setTimeElapsed((prev) => prev + 1);
+      const timer = setInterval(() => {
+        if (isMounted()) {
+          setTimeElapsed((prev) => prev + 1);
+        }
       }, 1000);
+
+      timerRef.current = timer;
+
+      // Add cleanup function
+      addCleanup(() => {
+        clearInterval(timer);
+      });
 
       return () => {
         if (timerRef.current) {
@@ -294,22 +359,22 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
         }
       };
     }
-  }, [mode, sessionState]);
+  }, [mode, sessionState, isMounted, addCleanup]);
 
-  // Auto-submit when time limit is reached - NOW submitExam is available
+  // Auto-submit when time limit is reached
   useEffect(() => {
     if (mode === "exam" && sessionState?.test.time_limit) {
       const timeLimit = sessionState.test.time_limit * 60; // convert minutes to seconds
-      if (timeElapsed >= timeLimit) {
+      if (timeElapsed >= timeLimit && isMounted()) {
         submitExam();
       }
     }
-  }, [mode, timeElapsed, sessionState, submitExam]);
+  }, [mode, timeElapsed, sessionState, submitExam, isMounted]);
 
   // Select answer(s) - supports multiple selections
   const selectAnswer = useCallback(
     (optionId: string) => {
-      if (!sessionState) return;
+      if (!sessionState || !isMounted()) return;
 
       const currentQuestion =
         sessionState.questions[sessionState.currentQuestionIndex];
@@ -349,13 +414,13 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
         };
       });
     },
-    [sessionState]
+    [sessionState, isMounted]
   );
 
   // Navigate between questions
   const goToQuestion = useCallback(
     (index: number) => {
-      if (!sessionState) return;
+      if (!sessionState || !isMounted()) return;
 
       if (index >= 0 && index < sessionState.questions.length) {
         setSessionState((prev) => {
@@ -367,22 +432,22 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
         });
       }
     },
-    [sessionState]
+    [sessionState, isMounted]
   );
 
   const goToNext = useCallback(() => {
-    if (!sessionState) return;
+    if (!sessionState || !isMounted()) return;
     goToQuestion(sessionState.currentQuestionIndex + 1);
-  }, [sessionState, goToQuestion]);
+  }, [sessionState, goToQuestion, isMounted]);
 
   const goToPrevious = useCallback(() => {
-    if (!sessionState) return;
+    if (!sessionState || !isMounted()) return;
     goToQuestion(sessionState.currentQuestionIndex - 1);
-  }, [sessionState, goToQuestion]);
+  }, [sessionState, goToQuestion, isMounted]);
 
   // Mark for review
   const toggleMarkForReview = useCallback(() => {
-    if (!sessionState) return;
+    if (!sessionState || !isMounted()) return;
 
     const currentQuestion =
       sessionState.questions[sessionState.currentQuestionIndex];
@@ -403,14 +468,26 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
         markedForReview: newMarked,
       };
     });
-  }, [sessionState]);
+  }, [sessionState, isMounted]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Clear timer if exists
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
 
   // Helper computed values
   const currentQuestion =
     sessionState?.questions[sessionState.currentQuestionIndex] || null;
+
   const selectedAnswer = currentQuestion
     ? sessionState?.answers[currentQuestion.id] || []
     : [];
+
   const isMarkedForReview = currentQuestion
     ? sessionState?.markedForReview.has(currentQuestion.id) || false
     : false;
@@ -447,7 +524,7 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
     error,
     sessionState,
     currentQuestion,
-    selectedAnswer, // Array of option IDs
+    selectedAnswer,
     isMarkedForReview,
     progress,
     timeElapsed,
@@ -456,6 +533,7 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
     goToPrevious,
     goToQuestion,
     toggleMarkForReview,
-    submitExam,
+    submitExam: guardedSubmit(submitExam),
+    isSubmitting,
   };
 }
