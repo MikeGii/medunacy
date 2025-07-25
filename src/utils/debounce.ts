@@ -1,18 +1,42 @@
 // src/utils/debounce.ts
-
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
-  wait: number
+  delay: number
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null;
+  let timeoutId: NodeJS.Timeout | null = null;
 
-  return function debounced(...args: Parameters<T>) {
-    if (timeout) {
-      clearTimeout(timeout);
+  return (...args: Parameters<T>) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
     }
 
-    timeout = setTimeout(() => {
+    timeoutId = setTimeout(() => {
       func(...args);
-    }, wait);
+    }, delay);
   };
+}
+
+// Simpler hook version for React components
+import { useCallback, useRef } from "react";
+
+export function useDebounce<T extends (...args: any[]) => any>(
+  callback: T,
+  delay: number
+): T {
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const debouncedCallback = useCallback(
+    (...args: Parameters<T>) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      timeoutRef.current = setTimeout(() => {
+        callback(...args);
+      }, delay);
+    },
+    [callback, delay]
+  ) as T;
+
+  return debouncedCallback;
 }

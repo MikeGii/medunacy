@@ -1,0 +1,80 @@
+{
+  "roles": {
+    "page_title": "Kasutajate rollid",
+    "page_subtitle": "Halda kasutajate rolle ja õigusi",
+    "loading": "Laadin kasutajaid...",
+    "no_users": "Kasutajaid ei leitud",
+    "table": {
+      "name": "Nimi",
+      "email": "E-post",
+      "current_role": "Praegune roll",
+      "change_role": "Muuda rolli",
+      "your_account": "Sinu konto"
+    },
+    "roles": {
+      "user": "Kasutaja",
+      "doctor": "Arst",
+      "admin": "Administraator"
+    },
+    "messages": {
+      "role_updated": "Roll edukalt uuendatud!",
+      "role_update_error": "Viga rolli uuendamisel",
+      "cannot_change_own_role": "Sa ei saa muuta oma rolli"
+    },
+    "search": {
+      "placeholder": "Otsi nime või e-posti järgi...",
+      "results": "Leitud {count} kasutajat",
+      "no_results": "Kasutajaid ei leitud"
+    }
+  },
+  "users": {
+    "page_title": "Kasutajad",
+    "table_title": "Siin näed registreeritud kasutajaid ja nende andmeid",
+    "table": {
+      "first_name": "Eesnimi",
+      "last_name": "Perekonnanimi",
+      "email": "E-post",
+      "phone": "Telefon",
+      "view_details": "Vaata detaile",
+      "no_users": "Kasutajaid ei leitud",
+      "loading": "Laadin kasutajaid...",
+      "admins": "Administraatorid",
+      "doctors": "Arstid",
+      "users": "Kasutajad"
+    },
+    "modal": {
+      "title": "Kasutaja andmed",
+      "personal_info": "Isikuandmed",
+      "professional_info": "Lisainformatsioon",
+      "close": "Sulge"
+    }
+  },
+  "dashboard": {
+    "welcome": "Siin on sinu töölaud,",
+    "quick_actions": "Kiired toimingud",
+    "forum": "Foorum",
+    "my_data": "Minu andmed",
+    "healthcare_tools": "Tervisehoiutöötaja tööriistad",
+    "users": "Kasutajad",
+    "users_description": "Vaata ja halda kasutajaid",
+    "admin_tools": "Administratiivsed tööriistad",
+    "roles": "Rollid",
+    "roles_description": "Halda kasutajate rolle ja õigusi",
+    "import_exam_questions": "Impordi eksami küsimused",
+    "import_exam_questions_description": "Impordi uusi eksami küsimusi süsteemi",
+    "forum_description": "Liitu kogukonna aruteludega",
+    "my_data_description": "Halda oma profiili andmeid",
+    "exam_tests": "Eksamitestid",
+    "exam_tests_description": "Harjuta ja valmista eksamiteks",
+    "test_creation": "Testide loomine",
+    "test_creation_description": "Loo ja halda eksamikategooriaid ning teste",
+    "exam_session_results": "Eksami tulemused",
+    "exam_session_results_description": "Vaata ja analüüsi eksami seansi tulemusi",
+    "courses": "Koolitused",
+    "courses_description": "Vaata ja registreeru meditsiinilistele koolitustele",
+    "courses_panel": "Koolituste haldus",
+    "courses_panel_description": "Halda koolitusi ja vaata registreerunuid",
+    "exam_results": "Eksami tulemused",
+    "exam_results_description": "Vaata ja halda eksami tulemusi"
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "forum": {
+    "page_title": "Foorum",
+    "page_subtitle": "Kogukonna arutelud ja teadmiste jagamine",
+    "loading": "Laadin foorumit...",
+    "categories": {
+      "all": "Kõik kategooriad",
+      "title": "Kategooriad",
+      "no_posts": "Selles kategoorias pole veel postitusi",
+      "no_categories": "Kategooriaid ei leitud"
+    },
+    "pagination": {
+      "previous": "Eelmine",
+      "next": "Järgmine",
+      "page": "Lehekülg {page}",
+      "of": "{total}st"
+    },
+    "posts": {
+      "create": "Uus postitus",
+      "no_posts": "Postitusi ei leitud",
+      "loading": "Laadin postitusi...",
+      "by": "Autor",
+      "comments": "kommentaari",
+      "likes": "meeldimist",
+      "no_posts_category": "Selles kategoorias pole veel postitusi",
+      "no_posts_search": "Otsingule \"{query}\" ei leitud ühtegi postitust",
+      "showing_posts": "Näitan {from}-{to} postitust {total}st",
+      "error_loading": "Viga postituste laadimisel"
+    },
+    "search": {
+      "placeholder": "Otsi postitusi...",
+      "button": "Otsi",
+      "shortcut_hint": "kiirklahv",
+      "clear": "Tühista",
+      "searching": "Otsimine..."
+    },
+    "create_post": {
+      "button": "Uus postitus",
+      "modal_title": "Loo uus postitus",
+      "form": {
+        "title": "Pealkiri",
+        "title_placeholder": "Sisesta postituse pealkiri...",
+        "category": "Kategooria",
+        "category_placeholder": "Vali kategooria",
+        "content": "Sisu",
+        "content_placeholder": "Kirjuta oma postitus siia...",
+        "submit": "Avalda postitus",
+        "cancel": "Tühista",
+        "creating": "Avaldan...",
+        "markdown_supported": "Markdown on toetatud"
+      },
+      "validation": {
+        "title_required": "Pealkiri on kohustuslik",
+        "title_too_short": "Pealkiri peab olema vähemalt {min} tähemärki pikk",
+        "title_too_long": "Pealkiri ei tohi olla pikem kui {max} tähemärki",
+        "content_required": "Sisu on kohustuslik",
+        "content_too_short": "Sisu peab olema vähemalt {min} tähemärki pikk",
+        "content_too_long": "Sisu ei tohi olla pikem kui {max} tähemärki",
+        "category_required": "Kategooria on kohustuslik"
+      },
+      "category": {
+        "new": "Lisa uus kategooria",
+        "modal_title": "Lisa uus kategooria",
+        "name": "Kategooria nimi",
+        "name_placeholder": "Sisesta kategooria nimi...",
+        "create": "Loo kategooria",
+        "creating": "Loon...",
+        "cancel": "Tühista",
+        "validation": {
+          "name_required": "Kategooria nimi on kohustuslik",
+          "name_too_short": "Kategooria nimi peab olema vähemalt {min} tähemärki pikk",
+          "name_too_long": "Kategooria nimi ei tohi olla pikem kui {max} tähemärki",
+          "invalid_characters": "Kategooria nimi sisaldab lubamatuid tähemärke"
+        }
+      }
+    },
+    "post_detail": {
+      "loading": "Laadin postitust...",
+      "not_found": "Postitust ei leitud",
+      "back": "Tagasi foorumisse",
+      "edit": "Muuda",
+      "save": "Salvesta",
+      "cancel": "Tühista",
+      "editing": "Muudan...",
+      "edit_success": "Postitus edukalt uuendatud",
+      "edit_error": "Viga postituse uuendamisel",
+      "delete": "Kustuta",
+      "like": "Meeldib",
+      "unlike": "Eemalda meeldimine",
+      "confirm_delete": "Kas oled kindel, et soovid selle postituse kustutada?",
+      "comments": {
+        "title": "Kommentaarid",
+        "empty": "Kommentaare pole veel. Ole esimene!",
+        "add": "Lisa kommentaar",
+        "placeholder": "Kirjuta oma kommentaar...",
+        "submit": "Postita",
+        "submitting": "Postitan...",
+        "delete": "Kustuta kommentaar",
+        "edit": "Muuda",
+        "save": "Salvesta",
+        "cancel": "Tühista",
+        "editing": "Muudan...",
+        "edit_success": "Kommentaar edukalt uuendatud",
+        "edit_error": "Viga kommentaari uuendamisel",
+        "confirm_delete": "Kas oled kindel, et soovid selle kommentaari kustutada?",
+        "form": {
+          "placeholder": "Lisa kommentaar...",
+          "submit": "Postita",
+          "posting": "Postitamine..."
+        }
+      }
+    },
+    "edit_post": {
+      "title": "Muuda postitust",
+      "form": {
+        "title": "Pealkiri",
+        "category": "Kategooria",
+        "content": "Sisu",
+        "save": "Salvesta",
+        "saving": "Salvestan...",
+        "cancel": "Tühista"
+      },
+      "error": "Viga postituse uuendamisel"
+    },
+    "stats": {
+      "active_members": "{count} aktiivset liiget",
+      "discussions": "{count} arutelu"
+    },
+    "errors": {
+      "fetch_posts": "Viga postituste laadimisel",
+      "create_post": "Viga postituse loomisel",
+      "update_post": "Viga postituse uuendamisel",
+      "delete_post": "Viga postituse kustutamisel",
+      "fetch_comments": "Viga kommentaaride laadimisel",
+      "create_comment": "Viga kommentaari loomisel",
+      "update_comment": "Viga kommentaari uuendamisel",
+      "delete_comment": "Viga kommentaari kustutamisel",
+      "unauthorized": "Teil pole selleks tegevuseks õigusi"
+    }
+  }
+}
