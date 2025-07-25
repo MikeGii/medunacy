@@ -34,6 +34,7 @@ type ForumAction =
   | { type: "ADD_POST"; payload: ForumPost }
   | { type: "CACHE_POSTS"; payload: { key: string; data: ForumPost[] } }
   | { type: "CLEAR_CACHE" }
+  | { type: "APPEND_POSTS"; payload: ForumPost[] }
   // Pagination actions
   | {
       type: "SET_PAGINATION";
@@ -166,6 +167,12 @@ function forumReducer(state: ForumState, action: ForumAction): ForumState {
 
     default:
       return state;
+
+    case "APPEND_POSTS":
+      return {
+        ...state,
+        posts: [...state.posts, ...action.payload],
+      };
   }
 }
 

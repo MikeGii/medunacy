@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { createPortal } from "react-dom";
 import { Course, CourseCategory } from "@/types/course.types";
 import { usePathname } from "next/navigation";
+import { useSubmissionGuard } from "@/hooks/useSubmissionGuard";
 
 interface CourseFormProps {
   course: Course | null;
@@ -52,34 +53,29 @@ export default function CourseForm({
     }
   }, [course]);
 
+  const { guardedSubmit, isSubmitting } = useSubmissionGuard({
+    onError: (error) => {
+      setError(error.message);
+    },
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
 
-    try {
-      // Log the data being sent
-      console.log("Submitting course data:", formData);
+    await guardedSubmit(async () => {
+      setError(null);
 
       const result = await onSubmit(formData);
 
       if (!result.success) {
-        console.error("Submit failed:", result.error);
-        setError(
+        throw new Error(
           result.error ||
             t(course ? "messages.update_error" : "messages.create_error")
         );
-      } else {
-        onClose();
       }
-    } catch (err) {
-      console.error("Unexpected error:", err);
-      setError(
-        err instanceof Error ? err.message : "An unexpected error occurred"
-      );
-    } finally {
-      setLoading(false);
-    }
+
+      onClose();
+    });
   };
 
   const modalContent = (
@@ -264,10 +260,39 @@ export default function CourseForm({
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                  disabled={isSubmitting}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    isSubmitting
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700"
+                  }`}
                 >
-                  {loading ? t("actions.saving") : t("actions.save")}
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center">
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
+                      </svg>
+                      {t("messages.saving")}
+                    </span>
+                  ) : (
+                    t(course ? "actions.update" : "actions.create")
+                  )}
                 </button>
               </div>
             </form>

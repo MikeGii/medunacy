@@ -1,8 +1,10 @@
+// src/components/courses/CoursesFilters.tsx - UPDATED
 "use client";
 
 import { useTranslations } from "next-intl";
 import { CourseCategory } from "@/types/course.types";
 import { usePathname } from "next/navigation";
+import DebouncedSearchInput from "@/components/common/DebouncedSearchInput";
 
 interface CoursesFiltersProps {
   categories: CourseCategory[];
@@ -39,14 +41,13 @@ export default function CoursesFilters({
         ))}
       </select>
 
-      {/* Search */}
+      {/* Debounced Search Input */}
       <div className="flex-1">
-        <input
-          type="text"
+        <DebouncedSearchInput
           value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
+          onChange={onSearchChange}
           placeholder={t("search_placeholder")}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          delay={300}
         />
       </div>
     </div>

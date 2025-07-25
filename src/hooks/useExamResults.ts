@@ -131,15 +131,20 @@ export function useExamResults({
         .from("exam_sessions")
         .select(
           `
-          *,
-          test:tests(
-            title,
-            category:test_categories(name)
+        *,
+        test:tests!exam_sessions_test_id_fkey(
+          id,
+          title,
+          category:test_categories!tests_category_id_fkey(
+            id,
+            name
           )
-        `
+        )
+      `
         )
         .eq("user_id", targetUserId)
-        .order("created_at", { ascending: false });
+        .not("completed_at", "is", null) // Only show completed sessions
+        .order("completed_at", { ascending: false });
 
       if (testId) {
         query = query.eq("test_id", testId);

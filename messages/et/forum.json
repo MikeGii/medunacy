@@ -3,6 +3,9 @@
     "page_title": "Foorum",
     "page_subtitle": "Kogukonna arutelud ja teadmiste jagamine",
     "loading": "Laadin foorumit...",
+    "settings": {
+      "use_infinite_scroll": "Kasuta lõputut kerimist"
+    },
     "categories": {
       "all": "Kõik kategooriad",
       "title": "Kategooriad",
@@ -25,7 +28,9 @@
       "no_posts_category": "Selles kategoorias pole veel postitusi",
       "no_posts_search": "Otsingule \"{query}\" ei leitud ühtegi postitust",
       "showing_posts": "Näitan {from}-{to} postitust {total}st",
-      "error_loading": "Viga postituste laadimisel"
+      "error_loading": "Viga postituste laadimisel",
+      "no_posts_title": "Postitusi ei leitud",
+      "loading_more": "Laen rohkem..."
     },
     "search": {
       "placeholder": "Otsi postitusi...",

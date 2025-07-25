@@ -63,7 +63,7 @@ export function useForum() {
 
   // Fetch posts with pagination
   const fetchPosts = useCallback(
-    async (page: number = 1, append: boolean = false) => {
+    async (page: number, append: boolean = false) => {
       if (!user) return;
 
       // Cancel any existing request
@@ -199,13 +199,10 @@ export function useForum() {
 
           // Update state
           if (append && state.posts.length > 0) {
-            // Append to existing posts (for load more)
-            dispatch({
-              type: "SET_POSTS",
-              payload: [...state.posts, ...transformedPosts],
-            });
+            // For infinite scroll - use APPEND_POSTS action
+            dispatch({ type: "APPEND_POSTS", payload: transformedPosts });
           } else {
-            // Replace posts (for page navigation)
+            // For page navigation - replace all posts
             dispatch({ type: "SET_POSTS", payload: transformedPosts });
           }
 
@@ -262,7 +259,6 @@ export function useForum() {
       state.selectedCategory,
       state.searchQuery,
       state.postsCache,
-      state.posts,
       dispatch,
       cleanup,
     ]
