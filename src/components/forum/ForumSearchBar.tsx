@@ -4,6 +4,7 @@
 import { useState, useCallback, useEffect, memo, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { FORUM_CONSTANTS } from "@/utils/forum.constants";
+import { useDebounce } from "@/hooks/usePerformance";
 
 interface ForumSearchBarProps {
   onSearch: (query: string) => void;
@@ -17,7 +18,6 @@ const ForumSearchBar = memo(function ForumSearchBar({
   const t = useTranslations("forum.search");
   const [query, setQuery] = useState(initialValue);
   const [isSearching, setIsSearching] = useState(false);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null); // Fixed: Added null as initial value
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Detect platform for keyboard shortcut display
@@ -25,57 +25,28 @@ const ForumSearchBar = memo(function ForumSearchBar({
     typeof window !== "undefined" &&
     navigator.platform.toUpperCase().indexOf("MAC") >= 0;
 
-  // Cleanup debounce timer on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, []);
+  const debouncedSearch = useDebounce((searchQuery: string) => {
+    onSearch(searchQuery);
+    setIsSearching(false);
+  }, FORUM_CONSTANTS.SEARCH_DEBOUNCE_MS);
 
-  // Debounced search handler
-  const handleSearch = useCallback(
-    (searchQuery: string) => {
-      // Clear existing timer
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-
-      // Show searching indicator for better UX
-      if (searchQuery.trim()) {
-        setIsSearching(true);
-      }
-
-      // Set new timer
-      debounceTimerRef.current = setTimeout(() => {
-        onSearch(searchQuery.trim());
-        setIsSearching(false);
-      }, FORUM_CONSTANTS.SEARCH_DEBOUNCE_MS);
-    },
-    [onSearch]
-  );
-
-  // Handle input change with debouncing
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newQuery = e.target.value;
       setQuery(newQuery);
-      handleSearch(newQuery);
+
+      if (newQuery.trim()) {
+        setIsSearching(true);
+      }
+
+      debouncedSearch(newQuery.trim());
     },
-    [handleSearch]
+    [debouncedSearch]
   );
 
-  // Handle form submit for immediate search
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
-
-      // Clear any pending debounce
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-
       // Immediate search
       onSearch(query.trim());
       setIsSearching(false);

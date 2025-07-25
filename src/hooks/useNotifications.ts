@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { useCleanup } from "@/hooks/useCleanup";
 
 interface Notification {
   id: string;
@@ -28,7 +29,7 @@ export function useNotifications() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const isMountedRef = useRef(true);
+  const { addCleanup, isMounted } = useCleanup();
   const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Memoize unread count calculation
@@ -40,7 +41,7 @@ export function useNotifications() {
   // Fetch notifications with caching
   const fetchNotifications = useCallback(
     async (forceRefresh = false) => {
-      if (!user || !isMountedRef.current) {
+      if (!user || !isMounted()) {
         setLoading(false);
         return;
       }
@@ -48,7 +49,6 @@ export function useNotifications() {
       const cacheKey = user.id;
       const cached = notificationsCache.get(cacheKey);
 
-      // Use cache if valid and not forcing refresh
       if (
         !forceRefresh &&
         cached &&
@@ -69,11 +69,10 @@ export function useNotifications() {
 
         if (error) throw error;
 
-        if (isMountedRef.current) {
+        if (isMounted()) {
           const notificationData = data || [];
           setNotifications(notificationData);
 
-          // Update cache
           notificationsCache.set(cacheKey, {
             data: notificationData,
             timestamp: Date.now(),
@@ -82,12 +81,12 @@ export function useNotifications() {
       } catch (error) {
         console.error("Error fetching notifications:", error);
       } finally {
-        if (isMountedRef.current) {
+        if (isMounted()) {
           setLoading(false);
         }
       }
     },
-    [user]
+    [user, isMounted]
   );
 
   // Optimized mark as read
@@ -206,8 +205,6 @@ export function useNotifications() {
 
   // Set up real-time subscription with debouncing
   useEffect(() => {
-    isMountedRef.current = true;
-
     // Initial fetch
     fetchNotifications();
 
@@ -225,7 +222,7 @@ export function useNotifications() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          if (isMountedRef.current) {
+          if (isMounted()) {
             const newNotification = payload.new as Notification;
             setNotifications((prev) => [newNotification, ...prev]);
 
@@ -236,26 +233,10 @@ export function useNotifications() {
       )
       .subscribe();
 
-    return () => {
-      isMountedRef.current = false;
+    addCleanup(() => {
       subscription.unsubscribe();
-
-      // Store the timeout ref value in a variable
-      const timeoutId = fetchTimeoutRef.current;
-      // Clear any pending timeouts
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-
-      // Clean up old cache entries
-      const now = Date.now();
-      notificationsCache.forEach((value, key) => {
-        if (now - value.timestamp > CACHE_DURATION * 2) {
-          notificationsCache.delete(key);
-        }
-      });
-    };
-  }, [user, fetchNotifications]);
+    });
+  }, [user, fetchNotifications, isMounted, addCleanup]);
 
   return {
     notifications,

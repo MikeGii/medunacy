@@ -1,17 +1,19 @@
-// src/components/forum/ForumPage.tsx
+// src/components/forum/ForumPage.tsx - FIXED VERSION
 "use client";
 
-import { useState, useCallback, memo } from "react";
+import { useState, useCallback, memo, lazy, Suspense } from "react";
 import Header from "../layout/Header";
 import ForumHero from "./ForumHero";
 import ForumCategories from "./ForumCategories";
 import ForumSearchBar from "./ForumSearchBar";
 import ForumPostList from "./ForumPostList";
-import CreatePostModal from "./CreatePostModal";
 import { AuthModalProvider } from "@/contexts/AuthModalContext";
 import { useTranslations } from "next-intl";
 import { useAuthorization } from "@/hooks/useAuthorization";
-import ForumSettings from "./ForumSettings";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+
+// MOVE LAZY IMPORT OUTSIDE THE COMPONENT
+const CreatePostModal = lazy(() => import("./CreatePostModal"));
 
 const ForumPageContent = memo(function ForumPageContent() {
   const t = useTranslations("forum");
@@ -19,15 +21,7 @@ const ForumPageContent = memo(function ForumPageContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-
   const [useInfiniteScroll, setUseInfiniteScroll] = useState(false);
-
-  const handleSettingsChange = useCallback(
-    (settings: { useInfiniteScroll: boolean }) => {
-      setUseInfiniteScroll(settings.useInfiniteScroll);
-    },
-    []
-  );
 
   // Handle post creation
   const handlePostCreated = useCallback(() => {
@@ -118,12 +112,22 @@ const ForumPageContent = memo(function ForumPageContent() {
         </section>
       </main>
 
-      {/* Create Post Modal */}
-      <CreatePostModal
-        isOpen={showCreatePost}
-        onClose={() => setShowCreatePost(false)}
-        onPostCreated={handlePostCreated}
-      />
+      {/* FIX: Conditionally render modal with Suspense */}
+      {showCreatePost && (
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <LoadingSpinner />
+            </div>
+          }
+        >
+          <CreatePostModal
+            isOpen={showCreatePost}
+            onClose={() => setShowCreatePost(false)}
+            onPostCreated={handlePostCreated}
+          />
+        </Suspense>
+      )}
     </div>
   );
 });

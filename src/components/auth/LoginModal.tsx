@@ -5,6 +5,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useAuthActions } from "@/hooks/useAuth";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRateLimit, RATE_LIMITS } from "@/utils/rateLimiter";
+import { sanitizeInput } from "@/utils/sanitization";
 
 interface LoginModalProps {
   onSwitchToRegister: () => void;
@@ -19,7 +21,9 @@ export default function LoginModal({
 }: LoginModalProps) {
   const t = useTranslations("auth.login");
   const { signIn, loading } = useAuthActions();
-  const { user, isInitialized } = useAuth(); // Add isInitialized
+  const { user, isInitialized } = useAuth();
+  const loginRateLimit = useRateLimit(RATE_LIMITS.LOGIN);
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -63,18 +67,34 @@ export default function LoginModal({
   // Memoize handlers to prevent recreating on each render
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+
+    // Sanitize input to prevent XSS
+    const sanitizedValue =
+      name === "email"
+        ? value.trim().toLowerCase() // Email doesn't need HTML sanitization
+        : value; // Password should not be sanitized (user might have HTML-like chars)
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value.trim(), // Trim whitespace as user types
+      [name]: sanitizedValue,
     }));
   }, []);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-
-      // Reset any previous messages
       setMessage(null);
+
+      // Check rate limit
+      const rateLimitError = loginRateLimit.checkRateLimit();
+      if (rateLimitError) {
+        const minutes = Math.ceil(rateLimitError.retryAfter / 60);
+        setMessage({
+          type: "error",
+          text: t("errors.too_many_attempts_time", { minutes }),
+        });
+        return;
+      }
 
       // Basic validation
       if (!formData.email || !formData.password) {
@@ -95,6 +115,9 @@ export default function LoginModal({
         return;
       }
 
+      // Record the login attempt
+      loginRateLimit.recordRequest();
+
       try {
         const result = await signIn(formData.email, formData.password);
 
@@ -108,14 +131,21 @@ export default function LoginModal({
         } else {
           let errorMessage = result.message;
 
+          // Show remaining attempts
+          const remaining = loginRateLimit.getRemainingRequests();
+
+          // Handle specific errors
           if (errorMessage.includes("Invalid login credentials")) {
-            errorMessage = t("errors.invalid_credentials");
+            errorMessage =
+              remaining > 0
+                ? t("errors.invalid_credentials_remaining", {
+                    attempts: remaining,
+                  })
+                : t("errors.invalid_credentials");
           } else if (errorMessage.includes("Email not confirmed")) {
             errorMessage = t("errors.email_not_verified");
           } else if (errorMessage.includes("Too many requests")) {
             errorMessage = t("errors.too_many_attempts");
-          } else if (errorMessage.includes("Sign in failed")) {
-            errorMessage = t("errors.sign_in_failed");
           }
 
           setMessage({
@@ -133,7 +163,7 @@ export default function LoginModal({
         }
       }
     },
-    [formData, signIn, t]
+    [formData, signIn, t, loginRateLimit]
   );
 
   // Prevent form submission while already loading or closing
