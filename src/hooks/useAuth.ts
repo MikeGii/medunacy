@@ -4,6 +4,8 @@
 import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useTranslations } from "next-intl";
+import { useRateLimit, RATE_LIMITS } from "@/utils/rateLimiter";
+import { sanitizeInput } from "@/utils/sanitization";
 
 interface RegisterData {
   firstName: string;
@@ -29,6 +31,11 @@ export function useAuthActions() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const t = useTranslations("auth.common");
 
+  // Rate limiters
+  const loginRateLimit = useRateLimit(RATE_LIMITS.LOGIN);
+  const registerRateLimit = useRateLimit(RATE_LIMITS.REGISTER);
+  const resetRateLimit = useRateLimit(RATE_LIMITS.PASSWORD_RESET);
+
   // Cleanup function for component unmount
   const cleanup = useCallback(() => {
     if (abortControllerRef.current) {
@@ -39,6 +46,17 @@ export function useAuthActions() {
 
   const register = useCallback(
     async (data: RegisterData): Promise<AuthResult> => {
+      // Check rate limit FIRST
+      const rateLimitError = registerRateLimit.checkRateLimit();
+      if (rateLimitError) {
+        const minutes = Math.ceil(rateLimitError.retryAfter / 60);
+        return {
+          success: false,
+          message: t("registration_rate_limit", { minutes }),
+          errorCode: "rate_limit_exceeded",
+        };
+      }
+
       // Create cache key from email
       const cacheKey = `register:${data.email.toLowerCase()}`;
 
@@ -47,6 +65,19 @@ export function useAuthActions() {
       if (cachedRequest) {
         return cachedRequest;
       }
+
+      // Record the rate limit attempt
+      registerRateLimit.recordRequest();
+
+      // Sanitize inputs
+      const sanitizedData = {
+        ...data,
+        firstName: sanitizeInput(data.firstName.trim()),
+        lastName: sanitizeInput(data.lastName.trim()),
+        email: data.email.trim().toLowerCase(),
+        phone: sanitizeInput(data.phone.trim()),
+        // password is not sanitized - users might have HTML-like characters
+      };
 
       // Create new request
       const request = (async (): Promise<AuthResult> => {
@@ -58,7 +89,7 @@ export function useAuthActions() {
         try {
           // Validate email format one more time
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!emailRegex.test(data.email)) {
+          if (!emailRegex.test(sanitizedData.email)) {
             return {
               success: false,
               message: t("invalid_email_format"),
@@ -70,7 +101,7 @@ export function useAuthActions() {
           const { data: existingUser, error: checkError } = await supabase
             .from("users")
             .select("email")
-            .eq("email", data.email.toLowerCase())
+            .eq("email", sanitizedData.email)
             .maybeSingle();
 
           if (checkError && checkError.code !== "PGRST116") {
@@ -88,13 +119,13 @@ export function useAuthActions() {
           // Sign up with Supabase Auth
           const { data: authData, error: authError } =
             await supabase.auth.signUp({
-              email: data.email.toLowerCase(),
-              password: data.password,
+              email: sanitizedData.email,
+              password: data.password, // Don't sanitize password
               options: {
                 data: {
-                  first_name: data.firstName.trim(),
-                  last_name: data.lastName.trim(),
-                  phone: data.phone.trim(),
+                  first_name: sanitizedData.firstName,
+                  last_name: sanitizedData.lastName,
+                  phone: sanitizedData.phone,
                 },
                 emailRedirectTo: `${window.location.origin}/auth/callback`,
               },
@@ -201,7 +232,6 @@ export function useAuthActions() {
           };
         } finally {
           setLoading(false);
-          // Remove from cache after completion
           authRequestCache.delete(cacheKey);
           abortControllerRef.current = null;
         }
@@ -212,11 +242,22 @@ export function useAuthActions() {
 
       return request;
     },
-    [t]
+    [t, registerRateLimit]
   );
 
   const signIn = useCallback(
     async (email: string, password: string): Promise<AuthResult> => {
+      // Check rate limit FIRST
+      const rateLimitError = loginRateLimit.checkRateLimit();
+      if (rateLimitError) {
+        const minutes = Math.ceil(rateLimitError.retryAfter / 60);
+        return {
+          success: false,
+          message: t("too_many_requests", { minutes }),
+          errorCode: "rate_limit_exceeded",
+        };
+      }
+
       // Create cache key
       const cacheKey = `signin:${email.toLowerCase()}`;
 
@@ -225,6 +266,9 @@ export function useAuthActions() {
       if (cachedRequest) {
         return cachedRequest;
       }
+
+      // Record the rate limit attempt
+      loginRateLimit.recordRequest();
 
       // Create new request
       const request = (async (): Promise<AuthResult> => {
@@ -245,7 +289,7 @@ export function useAuthActions() {
 
           const { data, error } = await supabase.auth.signInWithPassword({
             email: email.toLowerCase().trim(),
-            password: password,
+            password: password, // Don't sanitize password
           });
 
           if (error) {
@@ -253,9 +297,13 @@ export function useAuthActions() {
 
             // Handle specific error cases
             if (error.message.includes("Invalid login credentials")) {
+              const remaining = loginRateLimit.getRemainingRequests();
               return {
                 success: false,
-                message: "Invalid email or password", // This will be handled by the modal
+                message:
+                  remaining > 0
+                    ? `Invalid email or password. ${remaining} attempts remaining.`
+                    : "Invalid email or password",
                 errorCode: "invalid_credentials",
               };
             }
@@ -321,23 +369,34 @@ export function useAuthActions() {
           };
         } finally {
           setLoading(false);
-          // Remove from cache
           authRequestCache.delete(cacheKey);
           abortControllerRef.current = null;
         }
       })();
 
-      // Store in cache
       authRequestCache.set(cacheKey, request);
-
       return request;
     },
-    [t]
+    [t, loginRateLimit]
   );
 
   // Forgot password function (bonus optimization)
   const resetPassword = useCallback(
     async (email: string): Promise<AuthResult> => {
+      // Check rate limit
+      const rateLimitError = resetRateLimit.checkRateLimit();
+      if (rateLimitError) {
+        const minutes = Math.ceil(rateLimitError.retryAfter / 60);
+        return {
+          success: false,
+          message: t("reset_rate_limit", { minutes }),
+          errorCode: "rate_limit_exceeded",
+        };
+      }
+
+      // Record the attempt
+      resetRateLimit.recordRequest();
+
       setLoading(true);
 
       try {
@@ -390,7 +449,7 @@ export function useAuthActions() {
         setLoading(false);
       }
     },
-    [t]
+    [t, resetRateLimit]
   );
 
   return {

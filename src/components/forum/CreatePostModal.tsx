@@ -9,6 +9,8 @@ import { useForumContext } from "@/contexts/ForumContext";
 import CreateCategoryModal from "./CreateCategoryModal";
 import { FORUM_CONSTANTS } from "@/utils/forum.constants";
 import { ForumCategory } from "@/types/forum.types";
+import { useRateLimit, RATE_LIMITS } from "@/utils/rateLimiter";
+import { sanitizeForumContent, sanitizeInput } from "@/utils/sanitization";
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -25,6 +27,7 @@ const CreatePostModal = memo(function CreatePostModal({
   const { user } = useAuth();
   const { state } = useForumContext();
   const { createPost, fetchCategories } = useForum();
+  const createPostRateLimit = useRateLimit(RATE_LIMITS.CREATE_POST);
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -102,17 +105,65 @@ const CreatePostModal = memo(function CreatePostModal({
 
       if (!user || !validateForm()) return;
 
+      // Check rate limit
+      const rateLimitError = createPostRateLimit.checkRateLimit();
+      if (rateLimitError) {
+        const minutes = Math.ceil(rateLimitError.retryAfter / 60);
+        setError(t("error.rate_limit", { minutes }));
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
-      const result = await createPost(title, content, selectedCategory);
+      // Record the rate limit attempt
+      createPostRateLimit.recordRequest();
+
+      // Sanitize the inputs before sending
+      const sanitizedTitle = sanitizeInput(title.trim());
+      const sanitizedContent = sanitizeForumContent(content.trim());
+
+      const result = await createPost(
+        sanitizedTitle,
+        sanitizedContent,
+        selectedCategory
+      );
 
       if (result.success) {
         onPostCreated();
         resetForm();
         onClose();
       } else {
-        setError(t("error.create_failed"));
+        // Handle error properly with type checking
+        let errorMessage = t("error.create_failed");
+
+        if (result.error) {
+          // Type guard for Error object
+          if (result.error instanceof Error) {
+            errorMessage = result.error.message;
+          }
+          // Type guard for string
+          else if (typeof result.error === "string") {
+            errorMessage = result.error;
+          }
+          // Type guard for object with message property
+          else if (
+            typeof result.error === "object" &&
+            "message" in result.error
+          ) {
+            errorMessage = (result.error as { message: string }).message;
+          }
+
+          // Check if it's a rate limit error and show remaining attempts
+          if (errorMessage.toLowerCase().includes("rate")) {
+            const remaining = createPostRateLimit.getRemainingRequests();
+            errorMessage = t("error.create_failed_with_attempts", {
+              attempts: remaining,
+            });
+          }
+        }
+
+        setError(errorMessage);
       }
 
       setLoading(false);
@@ -128,14 +179,15 @@ const CreatePostModal = memo(function CreatePostModal({
       resetForm,
       onClose,
       t,
+      createPostRateLimit,
     ]
   );
 
+  // Rest of your handlers remain the same
   const handleCategoryCreated = useCallback(
     (newCategory: ForumCategory) => {
       setSelectedCategory(newCategory.id);
       setShowCategoryModal(false);
-      // Categories will be refreshed automatically by the context
       fetchCategories();
     },
     [fetchCategories]

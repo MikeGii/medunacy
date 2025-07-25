@@ -42,6 +42,10 @@
     "create_post": {
       "button": "Uus postitus",
       "modal_title": "Loo uus postitus",
+      "error": {
+        "rate_limit": "Liiga palju postitusi. Proovige uuesti {{minutes}} minuti pärast.",
+        "create_failed_with_attempts": "Postituse loomine ebaõnnestus. {{attempts}} katset jäänud."
+      },
       "form": {
         "title": "Pealkiri",
         "title_placeholder": "Sisesta postituse pealkiri...",
