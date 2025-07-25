@@ -5,6 +5,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOptimizedQuery } from "./useOptimizedQuery";
+import { dataFetcher } from "@/utils/dataFetcher";
 
 interface UserInfo {
   user_id: string;
@@ -105,9 +107,26 @@ export function useExamSessions(
       const offset = (currentPage - 1) * pageSize;
 
       // First, fetch exam sessions
-      let query = supabase
-        .from("exam_sessions")
-        .select("*", { count: "exact" });
+      let query = supabase.from("exam_sessions").select(
+        `
+        *,
+        user:users!exam_sessions_user_id_fkey(
+          user_id,
+          first_name,
+          last_name
+        ),
+        test:tests!exam_sessions_test_id_fkey(
+          id,
+          title,
+          category_id,
+          category:test_categories(
+            id,
+            name
+          )
+        )
+      `,
+        { count: "exact" }
+      );
 
       // Filter by mode
       if (options.mode && options.mode !== "all") {
@@ -138,63 +157,19 @@ export function useExamSessions(
         return;
       }
 
-      // Get unique user and test IDs
-      const userIds = [...new Set(sessionData.map((s) => s.user_id))];
-      const testIds = [...new Set(sessionData.map((s) => s.test_id))];
-
-      // Fetch users
-      const { data: users } = await supabase
-        .from("users")
-        .select("user_id, first_name, last_name")
-        .in("user_id", userIds);
-
-      // Fetch tests
-      const { data: tests } = await supabase
-        .from("tests")
-        .select("id, title, category_id")
-        .in("id", testIds);
-
-      // Fetch categories if we have tests
-      let categories: any[] = [];
-      if (tests && tests.length > 0) {
-        const categoryIds = [
-          ...new Set(tests.map((t) => t.category_id).filter(Boolean)),
-        ];
-        if (categoryIds.length > 0) {
-          const { data: categoriesData } = await supabase
-            .from("test_categories")
-            .select("id, name")
-            .in("id", categoryIds);
-          categories = categoriesData || [];
-        }
-      }
-
-      // Create lookup maps
-      const userMap = new Map(users?.map((u) => [u.user_id, u]) || []);
-      const testMap = new Map(tests?.map((t) => [t.id, t]) || []);
-      const categoryMap = new Map(categories.map((c) => [c.id, c]));
-
       // Transform the data
       const transformedData: ExamSessionWithDetails[] = sessionData.map(
-        (session) => {
-          const user = userMap.get(session.user_id);
-          const test = testMap.get(session.test_id);
-          const category = test?.category_id
-            ? categoryMap.get(test.category_id)
-            : undefined;
-
-          return {
-            ...session,
-            user: user || undefined,
-            test: test
-              ? {
-                  id: test.id,
-                  title: test.title,
-                  category: category || undefined,
-                }
-              : undefined,
-          };
-        }
+        (session) => ({
+          ...session,
+          user: session.user || undefined,
+          test: session.test
+            ? {
+                id: session.test.id,
+                title: session.test.title,
+                category: session.test.category || undefined,
+              }
+            : undefined,
+        })
       );
 
       // Client-side filtering for search

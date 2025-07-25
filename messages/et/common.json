@@ -156,5 +156,9 @@
     "approved": "Edukalt kinnitatud",
     "rejected": "Edukalt tagasi lükatud",
     "published": "Edukalt avaldatud"
+  },
+  "search": {
+    "placeholder": "Otsi...",
+    "clear": "Tühjenda"
   }
 }
