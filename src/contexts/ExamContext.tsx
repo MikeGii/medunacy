@@ -130,7 +130,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
 
   // Periodic cache cleanup
   useEffect(() => {
-    cacheCleanupTimer.current = setInterval(() => {
+    const timerId = setInterval(() => {
       const now = Date.now();
       const cache = testCache.current;
 
@@ -139,18 +139,17 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
           cache.delete(key);
         }
       }
-    }, 60000); // Run every minute
+    }, 60000);
+
+    // ⚡ CRITICAL: Store timer ID properly
+    cacheCleanupTimer.current = timerId;
 
     return () => {
       if (cacheCleanupTimer.current) {
         clearInterval(cacheCleanupTimer.current);
+        cacheCleanupTimer.current = null;
       }
     };
-  }, []);
-
-  // Clear error
-  const clearError = useCallback(() => {
-    setError(null);
   }, []);
 
   // Fetch categories
@@ -637,6 +636,41 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         clearInterval(cacheCleanupTimer.current);
       }
     };
+  }, []);
+
+  const cleanup = useCallback(() => {
+    // Clean up all subscriptions
+    if (categoriesSubscription.current) {
+      categoriesSubscription.current.unsubscribe();
+      categoriesSubscription.current = null;
+    }
+
+    if (testsSubscription.current) {
+      testsSubscription.current.unsubscribe();
+      testsSubscription.current = null;
+    }
+
+    // Clean up all test update subscriptions
+    testUpdateSubscriptions.current.forEach((subscription) => {
+      subscription.unsubscribe();
+    });
+    testUpdateSubscriptions.current.clear();
+
+    // Clear cache timer
+    if (cacheCleanupTimer.current) {
+      clearInterval(cacheCleanupTimer.current);
+      cacheCleanupTimer.current = null;
+    }
+  }, []);
+
+  // Add cleanup to provider's useEffect:
+  useEffect(() => {
+    return cleanup;
+  }, [cleanup]);
+
+  // Clear error
+  const clearError = useCallback(() => {
+    setError(null);
   }, []);
 
   const value: ExamContextType = {
