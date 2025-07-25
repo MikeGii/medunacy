@@ -72,13 +72,13 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
   }, [sessionState]);
 
   // Handle submit
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const unanswered = progress.total - progress.answered;
 
     if (unanswered > 0) {
       setShowConfirmSubmit(true);
     } else {
-      submitExam();
+      await submitExam();
     }
   };
 

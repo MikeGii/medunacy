@@ -533,7 +533,7 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
     goToPrevious,
     goToQuestion,
     toggleMarkForReview,
-    submitExam: guardedSubmit(submitExam),
+    submitExam: () => guardedSubmit(submitExam),
     isSubmitting,
   };
 }
