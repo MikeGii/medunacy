@@ -113,6 +113,8 @@
         "edit_success": "Kommentaar edukalt uuendatud",
         "edit_error": "Viga kommentaari uuendamisel",
         "confirm_delete": "Kas oled kindel, et soovid selle kommentaari kustutada?",
+        "like": "Meeldib",
+        "unlike": "Eemalda meeldimine",
         "form": {
           "placeholder": "Lisa kommentaar...",
           "submit": "Postita",
@@ -128,9 +130,21 @@
         "content": "Sisu",
         "save": "Salvesta",
         "saving": "Salvestan...",
-        "cancel": "Tühista"
+        "cancel": "Tühista",
+        "markdown_supported": "Markdown on toetatud"
       },
-      "error": "Viga postituse uuendamisel"
+      "error": {
+        "update_failed": "Postituse uuendamine ebaõnnestus. Palun proovige uuesti."
+      },
+      "validation": {
+        "title_required": "Pealkiri on kohustuslik",
+        "title_too_short": "Pealkiri peab olema vähemalt {min} tähemärki pikk",
+        "title_too_long": "Pealkiri ei tohi olla pikem kui {max} tähemärki",
+        "content_required": "Sisu on kohustuslik",
+        "content_too_short": "Sisu peab olema vähemalt {min} tähemärki pikk",
+        "content_too_long": "Sisu ei tohi olla pikem kui {max} tähemärki"
+      },
+      "confirm_close": "Oled teinud muudatusi. Kas oled kindel, et soovid sulgeda?"
     },
     "stats": {
       "active_members": "{count} aktiivset liiget",

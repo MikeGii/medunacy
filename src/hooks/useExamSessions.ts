@@ -169,7 +169,7 @@ export function useExamSessions(
       const userMap = new Map(userData?.map((u) => [u.user_id, u]) || []);
 
       // Transform the data
-      let transformedData: ExamSessionWithDetails[] = sessionData.map(
+      const transformedData: ExamSessionWithDetails[] = sessionData.map(
         (session) => ({
           ...session,
           user: session.user_id

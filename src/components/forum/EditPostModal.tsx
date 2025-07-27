@@ -8,6 +8,12 @@ import { usePost } from "@/hooks/usePost";
 import { useForumContext } from "@/contexts/ForumContext";
 import { FORUM_CONSTANTS } from "@/utils/forum.constants";
 import { ForumPost } from "@/types/forum.types";
+import { supabase } from "@/lib/supabase";
+import { useSubmissionGuard } from "@/hooks/useSubmissionGuard";
+import { useCleanup } from "@/hooks/useCleanup";
+import { sanitizeInput, sanitizeForumContent } from "@/utils/sanitization";
+import { useRateLimit, RATE_LIMITS } from "@/utils/rateLimiter";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 interface EditPostModalProps {
   isOpen: boolean;
@@ -24,8 +30,12 @@ const EditPostModal = memo(function EditPostModal({
 }: EditPostModalProps) {
   const t = useTranslations("forum.edit_post");
   const { user } = useAuth();
-  const { state } = useForumContext();
-  const { updatePost } = usePost(post.id);
+  const { state, dispatch } = useForumContext();
+  const { isMounted } = useCleanup();
+  const { guardedSubmit, isSubmitting } = useSubmissionGuard();
+  const updatePostRateLimit = useRateLimit(RATE_LIMITS.UPDATE_POST);
+
+  const postHook = usePost(post.id);
 
   const [title, setTitle] = useState(post.title);
   const [content, setContent] = useState(post.content);
@@ -47,6 +57,28 @@ const EditPostModal = memo(function EditPostModal({
       setValidationErrors({});
     }
   }, [isOpen, post]);
+
+  // Fetch categories if needed
+  useEffect(() => {
+    if (isOpen && state.categories.length === 0 && isMounted()) {
+      const fetchCategoriesData = async () => {
+        try {
+          const { data, error } = await supabase
+            .from("forum_categories")
+            .select("*")
+            .order("name");
+
+          if (data && !error && isMounted()) {
+            dispatch({ type: "SET_CATEGORIES", payload: data });
+          }
+        } catch (err) {
+          console.error("Error fetching categories:", err);
+        }
+      };
+
+      fetchCategoriesData();
+    }
+  }, [isOpen, state.categories.length, dispatch, isMounted]);
 
   // Validation
   const validateForm = useCallback(() => {
@@ -90,39 +122,70 @@ const EditPostModal = memo(function EditPostModal({
   const handleSave = useCallback(async () => {
     if (!canEdit() || !validateForm()) return;
 
-    setIsSaving(true);
-    setError(null);
-
-    const result = await updatePost({
-      title: title.trim(),
-      content: content.trim(),
-      category_id: categoryId,
-    });
-
-    if (result.success) {
-      onUpdate();
-      onClose();
-    } else {
-      setError(t("error.update_failed"));
+    // Check rate limit
+    if (!updatePostRateLimit.checkLimit()) {
+      const remainingTime = updatePostRateLimit.getRemainingTime();
+      setError(
+        t("error.rate_limit", { minutes: Math.ceil(remainingTime / 60000) })
+      );
+      return;
     }
 
-    setIsSaving(false);
+    setError(null);
+
+    const performUpdate = async () => {
+      try {
+        // Sanitize inputs ✅
+        const sanitizedTitle = sanitizeInput(title.trim());
+        const sanitizedContent = sanitizeForumContent(content.trim());
+
+        // Use the hook's updatePost method
+        const result = await postHook.updatePost({
+          title: sanitizedTitle,
+          content: sanitizedContent,
+          category_id: categoryId,
+        });
+
+        if (!isMounted()) return;
+
+        if (result.success) {
+          updatePostRateLimit.recordAction();
+          onUpdate();
+          onClose();
+        } else {
+          console.error("Update failed:", result.error);
+          setError(t("error.update_failed"));
+        }
+      } catch (err) {
+        console.error("Unexpected error in handleSave:", err);
+        if (isMounted()) {
+          setError(t("error.update_failed"));
+        }
+      }
+    };
+
+    // Use submission guard to prevent double submission ✅
+    await guardedSubmit(performUpdate);
   }, [
     canEdit,
     validateForm,
-    updatePost,
+    guardedSubmit,
+    updatePostRateLimit,
     title,
     content,
     categoryId,
+    postHook,
     onUpdate,
     onClose,
     t,
+    isMounted,
   ]);
 
-  // Handle input changes
+  // Handle input changes with sanitization
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setTitle(e.target.value);
+      const sanitized = sanitizeInput(e.target.value); // ✅ Sanitize on input
+      setTitle(sanitized);
       if (validationErrors.title) {
         setValidationErrors((prev) => ({ ...prev, title: undefined }));
       }
@@ -132,7 +195,7 @@ const EditPostModal = memo(function EditPostModal({
 
   const handleContentChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setContent(e.target.value);
+      setContent(e.target.value); // Don't sanitize markdown while typing
       if (validationErrors.content) {
         setValidationErrors((prev) => ({ ...prev, content: undefined }));
       }
