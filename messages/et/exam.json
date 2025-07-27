@@ -237,7 +237,11 @@
     "duplicate": "Dubleeri",
     "new_test": "Uus test",
     "description": "Kirjeldus",
-    "actions": "Tegevused"
+    "actions": "Tegevused",
+    "has_explanation": "Sisaldab selgitust",
+    "mark_as_correct": "Märgi õigeks",
+    "more_options": "veel varianti",
+    "confirm_delete": "Kinnita kustutamine"
   },
   "exam_session_results": {
     "page_title": "Eksami seansi tulemused",
