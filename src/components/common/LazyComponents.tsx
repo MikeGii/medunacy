@@ -1,4 +1,4 @@
-// src/components/common/LazyComponents.tsx
+// src/components/common/LazyComponents.tsx - CORRECTED VERSION
 import { lazy, Suspense, ComponentType } from "react";
 import LoadingSpinner from "./LoadingSpinner";
 
@@ -8,18 +8,6 @@ export function lazyLoad<T extends ComponentType<any>>(
 ) {
   return lazy(importFunc);
 }
-
-export const LazyCreateCategoryModal = lazyLoad(
-  () => import("@/components/forum/CreateCategoryModal")
-);
-
-export const LazyUserManagement = lazyLoad(
-  () => import("@/components/admin/UserManagement")
-);
-
-export const LazyExamResults = lazyLoad(
-  () => import("@/components/exam-tests/ExamResults")
-);
 
 // Admin/Doctor Components - Only load for authorized users
 export const LazyTestCreationPage = lazyLoad(
@@ -55,22 +43,15 @@ export const LazyEditPostModal = lazyLoad(
   () => import("@/components/forum/EditPostModal")
 );
 
-// Exam Components - Load when needed
-export const LazyExamInterface = lazyLoad(
-  () => import("@/components/exam-interface/ExamInterface")
-);
-
+// Exam Components - REMOVED non-existent ones
 export const LazyExamQuestion = lazyLoad(
   () => import("@/components/exam-tests/ExamQuestion")
 );
 
-// Profile Components
-export const LazyProfileSettings = lazyLoad(
-  () => import("@/components/profile/ProfileSettings")
-);
 
-export const LazyProfileStats = lazyLoad(
-  () => import("@/components/profile/ProfileStats")
+// Additional modals that exist
+export const LazyCreateCategoryModal = lazyLoad(
+  () => import("@/components/forum/CreateCategoryModal")
 );
 
 // Wrapper component for lazy loading with custom fallback
@@ -78,23 +59,6 @@ interface LazyLoadWrapperProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
   className?: string;
-}
-
-export function LazyModalWrapper({ children }: { children: React.ReactNode }) {
-  return (
-    <Suspense
-      fallback={
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8">
-            <LoadingSpinner />
-            <p className="mt-4 text-gray-600">Loading...</p>
-          </div>
-        </div>
-      }
-    >
-      {children}
-    </Suspense>
-  );
 }
 
 export function LazyLoadWrapper({
@@ -128,6 +92,24 @@ export function LazyPageWrapper({ children }: { children: React.ReactNode }) {
       fallback={
         <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA] flex items-center justify-center">
           <div className="text-center">
+            <LoadingSpinner />
+            <p className="mt-4 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      {children}
+    </Suspense>
+  );
+}
+
+// Modal loading wrapper with backdrop
+export function LazyModalWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8">
             <LoadingSpinner />
             <p className="mt-4 text-gray-600">Loading...</p>
           </div>

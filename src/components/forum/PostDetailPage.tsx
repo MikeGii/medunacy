@@ -11,7 +11,11 @@ import { useForumContext } from "@/contexts/ForumContext";
 import Header from "../layout/Header";
 import { AuthModalProvider } from "@/contexts/AuthModalContext";
 import ForumCommentsList from "./ForumCommentsList";
-import EditPostModal from "./EditPostModal";
+// ONLY CHANGE: Remove direct import and use lazy components
+import {
+  LazyEditPostModal,
+  LazyLoadWrapper,
+} from "@/components/common/LazyComponents";
 import { useAuthorization } from "@/hooks/useAuthorization";
 
 interface PostDetailPageProps {
@@ -300,13 +304,17 @@ const PostDetailPage = memo(function PostDetailPage({
                 <ForumCommentsList postId={postId} />
               </section>
 
-              {/* Edit Post Modal */}
-              <EditPostModal
-                isOpen={showEditModal}
-                onClose={() => setShowEditModal(false)}
-                post={post}
-                onUpdate={handlePostUpdate}
-              />
+              {/* ONLY CHANGE: Wrap EditPostModal with LazyLoadWrapper */}
+              {showEditModal && (
+                <LazyLoadWrapper>
+                  <LazyEditPostModal
+                    isOpen={showEditModal}
+                    onClose={() => setShowEditModal(false)}
+                    post={post}
+                    onUpdate={handlePostUpdate}
+                  />
+                </LazyLoadWrapper>
+              )}
             </>
           )}
         </main>
