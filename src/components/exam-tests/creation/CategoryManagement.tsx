@@ -210,28 +210,69 @@ export default function CategoryManagement({
 
       {/* Create/Edit Form */}
       {isCreating && (
-        <div className="bg-gradient-to-br from-[#E3F0AF]/20 to-[#5DB996]/10 border border-[#E3F0AF] rounded-xl p-6 mb-8">
-          <h3 className="text-lg font-semibold mb-4 text-[#118B50]">
-            {editingCategory ? t("edit_category") : t("create_new_category")}
-          </h3>
+        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              {editingCategory ? t("edit_category") : t("create_new_category")}
+            </h3>
+            <button
+              onClick={handleCancel}
+              className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t("category_name")} *
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => handleNameChange(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent"
-                placeholder={t("category_name_placeholder")}
-                required
-              />
+            {/* First row - Name and Slug */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                  {t("category_name")} *
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent"
+                  placeholder={t("category_name_placeholder")}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                  {t("category_slug")} *
+                </label>
+                <input
+                  type="text"
+                  value={formData.slug}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, slug: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent font-mono"
+                  placeholder={t("category_slug_placeholder")}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">{t("slug_help")}</p>
+              </div>
             </div>
 
+            {/* Description - Full width */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
                 {t("category_description")}
               </label>
               <textarea
@@ -242,34 +283,25 @@ export default function CategoryManagement({
                     description: e.target.value,
                   }))
                 }
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent"
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent resize-none"
                 placeholder={t("category_description_placeholder")}
-                rows={3}
+                rows={2}
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t("category_slug")} *
-              </label>
-              <input
-                type="text"
-                value={formData.slug}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, slug: e.target.value }))
-                }
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent"
-                placeholder={t("category_slug_placeholder")}
-                required
-              />
-              <p className="text-sm text-gray-500 mt-1">{t("slug_help")}</p>
-            </div>
-
-            <div className="flex space-x-4">
+            {/* Actions */}
+            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                {t("cancel")}
+              </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-3 bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white rounded-xl font-semibold hover:from-[#0A6B3B] hover:to-[#4A9B7E] transition-all duration-300 disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-white bg-[#118B50] rounded-lg hover:bg-[#0A6B3B] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <div className="flex items-center space-x-2">
@@ -281,14 +313,6 @@ export default function CategoryManagement({
                 ) : (
                   t("create_category")
                 )}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-all duration-300"
-              >
-                {t("cancel")}
               </button>
             </div>
           </form>

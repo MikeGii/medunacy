@@ -164,15 +164,36 @@ export default function TestManagement({
 
       {/* Test Form - keeping as is */}
       {isFormOpen && (
-        <div className="bg-gradient-to-br from-[#E3F0AF]/20 to-[#5DB996]/10 border border-[#E3F0AF] rounded-xl p-6 mb-8">
-          <h3 className="text-lg font-semibold mb-6 text-[#118B50]">
-            {editingTest ? t("edit_test") : t("new_test")}
-          </h3>
+        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              {editingTest ? t("edit_test") : t("new_test")}
+            </h3>
+            <button
+              onClick={resetForm}
+              className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* First row - Title and Category */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">
                   {t("test_title")} *
                 </label>
                 <input
@@ -181,13 +202,14 @@ export default function TestManagement({
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, title: e.target.value }))
                   }
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent"
+                  placeholder={t("test_title_placeholder")}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">
                   {t("category")} *
                 </label>
                 <select
@@ -198,7 +220,7 @@ export default function TestManagement({
                       category_id: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent"
                   required
                 >
                   <option value="">{t("select_category")}</option>
@@ -209,71 +231,94 @@ export default function TestManagement({
                   ))}
                 </select>
               </div>
+            </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t("description")}
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent"
-                  rows={3}
-                />
-              </div>
-
+            {/* Second row - Time and Score */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">
                   {t("time_limit")}
                 </label>
-                <input
-                  type="number"
-                  value={formData.time_limit || ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      time_limit: e.target.value
-                        ? parseInt(e.target.value)
-                        : undefined,
-                    }))
-                  }
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent"
-                  placeholder={t("time_limit_placeholder")}
-                  min="1"
-                />
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={formData.time_limit || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        time_limit: e.target.value
+                          ? parseInt(e.target.value)
+                          : undefined,
+                      }))
+                    }
+                    className="w-full px-3 py-2 pr-16 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent"
+                    placeholder={t("unlimited")}
+                    min="1"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                    {t("minutes")}
+                  </span>
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t("passing_score")} (%)
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                  {t("passing_score")} *
                 </label>
-                <input
-                  type="number"
-                  value={formData.passing_score}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      passing_score: parseInt(e.target.value) || 0,
-                    }))
-                  }
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent"
-                  min="0"
-                  max="100"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={formData.passing_score}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        passing_score: parseInt(e.target.value) || 0,
+                      }))
+                    }
+                    className="w-full px-3 py-2 pr-8 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent"
+                    min="0"
+                    max="100"
+                    required
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                    %
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="flex space-x-4">
+            {/* Description - Full width */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                {t("description")}
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent resize-none"
+                placeholder={t("test_description_placeholder")}
+                rows={2}
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={resetForm}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                {t("cancel")}
+              </button>
               <button
                 type="submit"
                 disabled={isCreating || isSaving}
-                className="px-6 py-3 bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white rounded-xl font-semibold hover:from-[#0A6B3B] hover:to-[#4A9B7E] transition-all duration-300 disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-white bg-[#118B50] rounded-lg hover:bg-[#0A6B3B] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isCreating || isSaving ? (
                   <div className="flex items-center space-x-2">
@@ -285,14 +330,6 @@ export default function TestManagement({
                 ) : (
                   t("create_test")
                 )}
-              </button>
-
-              <button
-                type="button"
-                onClick={resetForm}
-                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-all duration-300"
-              >
-                {t("cancel")}
               </button>
             </div>
           </form>
