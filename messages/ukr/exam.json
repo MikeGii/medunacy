@@ -236,7 +236,8 @@
     "to_pass": "для проходження",
     "duplicate": "Дублювати",
     "new_test": "Новий тест",
-    "description": "Опис"
+    "description": "Опис",
+    "actions": "Дії"
   },
   "exam_session_results": {
     "page_title": "Результати іспитової сесії",

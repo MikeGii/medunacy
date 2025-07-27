@@ -236,7 +236,8 @@
     "to_pass": "läbimiseks",
     "duplicate": "Dubleeri",
     "new_test": "Uus test",
-    "description": "Kirjeldus"
+    "description": "Kirjeldus",
+    "actions": "Tegevused"
   },
   "exam_session_results": {
     "page_title": "Eksami seansi tulemused",

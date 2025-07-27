@@ -22,7 +22,7 @@ const ForumPageContent = memo(function ForumPageContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [useInfiniteScroll, setUseInfiniteScroll] = useState(false);
+  const [useInfiniteScroll] = useState(false);
 
   // Handle post creation
   const handlePostCreated = useCallback(() => {

@@ -32,7 +32,7 @@ export default function TestCreationPage() {
   });
 
   const [activeTab, setActiveTab] = useState<"categories" | "tests">(
-    "categories"
+    "tests"
   );
 
   // Fetch initial data
@@ -105,16 +105,6 @@ export default function TestCreationPage() {
               {/* Tabs */}
               <div className="flex space-x-1 bg-gray-100 p-1 rounded-xl mb-8">
                 <button
-                  onClick={() => setActiveTab("categories")}
-                  className={`flex-1 py-3 px-6 rounded-lg font-medium transition-all ${
-                    activeTab === "categories"
-                      ? "bg-white text-[#118B50] shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  {t("categories_tab")}
-                </button>
-                <button
                   onClick={() => setActiveTab("tests")}
                   className={`flex-1 py-3 px-6 rounded-lg font-medium transition-all ${
                     activeTab === "tests"
@@ -124,20 +114,30 @@ export default function TestCreationPage() {
                 >
                   {t("tests_tab")}
                 </button>
+                <button
+                  onClick={() => setActiveTab("categories")}
+                  className={`flex-1 py-3 px-6 rounded-lg font-medium transition-all ${
+                    activeTab === "categories"
+                      ? "bg-white text-[#118B50] shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  {t("categories_tab")}
+                </button>
               </div>
 
               {/* Content */}
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-[#E3F0AF]/30 p-8">
-                {activeTab === "categories" ? (
-                  <CategoryManagement
-                    categories={categories}
-                    onRefresh={fetchCategories}
-                  />
-                ) : (
+                {activeTab === "tests" ? (
                   <TestManagement
                     tests={tests}
                     categories={categories}
                     onRefresh={fetchTests}
+                  />
+                ) : (
+                  <CategoryManagement
+                    categories={categories}
+                    onRefresh={fetchCategories}
                   />
                 )}
               </div>
