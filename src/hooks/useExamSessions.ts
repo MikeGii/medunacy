@@ -109,22 +109,17 @@ export function useExamSessions(
       // First, fetch exam sessions
       let query = supabase.from("exam_sessions").select(
         `
-        *,
-        user:users!exam_sessions_user_id_fkey(
-          user_id,
-          first_name,
-          last_name
-        ),
-        test:tests!exam_sessions_test_id_fkey(
+      *,
+      tests(
+        id,
+        title,
+        category_id,
+        test_categories(
           id,
-          title,
-          category_id,
-          category:test_categories(
-            id,
-            name
-          )
+          name
         )
-      `,
+      )
+    `,
         { count: "exact" }
       );
 
@@ -157,16 +152,34 @@ export function useExamSessions(
         return;
       }
 
+      // Now fetch user data from the users table using the user_ids from sessions
+      const userIds = [
+        ...new Set(sessionData.map((s) => s.user_id).filter(Boolean)),
+      ];
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("user_id, first_name, last_name")
+        .in("user_id", userIds);
+
+      if (userError) {
+        console.error("Error fetching user data:", userError);
+      }
+
+      // Create a map for quick lookup
+      const userMap = new Map(userData?.map((u) => [u.user_id, u]) || []);
+
       // Transform the data
-      const transformedData: ExamSessionWithDetails[] = sessionData.map(
+      let transformedData: ExamSessionWithDetails[] = sessionData.map(
         (session) => ({
           ...session,
-          user: session.user || undefined,
-          test: session.test
+          user: session.user_id
+            ? userMap.get(session.user_id) || undefined
+            : undefined,
+          test: session.tests
             ? {
-                id: session.test.id,
-                title: session.test.title,
-                category: session.test.category || undefined,
+                id: session.tests.id,
+                title: session.tests.title,
+                category: session.tests.test_categories || undefined,
               }
             : undefined,
         })
