@@ -138,19 +138,41 @@ export default function QuestionEditor({
   const correctCount = formData.options.filter((opt) => opt.is_correct).length;
 
   return (
-    <div className="bg-gradient-to-br from-[#E3F0AF]/20 to-[#5DB996]/10 border border-[#E3F0AF] rounded-xl p-6 mb-6">
-      <h3 className="text-lg font-semibold mb-6 text-[#118B50]">
-        {question ? t("edit_question") : t("add_new_question")}
-      </h3>
+    <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6">
+      {/* Header with title and close button */}
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">
+          {question ? t("edit_question") : t("add_new_question")}
+        </h3>
+        <button
+          onClick={onCancel}
+          className="text-gray-400 hover:text-gray-600 transition-colors"
+          title={t("cancel")}
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
           <p className="text-red-800 text-sm">{error}</p>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {/* Question Text */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -164,15 +186,15 @@ export default function QuestionEditor({
                 question_text: e.target.value,
               }))
             }
-            className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent"
+            className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent text-sm"
             placeholder={t("question_text_placeholder")}
             rows={3}
             required
           />
         </div>
 
-        {/* Points */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Points - Mobile responsive grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {t("points")} *
@@ -186,7 +208,7 @@ export default function QuestionEditor({
                   points: parseInt(e.target.value) || 1,
                 }))
               }
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent"
+              className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent text-sm"
               min="1"
               max="10"
               required
@@ -197,16 +219,16 @@ export default function QuestionEditor({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {t("correct_answers_selected")}
             </label>
-            <div className="px-4 py-3 bg-gray-50 rounded-xl border border-gray-300">
+            <div className="px-3 sm:px-4 py-2 sm:py-3 bg-gray-50 rounded-lg border border-gray-300">
               <span
-                className={`font-medium ${
+                className={`font-medium text-sm ${
                   correctCount > 0 ? "text-green-600" : "text-red-600"
                 }`}
               >
                 {correctCount} {t("selected")}
               </span>
               {correctCount > 1 && (
-                <span className="ml-2 text-sm text-blue-600">
+                <span className="ml-2 text-xs text-blue-600">
                   ({t("multiple_choice")})
                 </span>
               )}
@@ -214,18 +236,18 @@ export default function QuestionEditor({
           </div>
         </div>
 
-        {/* Options */}
+        {/* Options Section */}
         <div>
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
             <label className="block text-sm font-medium text-gray-700">
               {t("answer_options")} * ({t("minimum_two_required")})
             </label>
             <button
               type="button"
               onClick={addOption}
-              className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
+              className="w-full sm:w-auto px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
             >
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center justify-center space-x-1">
                 <svg
                   className="w-4 h-4"
                   fill="none"
@@ -244,18 +266,19 @@ export default function QuestionEditor({
             </button>
           </div>
 
-          <div className="space-y-3">
+          {/* Options List - Mobile optimized */}
+          <div className="space-y-2">
             {formData.options.map((option, index) => (
               <div
                 key={index}
-                className={`flex items-center space-x-3 p-4 rounded-xl border-2 transition-all ${
+                className={`flex items-center gap-2 sm:gap-3 p-3 rounded-lg border transition-all ${
                   option.is_correct
                     ? "border-green-300 bg-green-50"
                     : "border-gray-200 bg-white"
                 }`}
               >
                 {/* Option Label */}
-                <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-sm font-medium text-gray-600">
+                <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 bg-gray-100 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium text-gray-600">
                   {String.fromCharCode(65 + index)}
                 </div>
 
@@ -266,28 +289,28 @@ export default function QuestionEditor({
                   onChange={(e) =>
                     updateOption(index, "option_text", e.target.value)
                   }
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent"
+                  className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#118B50] focus:border-transparent text-sm"
                   placeholder={t("option_text_placeholder", {
                     letter: String.fromCharCode(65 + index),
                   })}
+                  required
                 />
 
-                {/* Correct Answer Toggle */}
-                <button
-                  type="button"
-                  onClick={() => toggleCorrectAnswer(index)}
-                  className={`flex-shrink-0 p-2 rounded-lg transition-all ${
-                    option.is_correct
-                      ? "bg-green-500 text-white hover:bg-green-600"
-                      : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                  }`}
-                  title={
-                    option.is_correct ? t("mark_incorrect") : t("mark_correct")
-                  }
-                >
-                  {option.is_correct ? (
+                {/* Mobile-friendly action buttons */}
+                <div className="flex items-center gap-1">
+                  {/* Correct Answer Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => toggleCorrectAnswer(index)}
+                    className={`p-1.5 sm:p-2 rounded-lg transition-all ${
+                      option.is_correct
+                        ? "bg-green-500 text-white hover:bg-green-600"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                    title={t("mark_as_correct")}
+                  >
                     <svg
-                      className="w-5 h-5"
+                      className="w-4 h-4"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -299,55 +322,34 @@ export default function QuestionEditor({
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
-                  ) : (
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  )}
-                </button>
-
-                {/* Remove Option */}
-                {formData.options.length > 2 && (
-                  <button
-                    type="button"
-                    onClick={() => removeOption(index)}
-                    className="flex-shrink-0 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title={t("remove_option")}
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
                   </button>
-                )}
+
+                  {/* Remove Option */}
+                  {formData.options.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => removeOption(index)}
+                      className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title={t("remove_option")}
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
-          </div>
-
-          <div className="text-sm text-gray-500 mt-2">
-            <p>{t("option_instructions")}</p>
-            {correctCount > 1 && (
-              <p className="text-blue-600 mt-1">{t("multiple_correct_note")}</p>
-            )}
           </div>
         </div>
 
@@ -361,36 +363,38 @@ export default function QuestionEditor({
             onChange={(e) =>
               setFormData((prev) => ({ ...prev, explanation: e.target.value }))
             }
-            className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent"
+            className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#118B50] focus:border-transparent text-sm"
             placeholder={t("explanation_placeholder")}
-            rows={3}
+            rows={2}
           />
-          <p className="text-sm text-gray-500 mt-1">{t("explanation_help")}</p>
+          <p className="text-xs text-gray-500 mt-1">{t("explanation_help")}</p>
         </div>
 
-        {/* Form Actions */}
-        <div className="flex space-x-4 pt-4 border-t border-gray-200">
-          <button
-            type="submit"
-            disabled={loading || isSaving}
-            className="px-6 py-3 bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white rounded-xl font-semibold hover:from-[#0A6B3B] hover:to-[#4A9B7E] transition-all duration-300 disabled:opacity-50"
-          >
-            {loading || isSaving ? (
-              <div className="flex items-center space-x-2">
-                <LoadingSpinner />
-                <span>{t("saving")}</span>
-              </div>
-            ) : (
-              t("save_question")
-            )}
-          </button>
-
+        {/* Form Actions - Mobile responsive */}
+        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t border-gray-200">
           <button
             type="button"
             onClick={onCancel}
-            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-all duration-300"
+            className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-300"
           >
             {t("cancel")}
+          </button>
+
+          <button
+            type="submit"
+            disabled={loading || isSaving}
+            className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white rounded-xl font-semibold hover:from-[#0A6B3B] hover:to-[#4A9B7E] transition-all duration-300 disabled:opacity-50"
+          >
+            {loading || isSaving ? (
+              <div className="flex items-center justify-center space-x-2">
+                <LoadingSpinner />
+                <span>{t("saving")}</span>
+              </div>
+            ) : question ? (
+              t("update_question")
+            ) : (
+              t("save_question")
+            )}
           </button>
         </div>
       </form>

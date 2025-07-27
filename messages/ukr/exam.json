@@ -237,7 +237,11 @@
     "duplicate": "Дублювати",
     "new_test": "Новий тест",
     "description": "Опис",
-    "actions": "Дії"
+    "actions": "Дії",
+    "confirm_delete": "Підтвердити видалення",
+    "has_explanation": "Містить пояснення",
+    "mark_as_correct": "Позначити правильним",
+    "more_options": "ще варіанти"
   },
   "exam_session_results": {
     "page_title": "Результати іспитової сесії",
