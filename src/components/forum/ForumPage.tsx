@@ -1,7 +1,7 @@
-// src/components/forum/ForumPage.tsx - FIXED VERSION
+// src/components/forum/ForumPage.tsx - IMPROVED VERSION
 "use client";
 
-import { useState, useCallback, memo, lazy, Suspense } from "react";
+import { useState, useCallback, memo } from "react";
 import Header from "../layout/Header";
 import ForumHero from "./ForumHero";
 import ForumCategories from "./ForumCategories";
@@ -10,10 +10,11 @@ import ForumPostList from "./ForumPostList";
 import { AuthModalProvider } from "@/contexts/AuthModalContext";
 import { useTranslations } from "next-intl";
 import { useAuthorization } from "@/hooks/useAuthorization";
-import LoadingSpinner from "@/components/common/LoadingSpinner";
-
-// MOVE LAZY IMPORT OUTSIDE THE COMPONENT
-const CreatePostModal = lazy(() => import("./CreatePostModal"));
+// Import from LazyComponents - using LazyLoadWrapper instead of Suspense
+import {
+  LazyCreatePostModal,
+  LazyLoadWrapper,
+} from "@/components/common/LazyComponents";
 
 const ForumPageContent = memo(function ForumPageContent() {
   const t = useTranslations("forum");
@@ -112,21 +113,15 @@ const ForumPageContent = memo(function ForumPageContent() {
         </section>
       </main>
 
-      {/* FIX: Conditionally render modal with Suspense */}
+      {/* IMPROVED: Using LazyLoadWrapper which includes Suspense internally */}
       {showCreatePost && (
-        <Suspense
-          fallback={
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <LoadingSpinner />
-            </div>
-          }
-        >
-          <CreatePostModal
+        <LazyLoadWrapper>
+          <LazyCreatePostModal
             isOpen={showCreatePost}
             onClose={() => setShowCreatePost(false)}
             onPostCreated={handlePostCreated}
           />
-        </Suspense>
+        </LazyLoadWrapper>
       )}
     </div>
   );
