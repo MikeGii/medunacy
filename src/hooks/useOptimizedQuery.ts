@@ -1,4 +1,4 @@
-// src/hooks/useOptimizedQuery.ts
+// src/hooks/useOptimizedQuery.ts - FIXED VERSION WITH MEMORY LEAK PREVENTION
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { dataFetcher } from "@/utils/dataFetcher";
@@ -20,13 +20,23 @@ export function useOptimizedQuery<T = any>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isMountedRef = useRef(true);
 
   const cacheKey = Array.isArray(queryKey) ? queryKey.join(":") : queryKey;
   const enabled = options?.enabled ?? true;
 
+  // Track mount status
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const fetchData = useCallback(
     async (forceRefresh = false) => {
-      if (!enabled) {
+      if (!enabled || !isMountedRef.current) {
         setLoading(false);
         return;
       }
@@ -40,14 +50,22 @@ export function useOptimizedQuery<T = any>(
           forceRefresh,
         });
 
-        setData(result);
-        options?.onSuccess?.(result);
+        // Check if component is still mounted before updating state
+        if (isMountedRef.current) {
+          setData(result);
+          options?.onSuccess?.(result);
+        }
       } catch (err) {
-        const error = err instanceof Error ? err : new Error(String(err));
-        setError(error);
-        options?.onError?.(error);
+        // Check if component is still mounted before updating state
+        if (isMountedRef.current) {
+          const error = err instanceof Error ? err : new Error(String(err));
+          setError(error);
+          options?.onError?.(error);
+        }
       } finally {
-        setLoading(false);
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
       }
     },
     [cacheKey, queryFn, enabled, options]
@@ -58,20 +76,44 @@ export function useOptimizedQuery<T = any>(
     fetchData();
   }, [fetchData]);
 
-  // Refetch interval
+  // Refetch interval with proper cleanup
   useEffect(() => {
     if (options?.refetchInterval && enabled) {
       intervalRef.current = setInterval(() => {
-        fetchData(true);
+        // Only fetch if component is still mounted
+        if (isMountedRef.current) {
+          fetchData(true);
+        }
       }, options.refetchInterval);
 
+      // CLEANUP FUNCTION - MEMORY LEAK FIX
       return () => {
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
+          intervalRef.current = null;
         }
       };
     }
+
+    // CLEANUP even when refetchInterval is not set or enabled is false
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
   }, [options?.refetchInterval, enabled, fetchData]);
+
+  // Additional cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Clear any pending intervals
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, []);
 
   return {
     data,

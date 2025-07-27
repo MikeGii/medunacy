@@ -1,3 +1,4 @@
+// src/hooks/useCourses.ts - FIXED VERSION WITH MEMORY LEAK PREVENTION
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getCourses,
@@ -20,6 +21,10 @@ export function useCourses(filters?: {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Track mount status
+  const isMountedRef = useRef(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   // Use refs to prevent infinite loops
   const filtersRef = useRef(filters);
   const userIdRef = useRef(user?.id);
@@ -33,7 +38,28 @@ export function useCourses(filters?: {
     userIdRef.current = user?.id;
   }, [user?.id]);
 
+  // Set mount status
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+      // Cancel any pending requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
   const fetchCourses = useCallback(async () => {
+    // Cancel previous request if any
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller
+    abortControllerRef.current = new AbortController();
+
     try {
       setLoading(true);
       setError(null);
@@ -43,16 +69,26 @@ export function useCourses(filters?: {
         getCourseCategories(),
       ]);
 
-      setCourses(coursesData || []); // Ensure we always set an array
-      setCategories(categoriesData || []); // Ensure we always set an array
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch courses");
-      console.error("Error fetching courses:", err);
-      // Set empty arrays on error to prevent undefined issues
-      setCourses([]);
-      setCategories([]);
+      // Check if component is still mounted before updating state
+      if (isMountedRef.current) {
+        setCourses(coursesData || []); // Ensure we always set an array
+        setCategories(categoriesData || []); // Ensure we always set an array
+      }
+    } catch (err: any) {
+      // Ignore abort errors
+      if (err.name !== "AbortError" && isMountedRef.current) {
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch courses"
+        );
+        console.error("Error fetching courses:", err);
+        // Set empty arrays on error to prevent undefined issues
+        setCourses([]);
+        setCategories([]);
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, []); // Remove dependencies to make it stable
 
@@ -61,20 +97,26 @@ export function useCourses(filters?: {
   }, []); // Only run once on mount
 
   const handleEnroll = async (courseId: string) => {
+    if (!isMountedRef.current)
+      return { success: false, error: "Component unmounted" };
+
     try {
       await enrollInCourse(courseId);
-      // Update local state
-      setCourses(
-        courses.map((course) =>
-          course.id === courseId
-            ? {
-                ...course,
-                is_enrolled: true,
-                enrollment_count: (course.enrollment_count || 0) + 1,
-              }
-            : course
-        )
-      );
+
+      // Update local state only if still mounted
+      if (isMountedRef.current) {
+        setCourses(
+          courses.map((course) =>
+            course.id === courseId
+              ? {
+                  ...course,
+                  is_enrolled: true,
+                  enrollment_count: (course.enrollment_count || 0) + 1,
+                }
+              : course
+          )
+        );
+      }
       return { success: true };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to enroll";
@@ -83,23 +125,29 @@ export function useCourses(filters?: {
   };
 
   const handleUnenroll = async (courseId: string) => {
+    if (!isMountedRef.current)
+      return { success: false, error: "Component unmounted" };
+
     try {
       await unenrollFromCourse(courseId);
-      // Update local state
-      setCourses(
-        courses.map((course) =>
-          course.id === courseId
-            ? {
-                ...course,
-                is_enrolled: false,
-                enrollment_count: Math.max(
-                  0,
-                  (course.enrollment_count || 1) - 1
-                ),
-              }
-            : course
-        )
-      );
+
+      // Update local state only if still mounted
+      if (isMountedRef.current) {
+        setCourses(
+          courses.map((course) =>
+            course.id === courseId
+              ? {
+                  ...course,
+                  is_enrolled: false,
+                  enrollment_count: Math.max(
+                    0,
+                    (course.enrollment_count || 1) - 1
+                  ),
+                }
+              : course
+          )
+        );
+      }
       return { success: true };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to unenroll";
@@ -109,7 +157,9 @@ export function useCourses(filters?: {
 
   // Create a manual refetch function that can be called when filters change
   const refetch = useCallback(async () => {
-    await fetchCourses();
+    if (isMountedRef.current) {
+      await fetchCourses();
+    }
   }, [fetchCourses]);
 
   return {
@@ -129,6 +179,17 @@ export function useUserEnrollments() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Track mount status
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   useEffect(() => {
     const fetchEnrollments = async () => {
       if (!user) {
@@ -140,14 +201,22 @@ export function useUserEnrollments() {
         setLoading(true);
         setError(null);
         const data = await getUserEnrollments(user.id);
-        setEnrollments(data);
+
+        // Only update state if component is still mounted
+        if (isMountedRef.current) {
+          setEnrollments(data);
+        }
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch enrollments"
-        );
-        console.error("Error fetching enrollments:", err);
+        if (isMountedRef.current) {
+          setError(
+            err instanceof Error ? err.message : "Failed to fetch enrollments"
+          );
+          console.error("Error fetching enrollments:", err);
+        }
       } finally {
-        setLoading(false);
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
       }
     };
 
@@ -167,21 +236,42 @@ export function useCourseDetails(courseId: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Track mount status
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   useEffect(() => {
     const fetchCourseDetails = async () => {
       try {
         setLoading(true);
         setError(null);
         const data = await getCourse(courseId);
-        setCourse(data);
-        setEnrollments(data.enrollments || []);
+
+        // Only update state if component is still mounted
+        if (isMountedRef.current) {
+          setCourse(data);
+          setEnrollments(data.enrollments || []);
+        }
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch course details"
-        );
-        console.error("Error fetching course details:", err);
+        if (isMountedRef.current) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Failed to fetch course details"
+          );
+          console.error("Error fetching course details:", err);
+        }
       } finally {
-        setLoading(false);
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
       }
     };
 

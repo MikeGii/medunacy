@@ -1,4 +1,4 @@
-// src/hooks/usePerformance.ts
+// src/hooks/usePerformance.ts - FIXED VERSION WITH MEMORY LEAK PREVENTION
 import { useCallback, useRef, useEffect, useMemo, useState } from "react";
 
 // Debounce hook with cleanup
@@ -39,13 +39,29 @@ export function useDebounce<T extends (...args: any[]) => any>(
   return debouncedCallback;
 }
 
-// Throttle hook
+// Throttle hook - FIXED WITH CLEANUP
 export function useThrottle<T extends (...args: any[]) => any>(
   callback: T,
   delay: number
 ): T {
   const lastRunRef = useRef(0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const callbackRef = useRef(callback);
+
+  // Update callback ref when it changes
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+
+  // CLEANUP ON UNMOUNT - MEMORY LEAK FIX
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const throttledCallback = useCallback(
     (...args: Parameters<T>) => {
@@ -53,20 +69,22 @@ export function useThrottle<T extends (...args: any[]) => any>(
       const timeSinceLastRun = now - lastRunRef.current;
 
       if (timeSinceLastRun >= delay) {
-        callback(...args);
+        callbackRef.current(...args);
         lastRunRef.current = now;
       } else {
+        // Clear existing timeout to prevent memory leaks
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
         }
 
         timeoutRef.current = setTimeout(() => {
-          callback(...args);
+          callbackRef.current(...args);
           lastRunRef.current = Date.now();
+          timeoutRef.current = null; // Clear reference after execution
         }, delay - timeSinceLastRun);
       }
     },
-    [callback, delay]
+    [delay]
   ) as T;
 
   return throttledCallback;
