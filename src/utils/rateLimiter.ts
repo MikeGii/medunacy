@@ -62,6 +62,15 @@ class RateLimiter {
     return oldestRequest + config.windowMs;
   }
 
+  // Add this method to get remaining time in milliseconds
+  getRemainingTime(config: RateLimitConfig): number {
+    const resetTime = this.getResetTime(config);
+    if (resetTime === 0) return 0;
+
+    const remainingMs = resetTime - Date.now();
+    return Math.max(0, remainingMs);
+  }
+
   checkRateLimit(config: RateLimitConfig): RateLimitError | null {
     if (!this.canMakeRequest(config)) {
       const resetTime = this.getResetTime(config);
@@ -93,6 +102,7 @@ export const RATE_LIMITS = {
 
   // Forum endpoints
   CREATE_POST: { maxRequests: 5, windowMs: 5 * 60 * 1000 }, // 5 posts per 5 minutes
+  UPDATE_POST: { maxRequests: 10, windowMs: 5 * 60 * 1000 }, // 10 updates per 5 minutes
   CREATE_COMMENT: { maxRequests: 10, windowMs: 5 * 60 * 1000 }, // 10 comments per 5 minutes
   LIKE_ACTION: { maxRequests: 30, windowMs: 60 * 1000 }, // 30 likes per minute
 
@@ -110,11 +120,18 @@ export function useRateLimit(limitConfig: RateLimitConfig) {
   const getResetTime = () => rateLimiter.getResetTime(limitConfig);
   const checkRateLimit = () => rateLimiter.checkRateLimit(limitConfig);
 
+  // Add these wrapper methods to match what EditPostModal expects
+  const getRemainingTime = () => rateLimiter.getRemainingTime(limitConfig);
+  const recordAction = () => rateLimiter.recordRequest(limitConfig.identifier);
+
   return {
     checkLimit,
     recordRequest,
     getRemainingRequests,
     getResetTime,
     checkRateLimit,
+    // Add the missing methods that EditPostModal uses
+    getRemainingTime,
+    recordAction, // Alias for recordRequest
   };
 }
