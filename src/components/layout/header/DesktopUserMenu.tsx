@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface DesktopUserMenuProps {
   baseUrl: string;
@@ -21,6 +22,7 @@ export default function DesktopUserMenu({
   const t = useTranslations("navigation");
   const dashboardT = useTranslations("dashboard");
   const { user } = useAuth();
+  const { isPremium } = useSubscription();
 
   if (!user) return null;
 
@@ -52,6 +54,7 @@ export default function DesktopUserMenu({
                     : user?.role === "doctor"
                     ? t("doctor")
                     : t("member")}
+                  {isPremium && " - Premium"}
                 </p>
               </div>
             </div>
