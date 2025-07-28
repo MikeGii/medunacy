@@ -9,7 +9,13 @@
       "email": "E-post",
       "current_role": "Praegune roll",
       "change_role": "Muuda rolli",
-      "your_account": "Sinu konto"
+      "your_account": "Sinu konto",
+      "subscription": "Tellimus",
+      "actions": "Tegevused"
+    },
+    "subscription": {
+      "free": "Tasuta",
+      "premium": "Premium"
     },
     "roles": {
       "user": "Kasutaja",

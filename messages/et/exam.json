@@ -49,6 +49,16 @@
     "cancel": "Tühista",
     "select_mode": "Vali režiim",
     "mode_description": "Vali sobiv režiim oma õppimiseks ja harjutamiseks",
+    "premium": "Premium",
+    "premium_required_title": "Premium tellimus on vajalik",
+    "premium_required_message": "See test on saadaval ainult Premium kasutajatele. Uuenda oma kontot, et saada ligipääs kõikidele testidele.",
+    "close": "Sulge",
+    "upgrade_to_premium": "Uuenda Premium'iks",
+    "subscription": {
+      "free": "Tasuta kasutaja",
+      "premium": "Premium kasutaja",
+      "trial": "Prooviperiood"
+    },
     "modes": {
       "training": "Treeningrežiim",
       "training_desc": "Harjuta ilma ajapiiranguta ja vaata kohe õigeid vastuseid",
@@ -246,7 +256,8 @@
     "premium_test_description": "Märgi test premium kasutajatele",
     "premium": "Premium",
     "free": "Tasuta",
-    "type": "Tüüp"
+    "type": "Tüüp",
+    "test": "test"
   },
   "exam_session_results": {
     "page_title": "Eksami seansi tulemused",
