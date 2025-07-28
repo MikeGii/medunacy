@@ -15,7 +15,7 @@ export default function PrivacySection({
   isActive
 }: PrivacySectionProps) {
   // Convert content to string if it's not already
-  let contentString = typeof content === 'string' ? content : String(content);
+  const contentString = typeof content === 'string' ? content : String(content);
   
   // Function to process the content and convert to proper HTML
   const processContent = (text: string) => {
