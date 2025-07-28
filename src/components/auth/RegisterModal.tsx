@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useAuthActions } from "@/hooks/useAuth";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 
 interface RegisterModalProps {
   onSwitchToLogin: () => void;
@@ -19,6 +20,7 @@ interface RegisterFormData {
   password: string;
   confirmPassword: string;
   language: string;
+  acceptPrivacy: boolean;
 }
 
 interface FormErrors {
@@ -46,6 +48,7 @@ export default function RegisterModal({
     password: "",
     confirmPassword: "",
     language: currentLocale,
+    acceptPrivacy: false,
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -87,62 +90,74 @@ export default function RegisterModal({
 
   // Validation function
   const validateField = useCallback(
-    (name: string, value: string): string => {
+    (name: string, value: string | boolean): string => {
       switch (name) {
         case "firstName":
         case "lastName":
           const fieldName = t(
             `form.${name === "firstName" ? "first_name" : "last_name"}`
           );
-          if (!value.trim()) {
+          const strValue = value as string; // Type assertion for string fields
+          if (!strValue.trim()) {
             return t("validation.field_required", { field: fieldName });
           }
-          if (value.trim().length < 2) {
+          if (strValue.trim().length < 2) {
             return t("validation.min_length", { min: 2 });
           }
-          if (!/^[a-zA-ZÀ-ÿĀ-žА-я\s\-']+$/.test(value)) {
+          if (!/^[a-zA-ZÀ-ÿĀ-žА-я\s\-']+$/.test(strValue)) {
             return t("validation.invalid_characters");
           }
           return "";
 
         case "email":
-          if (!value.trim()) {
+          const emailValue = value as string;
+          if (!emailValue.trim()) {
             return t("validation.field_required", { field: t("form.email") });
           }
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!emailRegex.test(value.trim())) {
+          if (!emailRegex.test(emailValue.trim())) {
             return t("validation.invalid_email");
           }
           return "";
 
         case "phone":
-          if (value && !/^[\d\s\-\+\(\)]+$/.test(value)) {
+          const phoneValue = value as string;
+          if (phoneValue && !/^[\d\s\-\+\(\)]+$/.test(phoneValue)) {
             return t("validation.invalid_phone");
           }
           return "";
 
         case "password":
-          if (!value) {
+          const passwordValue = value as string;
+          if (!passwordValue) {
             return t("validation.field_required", {
               field: t("form.password"),
             });
           }
-          if (value.length < 6) {
+          if (passwordValue.length < 6) {
             return t("messages.password_short");
           }
-          if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(value)) {
+          if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(passwordValue)) {
             return t("validation.password_complexity");
           }
           return "";
 
         case "confirmPassword":
-          if (!value) {
+          const confirmValue = value as string;
+          if (!confirmValue) {
             return t("validation.field_required", {
               field: t("form.confirm_password"),
             });
           }
-          if (value !== formData.password) {
+          if (confirmValue !== formData.password) {
             return t("messages.password_mismatch");
+          }
+          return "";
+
+        case "acceptPrivacy":
+          const boolValue = value as boolean;
+          if (!boolValue) {
+            return t("validation.privacy_required");
           }
           return "";
 
@@ -156,15 +171,16 @@ export default function RegisterModal({
   // Memoized change handler with validation
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-      const { name, value } = e.target;
+      const target = e.target as HTMLInputElement;
+      const { name, value, type, checked } = target;
 
       // Update form data
       setFormData((prev) => ({
         ...prev,
-        [name]: value,
+        [name]: type === "checkbox" ? checked : value,
       }));
 
-      // Clear error when user starts typing
+      // Clear error when user starts typing/checking
       if (errors[name]) {
         setErrors((prev) => ({
           ...prev,
@@ -172,7 +188,18 @@ export default function RegisterModal({
         }));
       }
 
-      // Validate on blur for better UX
+      // Validate on change for acceptPrivacy checkbox
+      if (name === "acceptPrivacy") {
+        const error = validateField(name, checked);
+        if (error) {
+          setErrors((prev) => ({
+            ...prev,
+            [name]: error,
+          }));
+        }
+      }
+
+      // Validate on blur for confirmPassword
       if (name === "confirmPassword" && value) {
         const error = validateField(name, value);
         if (error) {
@@ -212,10 +239,11 @@ export default function RegisterModal({
       const newErrors: FormErrors = {};
       Object.keys(formData).forEach((key) => {
         if (key !== "language") {
-          const error = validateField(
-            key,
-            formData[key as keyof RegisterFormData]
-          );
+          const value =
+            key === "acceptPrivacy"
+              ? formData.acceptPrivacy
+              : formData[key as keyof RegisterFormData];
+          const error = validateField(key, value);
           if (error) {
             newErrors[key] = error;
           }
@@ -257,6 +285,7 @@ export default function RegisterModal({
             password: "",
             confirmPassword: "",
             language: currentLocale,
+            acceptPrivacy: false,
           });
           setErrors({});
         } else {
@@ -447,7 +476,6 @@ export default function RegisterModal({
               )}
             </div>
           </div>
-
           <div>
             <label
               htmlFor="email"
@@ -474,7 +502,6 @@ export default function RegisterModal({
               <p className="mt-1 text-xs text-red-600">{errors.email}</p>
             )}
           </div>
-
           <div>
             <label
               htmlFor="phone"
@@ -503,7 +530,6 @@ export default function RegisterModal({
               <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
             )}
           </div>
-
           <div>
             <label
               htmlFor="language"
@@ -524,7 +550,6 @@ export default function RegisterModal({
               <option value="ukr">Українська</option>
             </select>
           </div>
-
           <div>
             <label
               htmlFor="password"
@@ -551,7 +576,6 @@ export default function RegisterModal({
               <p className="mt-1 text-xs text-red-600">{errors.password}</p>
             )}
           </div>
-
           <div>
             <label
               htmlFor="confirmPassword"
@@ -577,6 +601,42 @@ export default function RegisterModal({
             {errors.confirmPassword && (
               <p className="mt-1 text-xs text-red-600">
                 {errors.confirmPassword}
+              </p>
+            )}
+          </div>
+
+          {/* Privacy Policy Checkbox */}
+          <div className="mt-4">
+            <div className="flex items-start">
+              <input
+                type="checkbox"
+                id="acceptPrivacy"
+                name="acceptPrivacy"
+                checked={formData.acceptPrivacy}
+                onChange={handleChange}
+                className={`mt-1 w-4 h-4 text-[#118B50] bg-gray-100 border-gray-300 rounded focus:ring-[#118B50] focus:ring-2 ${
+                  errors.acceptPrivacy ? "border-red-500" : ""
+                }`}
+                disabled={isDisabled}
+              />
+              <label
+                htmlFor="acceptPrivacy"
+                className="ml-2 text-sm text-gray-700"
+              >
+                {t("form.privacy_consent")}{" "}
+                <Link
+                  href={`/${currentLocale}/privacy-policy`}
+                  target="_blank"
+                  className="text-[#118B50] hover:text-[#0F7A43] underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {t("form.privacy_policy_link")}
+                </Link>
+              </label>
+            </div>
+            {errors.acceptPrivacy && (
+              <p className="mt-1 text-xs text-red-600 ml-6">
+                {errors.acceptPrivacy}
               </p>
             )}
           </div>

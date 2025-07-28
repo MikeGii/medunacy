@@ -2,6 +2,7 @@
 "use client";
 
 import Header from "../layout/Header";
+import Footer from "../layout/Footer";
 import HeroSection from "./HeroSection";
 import ServicesSection from "./ServicesSection";
 import TeamSection from "./TeamSection";
@@ -30,6 +31,7 @@ function HomePageContent() {
       <ServicesSection />
       <TeamSection />
       <FAQSection />
+      <Footer />
 
       {/* Authentication Modals */}
       <AuthModal isOpen={isOpen} onClose={close}>

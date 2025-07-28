@@ -35,6 +35,21 @@
     "doctor": "Лікар Medunacy",
     "member": "Учасник Medunacy"
   },
+  "footer": {
+    "description": "Medunacy - Ваш надійний партнер у підтримці медичних працівників в Естонії. Ми пропонуємо екзаменаційні тести, навчальні матеріали та підтримку спільноти.",
+    "quick_links": "Швидкі посилання",
+    "about_us": "Про нас",
+    "services": "Послуги",
+    "forum": "Форум",
+    "contact": "Контакти",
+    "legal": "Юридична інформація",
+    "privacy_policy": "Політика конфіденційності",
+    "terms_of_service": "Умови використання",
+    "cookie_policy": "Політика файлів cookie",
+    "copyright": "© {year} Medunacy. Всі права захищені.",
+    "made_with": "Зроблено з",
+    "in_estonia": "в Естонії"
+  },
   "errors": {
     "error_title": "Ой!",
     "go_home": "На головну",

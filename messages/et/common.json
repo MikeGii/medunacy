@@ -35,6 +35,21 @@
     "doctor": "Medunacy arst",
     "member": "Medunacy liige"
   },
+  "footer": {
+    "description": "Medunacy - Teie usaldusväärne partner tervishoiutöötajate toetamisel Eestis. Pakume eksamiteste, õppematerjale ja kogukonna tuge.",
+    "quick_links": "Kiirlingid",
+    "about_us": "Meist",
+    "services": "Teenused",
+    "forum": "Foorum",
+    "contact": "Kontakt",
+    "legal": "Juriidiline info",
+    "privacy_policy": "Privaatsuspoliitika",
+    "terms_of_service": "Kasutustingimused",
+    "cookie_policy": "Küpsiste poliitika",
+    "copyright": "© {year} Medunacy. Kõik õigused kaitstud.",
+    "made_with": "Tehtud",
+    "in_estonia": "Eestis"
+  },
   "errors": {
     "error_title": "Ups!",
     "go_home": "Mine avalehele",

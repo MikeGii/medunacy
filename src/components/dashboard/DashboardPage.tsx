@@ -1,6 +1,7 @@
 "use client";
 
 import Header from "../layout/Header";
+import Footer from "../layout/Footer";
 import DashboardHero from "./DashboardHero";
 import QuickActions from "./QuickActions";
 import HealthcareTools from "./HealthcareTools";
@@ -44,6 +45,7 @@ export default function DashboardPage() {
           <HealthcareTools />
           <AdminTools />
         </main>
+        <Footer />
       </div>
     </AuthModalProvider>
   );
