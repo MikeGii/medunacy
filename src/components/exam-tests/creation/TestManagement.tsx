@@ -507,22 +507,22 @@ export default function TestManagement({
                                       `/${locale}/exam-tests/create/${test.id}/questions`
                                     )
                                   }
-                                  className={`px-3 py-1.5 text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-1 ${
-                                    test.is_premium
-                                      ? "bg-yellow-600 hover:bg-yellow-700"
-                                      : "bg-[#118B50] hover:bg-[#0A6B3B]"
-                                  }`}
+                                  className="p-1.5 text-[#118B50] hover:bg-[#118B50]/10 rounded-lg transition-colors"
+                                  title={t("manage_questions")}
                                 >
-                                  {test.is_premium && (
-                                    <svg
-                                      className="w-3 h-3"
-                                      fill="currentColor"
-                                      viewBox="0 0 20 20"
-                                    >
-                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                    </svg>
-                                  )}
-                                  {t("manage_questions")}
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                  </svg>
                                 </button>
                                 <button
                                   onClick={() => handleEdit(test)}
