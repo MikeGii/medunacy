@@ -241,7 +241,12 @@
     "confirm_delete": "Підтвердити видалення",
     "has_explanation": "Містить пояснення",
     "mark_as_correct": "Позначити правильним",
-    "more_options": "ще варіанти"
+    "more_options": "ще варіанти",
+    "premium_test": "Преміум тест",
+    "premium_test_description": "Позначити тест для преміум користувачів",
+    "premium": "Преміум",
+    "free": "Безкоштовно",
+    "type": "Тип"
   },
   "exam_session_results": {
     "page_title": "Результати іспитової сесії",

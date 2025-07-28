@@ -47,6 +47,7 @@ export interface Test {
   category?: TestCategory;
   questions?: TestQuestion[];
   question_count?: number;
+  is_premium: boolean;
 }
 
 export interface TestCreate {
@@ -57,6 +58,7 @@ export interface TestCreate {
   passing_score?: number;
   allow_multiple_attempts?: boolean;
   show_correct_answers_in_training?: boolean;
+  is_premium?: boolean;
 }
 
 export interface TestUpdate {
@@ -68,6 +70,7 @@ export interface TestUpdate {
   passing_score?: number;
   allow_multiple_attempts?: boolean;
   show_correct_answers_in_training?: boolean;
+  is_premium?: boolean;
 }
 
 // ================================
@@ -260,4 +263,5 @@ export interface TestFormData {
   passing_score: number;
   allow_multiple_attempts: boolean;
   show_correct_answers_in_training: boolean;
+  is_premium: boolean;
 }
