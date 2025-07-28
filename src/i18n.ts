@@ -23,6 +23,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
       "exam",
       "courses",
       "admin",
+      "privacy",
     ];
     const messages: Record<string, any> = {};
 

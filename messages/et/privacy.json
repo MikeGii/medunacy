@@ -1,0 +1,44 @@
+{
+  "privacy": {
+    "title": "Privaatsuspoliitika",
+    "subtitle": "Teie privaatsus on meie jaoks oluline. See poliitika selgitab, kuidas me teie andmeid kogume, kasutame ja kaitseme.",
+    "last_updated": "Viimati uuendatud",
+    "update_date": "28. august 2025",
+    "table_of_contents": "Sisukord",
+    "agreement_notice": "Medunacy teenuseid kasutades nõustute käesoleva privaatsuspoliitikaga.",
+    "sections": {
+      "introduction": {
+        "title": "Sissejuhatus",
+        "content": "Medunacy (edaspidi \"meie\", \"meid\" või \"Medunacy\") on pühendunud teie privaatsuse kaitsmisele. See privaatsuspoliitika selgitab, kuidas me kogume, kasutame, avaldame ja kaitseme teie isikuandmeid, kui kasutate meie veebisaiti ja teenuseid.\n\nMeie platvorm on loodud tervishoiutöötajate toetamiseks Eestis, pakkudes eksamiteste, õppematerjale ja kogukonna tuge. Kuna töötleme tervishoiuga seotud teavet, võtame andmekaitse eriti tõsiselt.\n\nKäesolev poliitika on koostatud vastavalt Euroopa Liidu isikuandmete kaitse üldmäärusele (GDPR) ja Eesti andmekaitseseadusele."
+      },
+      "data_collection": {
+        "title": "Milliseid andmeid me kogume",
+        "content": "Me kogume järgmisi andmekategooriaid:\n\n<strong>1. Kontoandmed:</strong>\n• Ees- ja perekonnanimi\n• E-posti aadress\n• Telefoninumber\n• Parool (krüpteeritud kujul)\n• Eelistatud keel (eesti või ukraina)\n\n<strong>2. Profiiliandmed:</strong>\n• Hariduslik taust (ülikool, eriala)\n• Töökoht ja ametikoht\n• Keeleoskused\n• Erialane kirjeldus\n\n<strong>3. Kasutusandmed:</strong>\n• Eksamitulemused ja punktid\n• Õppimise edenemine\n• Foorumi postitused ja kommentaarid\n• Sisselogimise aeg"
+      },
+      "data_usage": {
+        "title": "Kuidas me teie andmeid kasutame",
+        "content": "Me kasutame teie andmeid järgmistel eesmärkidel:\n\n<strong>1. Teenuse pakkumine:</strong>\n• Kasutajakonto loomine ja haldamine\n• Eksamitestide ja õppematerjalide pakkumine\n• Isikupärastatud sisu kuvamine\n• Edusammude jälgimine\n\n<strong>2. Kommunikatsioon:</strong>\n• Teenusega seotud teatised\n• Vastused teie päringutele\n\n<strong>3. Teenuse parendamine:</strong>\n• Kasutajakogemuse analüüs\n• Tehniliste probleemide lahendamine\n• Uute funktsioonide arendamine\n\n<strong>4. Õiguslikud kohustused:</strong>\n• Seadusest tulenevate nõuete täitmine\n• Vaidluste lahendamine\n• Meie õiguste kaitsmine"
+      },
+      "legal_basis": {
+        "title": "Andmetöötluse õiguslik alus",
+        "content": "Me töötleme teie isikuandmeid järgmistel õiguslikel alustel:\n\n<strong>1. Lepingu täitmine:</strong>\nAndmete töötlemine on vajalik teenuse osutamiseks vastavalt kasutustingimustele.\n\n<strong>2. Nõusolek:</strong>\nTurunduskommunikatsiooni ja mittekohustuslike funktsioonide jaoks küsime teie selgesõnalist nõusolekut.\n\n<strong>3. Õigustatud huvi:</strong>\nTeenuse turvalisuse tagamine, pettuste ennetamine ja teenuse parendamine.\n\n<strong>4. Juriidiline kohustus:</strong>\nSeadusest tulenevate kohustuste täitmine, näiteks maksundus või kohtumäärus."
+      },
+      "data_sharing": {
+        "title": "Andmete jagamine ja edastamine",
+        "content": "Me ei müü ega rendi teie isikuandmeid kolmandatele isikutele. Me jagame teie andmeid ainult järgmistel juhtudel:\n\n<strong>1. Teenusepakkujad:</strong>\n• Supabase (andmebaasi majutus)\n• Vercel (veebimajutus)\n• E-posti teenuse pakkujad\n\nKõik teenusepakkujad on kohustatud järgima rangeid andmekaitse nõudeid.\n\n<strong>2. Õiguslikud nõuded:</strong>\nKui seadus, kohtumäärus või ametiasutus seda nõuab.\n\n<strong>3. Teie nõusolekul:</strong>\nJagame andmeid teiste osapooltega ainult teie selgesõnalisel nõusolekul.\n\n<strong>Rahvusvaheline andmeedastus:</strong>\nMõned meie teenusepakkujad võivad asuda väljaspool Euroopa Majanduspiirkonda. Sellisel juhul tagame asjakohased kaitsemeetmed."
+      },
+      "data_retention": {
+        "title": "Andmete säilitamine",
+        "content": "Me säilitame teie isikuandmeid ainult nii kaua, kui see on vajalik:\n\n<strong>Aktiivne konto:</strong>\nSäilitame teie andmeid, kuni teie konto on aktiivne või kuni vajate meie teenuseid.\n\n<strong>Pärast konto sulgemist:</strong>\n• Põhiandmed kustutatakse 30 päeva jooksul\n• Eksamitulemused säilitatakse 5 aastat\n• Finantsdokumendid 7 aastat (seadusest tulenev nõue)\n\n<strong>Varundused:</strong>\nAndmed võivad säilida varundussüsteemides kuni 90 päeva pärast kustutamist.\n\n<strong>Anonümiseeritud andmed:</strong>\nVõime säilitada anonümiseeritud statistilisi andmeid tähtajatult teenuse parendamiseks."
+      },
+      "user_rights": {
+        "title": "Teie õigused",
+        "content": "GDPR-i alusel on teil järgmised õigused:\n\n<strong>1. Juurdepääsuõigus:</strong>\nÕigus saada kinnitust oma isikuandmete töötlemise kohta ja koopia oma andmetest.\n\n<strong>2. Parandamisõigus:</strong>\nÕigus nõuda ebaõigete andmete parandamist ja puudulike andmete täiendamist.\n\n<strong>3. Kustutamisõigus:</strong>\nÕigus nõuda oma andmete kustutamist (\"õigus olla unustatud\").\n\n<strong>4. Piiramise õigus:</strong>\nÕigus nõuda andmetöötluse piiramist teatud juhtudel.\n\n<strong>5. Andmete ülekandmise õigus:</strong>\nÕigus saada oma andmed struktureeritud, üldkasutatavas vormingus.\n\n<strong>6. Vastuväite esitamise õigus:</strong>\nÕigus esitada vastuväiteid andmete töötlemisele.\n\n"
+      },
+      "changes": {
+        "title": "Muudatused privaatsuspoliitikas",
+        "content": "Me võime seda privaatsuspoliitikat aeg-ajalt uuendada, et kajastada:\n• Muudatusi meie tavades\n• Uusi funktsioone või teenuseid\n• Seadusandluse muudatusi\n• Tehnoloogilisi arenguid\n\n<strong>Jõustumine:</strong>\nMuudatused jõustuvad postitamise kuupäeval, kui ei ole märgitud teisiti."
+      }
+    }
+  }
+}
