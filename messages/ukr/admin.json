@@ -9,7 +9,13 @@
       "email": "Електронна пошта",
       "current_role": "Поточна роль",
       "change_role": "Змінити роль",
-      "your_account": "Ваш обліковий запис"
+      "your_account": "Ваш обліковий запис",
+      "subscription": "Підписка",
+      "actions": "Дії"
+    },
+    "subscription": {
+      "free": "Безкоштовно",
+      "premium": "Преміум"
     },
     "roles": {
       "user": "Користувач",

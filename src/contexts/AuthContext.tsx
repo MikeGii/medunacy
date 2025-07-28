@@ -14,6 +14,12 @@ import { useRouter, usePathname } from "next/navigation";
 
 interface UserWithRole extends User {
   role?: "user" | "doctor" | "admin";
+  subscription_status?: "free" | "premium" | "trial";
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  preferred_language?: "et" | "ukr";
+  is_verified?: boolean;
 }
 
 interface AuthContextType {
@@ -66,22 +72,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data: userData, error } = await supabase
         .from("users")
-        .select("role, preferred_language")
+        .select("role, preferred_language, subscription_status")
         .eq("user_id", userId)
         .single();
 
       if (error) {
         console.error("Error fetching user role:", error.message);
-        return { role: "user" as const, preferred_language: null };
+        return {
+          role: "user" as const,
+          preferred_language: null,
+          subscription_status: "free" as const,
+        };
       }
 
       return {
         role: (userData?.role || "user") as UserWithRole["role"],
         preferred_language: userData?.preferred_language,
+        subscription_status: userData?.subscription_status || "free",
       };
     } catch (error) {
       console.error("Error in fetchUserData:", error);
-      return { role: "user" as const, preferred_language: null };
+      return {
+        role: "user" as const,
+        preferred_language: null,
+        subscription_status: "free" as const,
+      };
     }
   }, []);
 
@@ -118,14 +133,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (session?.user) {
           const userData = await fetchUserData(session.user.id);
-
           if (!mounted) return;
-
           const userWithRole: UserWithRole = {
             ...session.user,
             role: userData.role,
+            subscription_status: userData.subscription_status,
           };
-
           setUser(userWithRole);
         } else {
           // Only clear user if not in transition
@@ -164,8 +177,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Check if we're in a language transition
       const transition = checkLanguageTransition();
 
-      console.log("Auth event:", event);
-
       try {
         if (session?.user) {
           const userData = await fetchUserData(session.user.id);
@@ -175,6 +186,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const userWithRole: UserWithRole = {
             ...session.user,
             role: userData.role,
+            subscription_status: userData.subscription_status,
+            preferred_language: userData.preferred_language,
           };
 
           setUser(userWithRole);
