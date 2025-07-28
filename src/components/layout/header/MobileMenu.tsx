@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthModal } from "@/contexts/AuthModalContext";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export default function MobileMenu({
   const dashboardT = useTranslations("dashboard");
   const { user } = useAuth();
   const { openLogin, openRegister } = useAuthModal();
+  const { isPremium } = useSubscription();
 
   if (!isOpen) return null;
 
@@ -52,6 +54,11 @@ export default function MobileMenu({
               {(user.role === "admin" || user.role === "doctor") && (
                 <span className="text-sm font-normal text-[#5DB996]">
                   {user.role === "admin" ? " - Admin" : " - Arst"}
+                </span>
+              )}
+              {isPremium && (
+                <span className="text-sm font-normal text-yellow-500">
+                  {" - Premium"}
                 </span>
               )}
             </p>
