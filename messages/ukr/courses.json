@@ -2,6 +2,11 @@
   "courses": {
     "title": "Навчання",
     "description": "Реєструйтесь на медичні тренінги та курси",
+    "premium": "Преміум",
+    "premium_required_title": "Потрібна преміум підписка",
+    "premium_required_message": "Цей курс доступний лише для преміум користувачів. Оновіть свій обліковий запис, щоб отримати доступ до всіх курсів.",
+    "close": "Закрити",
+    "upgrade_to_premium": "Оновити до преміум",
     "tabs": {
       "upcoming": "Майбутні",
       "past": "Завершені",
@@ -91,7 +96,9 @@
         "course_type": "Вартість",
         "category_name_et": "Назва категорії (естонська)",
         "category_name_uk": "Назва категорії (українська)",
-        "category_name_placeholder": "Введіть назву категорії"
+        "category_name_placeholder": "Введіть назву категорії",
+        "premium_course": "Преміум курс",
+        "premium_course_description": "Зробити цей курс доступним лише для преміум користувачів"
       },
       "validation": {
         "name_required": "Назва курсу є обов'язковою",
