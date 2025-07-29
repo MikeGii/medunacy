@@ -1,74 +1,78 @@
+// src/components/courses-panel/CoursesPanel.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { usePathname } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
-import Header from "../layout/Header";
 import { AuthModalProvider } from "@/contexts/AuthModalContext";
+import { useAuthorization } from "@/hooks/useAuthorization";
+import Header from "@/components/layout/Header";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 import CoursesPanelTabs from "./CoursesPanelTabs";
 import CoursesManagement from "./CoursesManagement";
 import CategoriesManagement from "./CategoriesManagement";
 import EnrollmentsView from "./EnrollmentsView";
 
-function CoursesPanelContent() {
+export default function CoursesPanel() {
   const t = useTranslations("courses_panel");
-  const { user } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
-  const locale = pathname.startsWith("/ukr") ? "ukr" : "et";
-
   const [activeTab, setActiveTab] = useState<
     "courses" | "categories" | "enrollments"
   >("courses");
 
-  // Check if user has permission
-  useEffect(() => {
-    if (user && user.role !== "doctor" && user.role !== "admin") {
-      router.push(`/${locale}/`);
-    }
-  }, [user, router, locale]);
+  const { isAuthorized, isLoading } = useAuthorization({
+    requireAuth: true,
+    allowedRoles: ["doctor", "admin"],
+    redirectOnUnauthorized: true,
+  });
 
-  if (!user || (user.role !== "doctor" && user.role !== "admin")) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-      </div>
+      <AuthModalProvider>
+        <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA]">
+          <Header />
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <LoadingSpinner />
+          </div>
+        </div>
+      </AuthModalProvider>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA]">
-      <Header />
+  if (!isAuthorized) {
+    return null; // useAuthorization will handle redirect
+  }
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-            {t("title")}
-          </h1>
-          <p className="text-gray-600 mt-2">{t("description")}</p>
-        </div>
-
-        {/* Tabs */}
-        <CoursesPanelTabs activeTab={activeTab} onTabChange={setActiveTab} />
-
-        {/* Content */}
-        <div className="mt-6">
-          {activeTab === "courses" && <CoursesManagement />}
-          {activeTab === "categories" && <CategoriesManagement />}
-          {activeTab === "enrollments" && <EnrollmentsView />}
-        </div>
-      </main>
-    </div>
-  );
-}
-
-export default function CoursesPanel() {
   return (
     <AuthModalProvider>
-      <CoursesPanelContent />
+      <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA]">
+        <Header />
+
+        <main className="py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Page Header */}
+            <div className="mb-8 text-center">
+              <h1 className="text-3xl md:text-4xl font-bold text-[#118B50] mb-3">
+                {t("title")}
+              </h1>
+              <p className="text-gray-600 text-lg">{t("description")}</p>
+            </div>
+
+            {/* Tabs */}
+            <div className="mb-8">
+              <CoursesPanelTabs
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+              />
+            </div>
+
+            {/* Tab Content */}
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+              {activeTab === "courses" && <CoursesManagement />}
+              {activeTab === "categories" && <CategoriesManagement />}
+              {activeTab === "enrollments" && <EnrollmentsView />}
+            </div>
+          </div>
+        </main>
+      </div>
     </AuthModalProvider>
   );
 }

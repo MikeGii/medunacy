@@ -130,7 +130,8 @@
       "user": "Kasutaja",
       "enrolled_at": "Registreerus",
       "select_course": "Vali koolitus",
-      "select_course_to_view": "Vali koolitus registreerunute vaatamiseks"
+      "select_course_to_view": "Vali koolitus registreerunute vaatamiseks",
+      "enrolled": "registreerunud"
     }
   }
 }
