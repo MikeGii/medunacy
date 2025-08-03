@@ -1,0 +1,9 @@
+{
+  "subscription": {
+    "success_title": "Tellimus õnnestus!",
+    "success_message": "Teie premium tellimus on aktiveeritud. Suuname teid juhtpaneelile...",
+    "redirecting": "Ümbersuunamine...",
+    "error_title": "Viga",
+    "return_to_premium": "Tagasi Premium lehele"
+  }
+}

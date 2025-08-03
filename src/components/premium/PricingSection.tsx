@@ -4,6 +4,10 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { User } from "@supabase/supabase-js";
+import { getStripe } from "@/lib/stripe-client";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { useLocale } from "next-intl";
 
 interface PricingSectionProps {
   user: User | null;
@@ -15,6 +19,8 @@ export default function PricingSection({
   isPremium,
 }: PricingSectionProps) {
   const t = useTranslations("premium");
+  const router = useRouter();
+  const locale = useLocale();
   const [isAnnual, setIsAnnual] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -27,19 +33,71 @@ export default function PricingSection({
   ).toFixed(0);
 
   const handleSubscribe = async () => {
+
     if (!user) {
-      // Open login modal - you'll need to implement this
       alert(t("please_login"));
       return;
     }
 
     setIsLoading(true);
     try {
-      // TODO: Implement payment integration
-      console.log("Subscribing to:", isAnnual ? "annual" : "monthly");
-      alert(t("payment_coming_soon"));
+      // Get the session to get the access token
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        throw new Error("No active session");
+      }
+
+      // Get the appropriate price ID from environment variables
+      const priceId = isAnnual
+        ? process.env.NEXT_PUBLIC_STRIPE_PRICE_ANNUAL
+        : process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY;
+
+      if (!priceId) {
+        throw new Error(
+          "Stripe price ID not configured. Please check environment variables."
+        );
+      }
+
+      // Create checkout session with auth header
+      const response = await fetch("/api/stripe/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          priceId,
+          planType: isAnnual ? "annual" : "monthly",
+          locale, // Add locale here
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("API Error:", error);
+        throw new Error(error.error || "Failed to create checkout session");
+      }
+
+      const { sessionId } = await response.json();
+
+      // Redirect to Stripe Checkout
+      const stripe = await getStripe();
+      if (!stripe) {
+        throw new Error("Stripe not initialized");
+      }
+
+      const { error } = await stripe.redirectToCheckout({ sessionId });
+
+      if (error) {
+        console.error("Stripe redirect error:", error);
+        throw error;
+      }
     } catch (error) {
       console.error("Subscription error:", error);
+      alert(`Failed to start subscription process: ${error}`);
     } finally {
       setIsLoading(false);
     }
