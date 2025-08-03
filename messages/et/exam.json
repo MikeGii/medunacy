@@ -138,6 +138,20 @@
         "invalid_passing_score": "Läbimisprotsent peab olema 0-100 vahel",
         "no_questions": "Test peab sisaldama vähemalt ühte küsimust"
       }
+    },
+    "daily_limits": {
+      "title": "Päevased piirangud",
+      "training": "Treeningtestid",
+      "exam": "Eksamitestid",
+      "limit_reached": "Piir täis",
+      "reset_info": "Piirangud nullitakse iga päev kell 00:00",
+      "training_limit_reached": "Olete tänaseks jõudnud treeningtestide päevase piirini (3). Premium kasutajatel on piiramatu ligipääs.",
+      "exam_limit_reached": "Olete tänaseks jõudnud eksamitestide päevase piirini (1). Premium kasutajatel on piiramatu ligipääs.",
+      "error_recording": "Viga testi alustamisel. Palun proovige uuesti.",
+      "remaining_attempts": "Tänased katsed",
+      "remaining": "jäänud",
+      "unlimited": "piiramatu",
+      "upgrade_for_unlimited": "Uuenda Premium'iks piiramatu ligipääsu saamiseks"
     }
   },
   "test_creation": {
