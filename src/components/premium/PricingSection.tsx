@@ -4,8 +4,10 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { User } from "@supabase/supabase-js";
-import { getStripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe-client";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { useLocale } from "next-intl";
 
 interface PricingSectionProps {
   user: User | null;
@@ -18,6 +20,7 @@ export default function PricingSection({
 }: PricingSectionProps) {
   const t = useTranslations("premium");
   const router = useRouter();
+  const locale = useLocale();
   const [isAnnual, setIsAnnual] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -30,33 +33,52 @@ export default function PricingSection({
   ).toFixed(0);
 
   const handleSubscribe = async () => {
+
     if (!user) {
-      // Open login modal - you'll need to implement this
       alert(t("please_login"));
       return;
     }
 
     setIsLoading(true);
     try {
+      // Get the session to get the access token
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        throw new Error("No active session");
+      }
+
       // Get the appropriate price ID from environment variables
       const priceId = isAnnual
         ? process.env.NEXT_PUBLIC_STRIPE_PRICE_ANNUAL
         : process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY;
 
-      // Create checkout session
+      if (!priceId) {
+        throw new Error(
+          "Stripe price ID not configured. Please check environment variables."
+        );
+      }
+
+      // Create checkout session with auth header
       const response = await fetch("/api/stripe/create-checkout-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           priceId,
           planType: isAnnual ? "annual" : "monthly",
+          locale, // Add locale here
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create checkout session");
+        const error = await response.json();
+        console.error("API Error:", error);
+        throw new Error(error.error || "Failed to create checkout session");
       }
 
       const { sessionId } = await response.json();
@@ -75,7 +97,7 @@ export default function PricingSection({
       }
     } catch (error) {
       console.error("Subscription error:", error);
-      alert("Failed to start subscription process. Please try again.");
+      alert(`Failed to start subscription process: ${error}`);
     } finally {
       setIsLoading(false);
     }

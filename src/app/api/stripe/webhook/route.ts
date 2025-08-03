@@ -73,7 +73,8 @@ export async function POST(request: NextRequest) {
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        // Silent ignore - remove the console.log
+        break;
     }
 
     return NextResponse.json({ received: true });
@@ -87,141 +88,262 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
-  const userId = session.metadata?.user_id;
-  const planType = session.metadata?.plan_type;
+  try {
+    const userId = session.metadata?.user_id;
+    const planType = session.metadata?.plan_type;
 
-  if (!userId || !planType || !session.subscription) {
-    console.error("Missing required data in checkout session");
-    return;
+    if (!userId || !planType || !session.subscription) {
+      return;
+    }
+
+    const subscription = (await stripe.subscriptions.retrieve(
+      session.subscription as string
+    )) as any;
+
+    const periodStart =
+      subscription.billing_cycle_anchor || subscription.created;
+    const isAnnual = planType === "annual";
+    const daysToAdd = isAnnual ? 365 : 30;
+    const periodEnd = periodStart + daysToAdd * 24 * 60 * 60;
+
+    const { data, error } = await supabaseAdmin
+      .from("subscriptions")
+      .insert({
+        user_id: userId,
+        status: subscription.status,
+        plan_type: planType,
+        stripe_subscription_id: subscription.id,
+        stripe_customer_id: subscription.customer as string,
+        stripe_price_id: subscription.items.data[0].price.id,
+        current_period_start: new Date(periodStart * 1000).toISOString(),
+        current_period_end: new Date(periodEnd * 1000).toISOString(),
+        cancel_at_period_end: subscription.cancel_at_period_end || false,
+        trial_end: subscription.trial_end
+          ? new Date(subscription.trial_end * 1000).toISOString()
+          : null,
+      })
+      .select();
+
+    if (error) {
+      console.error("Supabase insert error:", error);
+      throw error;
+    }
+
+    const { error: userError } = await supabaseAdmin
+      .from("users")
+      .update({ subscription_status: "premium" })
+      .eq("user_id", userId);
+
+    if (userError) {
+      console.error("Error updating user subscription_status:", userError);
+    }
+  } catch (error) {
+    console.error("Error in handleCheckoutComplete:", error);
+    throw error;
   }
-
-  // Retrieve the subscription to get full details
-  const subscription = await stripe.subscriptions.retrieve(
-    session.subscription as string
-  );
-
-  // Create subscription record
-  await supabaseAdmin.from("subscriptions").insert({
-    user_id: userId,
-    status: subscription.status,
-    plan_type: planType,
-    stripe_subscription_id: subscription.id,
-    stripe_customer_id: subscription.customer as string,
-    stripe_price_id: subscription.items.data[0].price.id,
-    current_period_start: new Date(
-      subscription.current_period_start * 1000
-    ).toISOString(),
-    current_period_end: new Date(
-      subscription.current_period_end * 1000
-    ).toISOString(),
-    cancel_at_period_end: subscription.cancel_at_period_end,
-  });
 }
 
 async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
-  const userId = subscription.metadata?.user_id;
+  try {
+    const userId = subscription.metadata?.user_id;
 
-  if (!userId) {
-    console.error("No user_id in subscription metadata");
-    return;
+    if (!userId) {
+      return;
+    }
+
+    const sub = subscription as any;
+    const planType = sub.metadata?.plan_type || "monthly";
+    const isAnnual = planType === "annual";
+    const periodStart = sub.billing_cycle_anchor || sub.created;
+    const daysToAdd = isAnnual ? 365 : 30;
+    const periodEnd = periodStart + daysToAdd * 24 * 60 * 60;
+
+    const { data, error } = await supabaseAdmin
+      .from("subscriptions")
+      .update({
+        status: subscription.status,
+        current_period_start: new Date(periodStart * 1000).toISOString(),
+        current_period_end: new Date(periodEnd * 1000).toISOString(),
+        cancel_at_period_end: subscription.cancel_at_period_end,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("stripe_subscription_id", subscription.id)
+      .select();
+
+    if (error) {
+      console.error("Supabase update error:", error);
+      throw error;
+    }
+
+    const userStatus =
+      subscription.status === "active" || subscription.status === "trialing"
+        ? "premium"
+        : "free";
+
+    await supabaseAdmin
+      .from("users")
+      .update({ subscription_status: userStatus })
+      .eq("user_id", userId);
+  } catch (error) {
+    console.error("Error in handleSubscriptionUpdate:", error);
+    throw error;
   }
-
-  // Update subscription record
-  await supabaseAdmin
-    .from("subscriptions")
-    .update({
-      status: subscription.status,
-      current_period_start: new Date(
-        subscription.current_period_start * 1000
-      ).toISOString(),
-      current_period_end: new Date(
-        subscription.current_period_end * 1000
-      ).toISOString(),
-      cancel_at_period_end: subscription.cancel_at_period_end,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("stripe_subscription_id", subscription.id);
 }
 
 async function handleSubscriptionCancelled(subscription: Stripe.Subscription) {
-  // Update subscription status to cancelled
-  await supabaseAdmin
-    .from("subscriptions")
-    .update({
-      status: "cancelled",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("stripe_subscription_id", subscription.id);
+  try {
+    const { error } = await supabaseAdmin
+      .from("subscriptions")
+      .update({
+        status: "cancelled",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("stripe_subscription_id", subscription.id);
+
+    if (error) {
+      console.error("Error cancelling subscription:", error);
+      throw error;
+    }
+
+    const userId = subscription.metadata?.user_id;
+    if (userId) {
+      await supabaseAdmin
+        .from("users")
+        .update({ subscription_status: "free" })
+        .eq("user_id", userId);
+    }
+  } catch (error) {
+    console.error("Error in handleSubscriptionCancelled:", error);
+    throw error;
+  }
 }
 
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
-  // Check if this is related to a subscription
-  if (!invoice.subscription || !invoice.customer) return;
+  try {
+    const invoiceData = invoice as any;
 
-  const subscription = await stripe.subscriptions.retrieve(
-    invoice.subscription as string
-  );
+    let subscriptionId = null;
+    let planType = null;
+    let userId = null;
 
-  const userId = subscription.metadata?.user_id;
-  if (!userId) return;
+    if (
+      invoiceData.lines &&
+      invoiceData.lines.data &&
+      invoiceData.lines.data.length > 0
+    ) {
+      const firstLineItem = invoiceData.lines.data[0];
 
-  // Get subscription ID from database
-  const { data: subscriptionData } = await supabaseAdmin
-    .from("subscriptions")
-    .select("id")
-    .eq("stripe_subscription_id", invoice.subscription as string)
-    .single();
+      if (firstLineItem.parent?.subscription_item_details?.subscription) {
+        subscriptionId =
+          firstLineItem.parent.subscription_item_details.subscription;
+      }
 
-  if (!subscriptionData) return;
+      if (firstLineItem.metadata) {
+        userId = firstLineItem.metadata.user_id;
+        planType = firstLineItem.metadata.plan_type;
+      }
+    }
 
-  // Record payment
-  await supabaseAdmin.from("payment_history").insert({
-    user_id: userId,
-    subscription_id: subscriptionData.id,
-    amount: invoice.amount_paid / 100, // Convert from cents
-    currency: invoice.currency.toUpperCase(),
-    status: "succeeded",
-    stripe_invoice_id: invoice.id,
-    stripe_payment_intent_id: invoice.payment_intent as string | null,
-    description: `Payment for ${subscription.metadata?.plan_type} subscription`,
-  });
+    if (!subscriptionId) {
+      return;
+    }
+
+    if (!userId) {
+      const subscription = (await stripe.subscriptions.retrieve(
+        subscriptionId
+      )) as any;
+      userId = subscription.metadata?.user_id;
+      planType = planType || subscription.metadata?.plan_type;
+    }
+
+    if (!userId) {
+      return;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    const { data: subscriptionData } = await supabaseAdmin
+      .from("subscriptions")
+      .select("id")
+      .eq("stripe_subscription_id", subscriptionId)
+      .single();
+
+    const paymentRecord = {
+      user_id: userId,
+      subscription_id: subscriptionData?.id || null,
+      amount: invoice.amount_paid / 100,
+      currency: invoice.currency.toUpperCase(),
+      status: "succeeded" as const,
+      stripe_invoice_id: invoice.id,
+      stripe_payment_intent_id: invoiceData.payment_intent || null,
+      description: `Payment for ${planType || "subscription"} - ${
+        invoiceData.period_start
+          ? new Date(invoiceData.period_start * 1000).toLocaleDateString()
+          : "Initial payment"
+      }`,
+      created_at: invoice.created
+        ? new Date(invoice.created * 1000).toISOString()
+        : new Date().toISOString(),
+    };
+
+    const { error } = await supabaseAdmin
+      .from("payment_history")
+      .insert(paymentRecord);
+
+    if (error) {
+      console.error("Error recording payment:", error);
+      throw error;
+    }
+  } catch (error) {
+    console.error("Error in handlePaymentSucceeded:", error);
+  }
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
-  if (!invoice.subscription || !invoice.customer) return;
+  try {
+    const invoiceData = invoice as any;
+    const subscriptionId = invoiceData.subscription;
 
-  const subscription = await stripe.subscriptions.retrieve(
-    invoice.subscription as string
-  );
+    if (!subscriptionId || !invoice.customer) return;
 
-  const userId = subscription.metadata?.user_id;
-  if (!userId) return;
+    const subscription = (await stripe.subscriptions.retrieve(
+      subscriptionId
+    )) as any;
+    const userId = subscription.metadata?.user_id;
 
-  // Update subscription status to past_due
-  await supabaseAdmin
-    .from("subscriptions")
-    .update({
-      status: "past_due",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("stripe_subscription_id", invoice.subscription as string);
+    if (!userId) return;
 
-  // Record failed payment
-  const { data: subscriptionData } = await supabaseAdmin
-    .from("subscriptions")
-    .select("id")
-    .eq("stripe_subscription_id", invoice.subscription as string)
-    .single();
+    await supabaseAdmin
+      .from("subscriptions")
+      .update({
+        status: "past_due",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("stripe_subscription_id", subscriptionId);
 
-  if (subscriptionData) {
-    await supabaseAdmin.from("payment_history").insert({
-      user_id: userId,
-      subscription_id: subscriptionData.id,
-      amount: invoice.amount_due / 100,
-      currency: invoice.currency.toUpperCase(),
-      status: "failed",
-      stripe_invoice_id: invoice.id,
-      description: `Failed payment for subscription`,
-    });
+    await supabaseAdmin
+      .from("users")
+      .update({ subscription_status: "free" })
+      .eq("user_id", userId);
+
+    const { data: subscriptionData } = await supabaseAdmin
+      .from("subscriptions")
+      .select("id")
+      .eq("stripe_subscription_id", subscriptionId)
+      .single();
+
+    if (subscriptionData) {
+      await supabaseAdmin.from("payment_history").insert({
+        user_id: userId,
+        subscription_id: subscriptionData.id,
+        amount: invoice.amount_due / 100,
+        currency: invoice.currency.toUpperCase(),
+        status: "failed",
+        stripe_invoice_id: invoice.id,
+        description: `Failed payment for subscription`,
+      });
+    }
+  } catch (error) {
+    console.error("Error in handlePaymentFailed:", error);
   }
 }

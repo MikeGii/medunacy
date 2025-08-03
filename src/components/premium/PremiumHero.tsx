@@ -1,6 +1,7 @@
 // src/components/premium/PremiumHero.tsx
 "use client";
 
+import { supabase } from "@/lib/supabase";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
@@ -66,7 +67,9 @@ export default function PremiumHero({ isPremium }: PremiumHeroProps) {
             <button
               onClick={() => {
                 // Scroll to pricing section
-                document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+                document
+                  .getElementById("pricing")
+                  ?.scrollIntoView({ behavior: "smooth" });
               }}
               className="inline-flex items-center px-8 py-4 text-lg font-semibold text-white 
                        bg-gradient-to-r from-yellow-500 to-amber-600 rounded-full 
@@ -108,7 +111,9 @@ export default function PremiumHero({ isPremium }: PremiumHeroProps) {
                   />
                 </svg>
               </div>
-              <h3 className="font-semibold text-gray-800">{t("unlimited_access")}</h3>
+              <h3 className="font-semibold text-gray-800">
+                {t("unlimited_access")}
+              </h3>
             </div>
 
             <div className="text-center">
@@ -127,7 +132,9 @@ export default function PremiumHero({ isPremium }: PremiumHeroProps) {
                   />
                 </svg>
               </div>
-              <h3 className="font-semibold text-gray-800">{t("premium_content")}</h3>
+              <h3 className="font-semibold text-gray-800">
+                {t("premium_content")}
+              </h3>
             </div>
 
             <div className="text-center">
@@ -146,7 +153,9 @@ export default function PremiumHero({ isPremium }: PremiumHeroProps) {
                   />
                 </svg>
               </div>
-              <h3 className="font-semibold text-gray-800">{t("priority_support")}</h3>
+              <h3 className="font-semibold text-gray-800">
+                {t("priority_support")}
+              </h3>
             </div>
           </div>
         </div>

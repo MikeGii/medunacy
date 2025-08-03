@@ -14,19 +14,21 @@ import ComparisonTable from "./ComparisonTable";
 
 export default function PremiumPage() {
   const t = useTranslations("premium");
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { isPremium } = useSubscription();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading for smooth transition
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!loading) {
+      // Only set loading false when auth is loaded
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
 
-  if (isLoading) {
+  if (isLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA] flex items-center justify-center">
         <div className="text-center">
