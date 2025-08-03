@@ -132,7 +132,9 @@ export default function CoursesTableView({
                     className="px-3 py-1.5 bg-yellow-500 text-white text-sm font-medium rounded-lg hover:bg-yellow-600 transition-colors whitespace-nowrap w-full sm:w-auto"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setShowPremiumModal(true);
+                      const pathname = window.location.pathname;
+                      const locale = pathname.startsWith("/ukr") ? "ukr" : "et";
+                      window.location.href = `/${locale}/premium`;
                     }}
                   >
                     {t("upgrade_to_premium")}
@@ -453,8 +455,8 @@ export default function CoursesTableView({
 
       {/* Premium Modal */}
       {showPremiumModal && (
-        <div className="fixed inset-0 bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+        <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl">
             <div className="text-center">
               <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
@@ -480,8 +482,9 @@ export default function CoursesTableView({
                 </button>
                 <button
                   onClick={() => {
-                    // Later this will redirect to payment page
-                    setShowPremiumModal(false);
+                    const pathname = window.location.pathname;
+                    const locale = pathname.startsWith("/ukr") ? "ukr" : "et";
+                    window.location.href = `/${locale}/premium`;
                   }}
                   className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
                 >
