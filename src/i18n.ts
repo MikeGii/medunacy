@@ -24,6 +24,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
       "courses",
       "admin",
       "privacy",
+      "premium",
     ];
     const messages: Record<string, any> = {};
 
