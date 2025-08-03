@@ -317,7 +317,7 @@ export default function ExamTestsPage() {
                         {(limits.trainingUsed >= limits.trainingLimit ||
                           limits.examUsed >= limits.examLimit) && (
                           <button
-                            onClick={() => setShowPremiumModal(true)}
+                            onClick={() => router.push(`/${locale}/premium`)}
                             className="mt-2 text-xs text-yellow-600 hover:text-yellow-700 font-medium w-full"
                           >
                             {t("daily_limits.upgrade_for_unlimited")}
@@ -778,8 +778,8 @@ export default function ExamTestsPage() {
 
         {/* Premium Modal */}
         {showPremiumModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl p-6 max-w-md w-full">
+          <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl">
               <div className="text-center">
                 <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg
@@ -805,8 +805,7 @@ export default function ExamTestsPage() {
                   </button>
                   <button
                     onClick={() => {
-                      // Later this will redirect to payment page
-                      setShowPremiumModal(false);
+                      router.push(`/${locale}/premium`);
                     }}
                     className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
                   >

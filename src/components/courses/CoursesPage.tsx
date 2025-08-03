@@ -15,6 +15,8 @@ import CoursesTableView from "./CoursesTableView";
 import CoursesFilters from "./CoursesFilters";
 import CourseTabs from "./CourseTabs";
 import { useCourseAccess } from "@/hooks/useCourseAccess";
+import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 
 function CoursesPageContent() {
   const t = useTranslations("courses");
@@ -28,6 +30,9 @@ function CoursesPageContent() {
   const [categories, setCategories] = useState<CourseCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();
+  const locale = useLocale();
 
   const { checkCourseAccess } = useCourseAccess();
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -232,8 +237,8 @@ function CoursesPageContent() {
 
       {/* ADD THE PREMIUM MODAL HERE - before the closing div */}
       {showPremiumModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+        <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl">
             <div className="text-center">
               <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
@@ -259,8 +264,7 @@ function CoursesPageContent() {
                 </button>
                 <button
                   onClick={() => {
-                    // Later this will redirect to payment page
-                    setShowPremiumModal(false);
+                    router.push(`/${locale}/premium`);
                   }}
                   className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
                 >
