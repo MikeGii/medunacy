@@ -18,6 +18,7 @@
     "push": "npm run pre-push && echo 'All checks passed! Use git push to continue'"
   },
   "dependencies": {
+    "@stripe/stripe-js": "^7.8.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.52.0",
@@ -27,7 +28,8 @@
     "next": "15.4.2",
     "next-intl": "^4.3.4",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "stripe": "^18.4.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

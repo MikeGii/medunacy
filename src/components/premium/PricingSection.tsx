@@ -4,6 +4,8 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { User } from "@supabase/supabase-js";
+import { getStripe } from "@/lib/stripe";
+import { useRouter } from "next/navigation";
 
 interface PricingSectionProps {
   user: User | null;
@@ -15,6 +17,7 @@ export default function PricingSection({
   isPremium,
 }: PricingSectionProps) {
   const t = useTranslations("premium");
+  const router = useRouter();
   const [isAnnual, setIsAnnual] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -35,11 +38,44 @@ export default function PricingSection({
 
     setIsLoading(true);
     try {
-      // TODO: Implement payment integration
-      console.log("Subscribing to:", isAnnual ? "annual" : "monthly");
-      alert(t("payment_coming_soon"));
+      // Get the appropriate price ID from environment variables
+      const priceId = isAnnual
+        ? process.env.NEXT_PUBLIC_STRIPE_PRICE_ANNUAL
+        : process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY;
+
+      // Create checkout session
+      const response = await fetch("/api/stripe/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          priceId,
+          planType: isAnnual ? "annual" : "monthly",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create checkout session");
+      }
+
+      const { sessionId } = await response.json();
+
+      // Redirect to Stripe Checkout
+      const stripe = await getStripe();
+      if (!stripe) {
+        throw new Error("Stripe not initialized");
+      }
+
+      const { error } = await stripe.redirectToCheckout({ sessionId });
+
+      if (error) {
+        console.error("Stripe redirect error:", error);
+        throw error;
+      }
     } catch (error) {
       console.error("Subscription error:", error);
+      alert("Failed to start subscription process. Please try again.");
     } finally {
       setIsLoading(false);
     }
