@@ -33,7 +33,8 @@
     "sign_out": "Logi välja",
     "admin": "Medunacy admin",
     "doctor": "Medunacy arst",
-    "member": "Medunacy liige"
+    "member": "Medunacy liige",
+    "premium": "Premium"
   },
   "footer": {
     "description": "Medunacy - Teie usaldusväärne partner tervishoiutöötajate toetamisel Eestis. Pakume eksamiteste, õppematerjale ja kogukonna tuge.",
