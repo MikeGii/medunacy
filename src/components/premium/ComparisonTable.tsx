@@ -91,7 +91,7 @@ export default function ComparisonTable() {
         </div>
 
         {/* Comparison Table */}
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full min-w-[640px]">
             <thead>
               <tr>
