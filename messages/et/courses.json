@@ -7,6 +7,8 @@
     "premium_required_message": "See koolitus on saadaval ainult Premium kasutajatele. Uuenda oma kontot, et saada ligipääs kõikidele koolitustele.",
     "close": "Sulge",
     "upgrade_to_premium": "Uuenda Premium'iks",
+    "premium_courses_title": "Premium koolitused",
+    "premium_courses_subtitle": "Uuenda oma kontot, et pääseda ligi eksklusiivsele sisule",
     "tabs": {
       "upcoming": "Tulevased",
       "past": "Toimunud",
@@ -24,6 +26,17 @@
       "category": "Kategooria",
       "enrolled_count": "{count} registreerunud",
       "description": "Kirjeldus"
+    },
+    "table": {
+      "name": "Koolituse nimi",
+      "status": "Staatus",
+      "until": "kuni",
+      "view_details": "Vaata detaile",
+      "enrolled": "Registreeritud"
+    },
+    "counts": {
+      "course": "koolitus",
+      "courses": "koolitust"
     },
     "location_types": {
       "online": "E-koolitus",

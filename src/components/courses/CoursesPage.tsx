@@ -11,7 +11,7 @@ import { Course, CourseCategory, CourseEnrollment } from "@/types/course.types";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "../layout/Header";
 import { AuthModalProvider } from "@/contexts/AuthModalContext";
-import CoursesList from "./CoursesList";
+import CoursesTableView from "./CoursesTableView";
 import CoursesFilters from "./CoursesFilters";
 import CourseTabs from "./CourseTabs";
 import { useCourseAccess } from "@/hooks/useCourseAccess";
@@ -92,18 +92,6 @@ function CoursesPageContent() {
 
   // Handle enrollment actions
   const handleEnroll = async (courseId: string) => {
-    const course = courses.find((c) => c.id === courseId);
-    if (!course) return { success: false, error: "Course not found" };
-
-    // Check premium access
-    const { canAccess, needsPremium } = checkCourseAccess(course);
-
-    if (!canAccess) {
-      setSelectedPremiumCourse(course);
-      setShowPremiumModal(true);
-      return { success: false, error: "Premium subscription required" };
-    }
-
     try {
       const { enrollInCourse } = await import("@/lib/courses");
       await enrollInCourse(courseId);
@@ -232,8 +220,9 @@ function CoursesPageContent() {
             {t("error")}
           </div>
         ) : (
-          <CoursesList
+          <CoursesTableView
             courses={filteredCourses}
+            categories={categories}
             activeTab={activeTab}
             onEnroll={handleEnroll}
             onUnenroll={handleUnenroll}

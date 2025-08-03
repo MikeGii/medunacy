@@ -75,7 +75,7 @@ export default function CourseDetailsModal({
       <div className="flex min-h-full items-center justify-center p-4">
         {/* Backdrop */}
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+          className="fixed inset-0 bg-opacity-20 backdrop-blur-sm"
           onClick={onClose}
         />
 
