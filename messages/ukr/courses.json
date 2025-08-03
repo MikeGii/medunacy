@@ -2,6 +2,13 @@
   "courses": {
     "title": "Навчання",
     "description": "Реєструйтесь на медичні тренінги та курси",
+    "premium": "Преміум",
+    "premium_required_title": "Потрібна преміум підписка",
+    "premium_required_message": "Цей курс доступний лише для преміум користувачів. Оновіть свій обліковий запис, щоб отримати доступ до всіх курсів.",
+    "close": "Закрити",
+    "upgrade_to_premium": "Оновити до преміум",
+    "premium_courses_title": "Преміум курси",
+    "premium_courses_subtitle": "Оновіть свій обліковий запис, щоб отримати доступ до ексклюзивного контенту",
     "tabs": {
       "upcoming": "Майбутні",
       "past": "Завершені",
@@ -19,6 +26,17 @@
       "category": "Категорія",
       "enrolled_count": "{count} зареєстровано",
       "description": "Опис"
+    },
+    "table": {
+      "name": "Назва курсу",
+      "status": "Статус",
+      "until": "до",
+      "view_details": "Детальніше",
+      "enrolled": "Зареєстровано"
+    },
+    "counts": {
+      "course": "курс",
+      "courses": "курсів"
     },
     "location_types": {
       "online": "Онлайн",
@@ -91,7 +109,9 @@
         "course_type": "Вартість",
         "category_name_et": "Назва категорії (естонська)",
         "category_name_uk": "Назва категорії (українська)",
-        "category_name_placeholder": "Введіть назву категорії"
+        "category_name_placeholder": "Введіть назву категорії",
+        "premium_course": "Преміум курс",
+        "premium_course_description": "Зробити цей курс доступним лише для преміум користувачів"
       },
       "validation": {
         "name_required": "Назва курсу є обов'язковою",

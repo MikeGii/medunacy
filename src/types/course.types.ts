@@ -15,13 +15,14 @@ export interface Course {
   category_id: string | null;
   start_date: string;
   end_date: string | null;
-  location_type: 'online' | 'hybrid' | 'in_person';
-  course_type: 'paid' | 'free';
+  location_type: "online" | "hybrid" | "in_person";
+  course_type: "paid" | "free";
   created_at: string;
   updated_at: string;
   created_by: string | null;
+  is_premium: boolean;
   // Computed field
-  status?: 'upcoming' | 'past';
+  status?: "upcoming" | "past";
   // Joined data
   category?: CourseCategory;
   enrollment_count?: number;
@@ -43,5 +44,18 @@ export interface CourseEnrollment {
   };
 }
 
-export type CourseFormData = Omit<Course, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'status' | 'category' | 'enrollment_count' | 'is_enrolled'>;
-export type CategoryFormData = Omit<CourseCategory, 'id' | 'created_at' | 'created_by'>;
+export type CourseFormData = Omit<
+  Course,
+  | "id"
+  | "created_at"
+  | "updated_at"
+  | "created_by"
+  | "status"
+  | "category"
+  | "enrollment_count"
+  | "is_enrolled"
+>;
+export type CategoryFormData = Omit<
+  CourseCategory,
+  "id" | "created_at" | "created_by"
+>;

@@ -39,6 +39,7 @@ export default function CourseForm({
     end_date: "",
     location_type: "in_person" as "online" | "hybrid" | "in_person",
     course_type: "free" as "paid" | "free",
+    is_premium: false,
   });
 
   useEffect(() => {
@@ -52,6 +53,7 @@ export default function CourseForm({
         end_date: course.end_date || "",
         location_type: course.location_type,
         course_type: course.course_type,
+        is_premium: course.is_premium || false,
       });
     }
   }, [course]);
@@ -222,6 +224,32 @@ export default function CourseForm({
               <option value="free">{tCourses("course_types.free")}</option>
               <option value="paid">{tCourses("course_types.paid")}</option>
             </select>
+          </div>
+        </div>
+
+        {/* Premium Course Toggle */}
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <div className="flex items-start">
+            <input
+              type="checkbox"
+              id="is_premium"
+              checked={formData.is_premium}
+              onChange={(e) =>
+                setFormData({ ...formData, is_premium: e.target.checked })
+              }
+              className="w-4 h-4 mt-0.5 text-[#118B50] bg-white border-gray-300 rounded focus:ring-[#118B50] focus:ring-2"
+            />
+            <div className="ml-3">
+              <label
+                htmlFor="is_premium"
+                className="text-sm font-medium text-gray-700"
+              >
+                {t("fields.premium_course")}
+              </label>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {t("fields.premium_course_description")}
+              </p>
+            </div>
           </div>
         </div>
 

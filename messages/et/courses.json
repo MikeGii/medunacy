@@ -2,6 +2,13 @@
   "courses": {
     "title": "Koolitused",
     "description": "Registreeru meditsiinilistele koolitustele ja kursustele",
+    "premium": "Premium",
+    "premium_required_title": "Premium tellimus on vajalik",
+    "premium_required_message": "See koolitus on saadaval ainult Premium kasutajatele. Uuenda oma kontot, et saada ligipääs kõikidele koolitustele.",
+    "close": "Sulge",
+    "upgrade_to_premium": "Uuenda Premium'iks",
+    "premium_courses_title": "Premium koolitused",
+    "premium_courses_subtitle": "Uuenda oma kontot, et pääseda ligi eksklusiivsele sisule",
     "tabs": {
       "upcoming": "Tulevased",
       "past": "Toimunud",
@@ -19,6 +26,17 @@
       "category": "Kategooria",
       "enrolled_count": "{count} registreerunud",
       "description": "Kirjeldus"
+    },
+    "table": {
+      "name": "Koolituse nimi",
+      "status": "Staatus",
+      "until": "kuni",
+      "view_details": "Vaata detaile",
+      "enrolled": "Registreeritud"
+    },
+    "counts": {
+      "course": "koolitus",
+      "courses": "koolitust"
     },
     "location_types": {
       "online": "E-koolitus",
@@ -91,7 +109,9 @@
         "course_type": "Maksumus",
         "category_name_et": "Kategooria nimi (eesti)",
         "category_name_uk": "Kategooria nimi (ukraina)",
-        "category_name_placeholder": "Sisesta kategooria nimi"
+        "category_name_placeholder": "Sisesta kategooria nimi",
+        "premium_course": "Premium koolitus",
+        "premium_course_description": "Märgi see koolitus Premium kasutajatele kättesaadavaks"
       },
       "validation": {
         "name_required": "Koolituse nimi on kohustuslik",
