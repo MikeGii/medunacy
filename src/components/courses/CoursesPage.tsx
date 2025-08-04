@@ -17,6 +17,7 @@ import CourseTabs from "./CourseTabs";
 import { useCourseAccess } from "@/hooks/useCourseAccess";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
+import { supabase } from "@/lib/supabase";
 
 function CoursesPageContent() {
   const t = useTranslations("courses");
@@ -43,22 +44,62 @@ function CoursesPageContent() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        // ADD THIS: Check session before fetching
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
+        if (sessionError) {
+          console.error("Session error in fetchCategories:", sessionError);
+          return;
+        }
+
+        if (!session) {
+          console.log("No session in fetchCategories - waiting for auth");
+          return;
+        }
+
+        // EXISTING CODE continues here
         const data = await getCourseCategories();
         setCategories(data);
       } catch (err) {
         console.error("Error fetching categories:", err);
       }
     };
+
     fetchCategories();
   }, []);
 
   // Fetch courses based on active tab
   const fetchCourses = useCallback(async () => {
-    if (!user) return;
+    // Don't just check for user, also ensure session is ready
+    if (!user) {
+      console.log("No user in fetchCourses - waiting for auth");
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
       setError(null);
+
+      // ADD THIS: Verify session before fetching
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        console.error("Session error in fetchCourses:", sessionError);
+        throw new Error("Authentication error");
+      }
+
+      if (!session) {
+        console.log("No session in fetchCourses - auth not ready");
+        setLoading(false);
+        return;
+      }
 
       let coursesData: Course[] = [];
 

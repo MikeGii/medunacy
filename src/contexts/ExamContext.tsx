@@ -177,6 +177,25 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
+      // ADD THIS BLOCK: Wait for auth session
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        console.error("Session error in fetchCategories:", sessionError);
+        throw new Error("Authentication error");
+      }
+
+      if (!session) {
+        console.log("No session in fetchCategories - waiting for auth");
+        // Don't throw error, just return - this prevents endless loading
+        setLoading(false);
+        return;
+      }
+
+      // EXISTING CODE continues here
       const { data, error: fetchError } = await supabase
         .from("test_categories")
         .select("*")
@@ -211,6 +230,25 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         setLoading(true);
         setError(null);
 
+        // ADD THIS BLOCK: Wait for auth session
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
+        if (sessionError) {
+          console.error("Session error in fetchTests:", sessionError);
+          throw new Error("Authentication error");
+        }
+
+        if (!session) {
+          console.log("No session in fetchTests - waiting for auth");
+          // Don't throw error, just return - this prevents endless loading
+          setLoading(false);
+          return;
+        }
+
+        // EXISTING CODE continues here
         let query = supabase
           .from("tests")
           .select(
@@ -241,7 +279,6 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
 
         if (isMounted()) {
           setTests(enrichedTests);
-
           // Update cache with new tests
           enrichedTests.forEach((test) => {
             addToCache(test);
