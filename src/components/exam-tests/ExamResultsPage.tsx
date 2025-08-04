@@ -112,9 +112,7 @@ export default function ExamResultsPage({ sessionId }: ExamResultsPageProps) {
                   {t("back_to_tests")}
                 </button>
                 <button
-                  onClick={() =>
-                    router.push(`/${locale}/exam-tests/${results.test.id}`)
-                  }
+                  onClick={() => router.push(`/${locale}/exam-tests`)}
                   className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-all duration-300 transform hover:scale-105"
                 >
                   {t("retake_test")}
