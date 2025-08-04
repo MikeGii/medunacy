@@ -2,7 +2,7 @@
 
 "use client";
 
-import { memo, useMemo, useCallback, useState, useEffect } from "react";
+import { memo, useMemo, useCallback } from "react";
 import { TestQuestion } from "@/types/exam";
 import { useTranslations } from "next-intl";
 
@@ -27,20 +27,6 @@ const ExamQuestion = memo(
     questionNumber,
   }: ExamQuestionProps) => {
     const t = useTranslations("exam_tests");
-    const [isMobile, setIsMobile] = useState(false);
-    const [expandedOptions, setExpandedOptions] = useState<Set<string>>(
-      new Set()
-    );
-
-    // Check if mobile
-    useEffect(() => {
-      const checkMobile = () => {
-        setIsMobile(window.innerWidth < 768);
-      };
-      checkMobile();
-      window.addEventListener("resize", checkMobile);
-      return () => window.removeEventListener("resize", checkMobile);
-    }, []);
 
     // Memoize expensive calculations
     const hasMultipleCorrect = useMemo(
@@ -88,18 +74,6 @@ const ExamQuestion = memo(
       },
       [onToggleMarkForReview]
     );
-
-    const toggleOptionExpand = useCallback((optionId: string) => {
-      setExpandedOptions((prev) => {
-        const newSet = new Set(prev);
-        if (newSet.has(optionId)) {
-          newSet.delete(optionId);
-        } else {
-          newSet.add(optionId);
-        }
-        return newSet;
-      });
-    }, []);
 
     return (
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
@@ -177,9 +151,6 @@ const ExamQuestion = memo(
                 isCorrect={correctOptionIds.has(option.id)}
                 showCorrectAnswers={showCorrectAnswers}
                 onClick={handleOptionClick(option.id)}
-                isMobile={isMobile}
-                isExpanded={expandedOptions.has(option.id)}
-                onToggleExpand={() => toggleOptionExpand(option.id)}
               />
             ))}
           </div>
@@ -217,9 +188,6 @@ const OptionButton = memo(
     isCorrect,
     showCorrectAnswers,
     onClick,
-    isMobile,
-    isExpanded,
-    onToggleExpand,
   }: {
     option: { id: string; option_text: string };
     index: number;
@@ -227,17 +195,8 @@ const OptionButton = memo(
     isCorrect: boolean;
     showCorrectAnswers: boolean;
     onClick: (e: React.MouseEvent) => void;
-    isMobile: boolean;
-    isExpanded: boolean;
-    onToggleExpand: () => void;
   }) => {
     const t = useTranslations("exam_tests");
-
-    const isLongText = option.option_text.length > 100;
-    const shouldTruncate = isMobile && isLongText && !isExpanded;
-    const displayText = shouldTruncate
-      ? option.option_text.substring(0, 100) + "..."
-      : option.option_text;
 
     // Calculate styles only when dependencies change
     const { containerClass, labelClass, showAsCorrect, showAsIncorrect } =
@@ -287,23 +246,10 @@ const OptionButton = memo(
             <p
               className={`${
                 isSelected || showAsCorrect ? "font-medium" : ""
-              } text-sm md:text-base text-gray-900`}
+              } text-sm md:text-base text-gray-900 break-words`}
             >
-              {displayText}
+              {option.option_text}
             </p>
-
-            {/* Show More/Less for Mobile */}
-            {isMobile && isLongText && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleExpand();
-                }}
-                className="text-sm text-blue-600 hover:text-blue-800 mt-1 underline"
-              >
-                {isExpanded ? t("show_less") : t("show_more")}
-              </button>
-            )}
 
             {/* Only show correct/incorrect indicators when showCorrectAnswers is true */}
             {showCorrectAnswers && (
