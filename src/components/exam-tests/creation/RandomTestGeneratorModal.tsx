@@ -24,7 +24,7 @@ export default function RandomTestGeneratorModal({
   onCancel,
 }: RandomTestGeneratorModalProps) {
   const t = useTranslations("test_creation");
-  const { tests, categories, fetchTests } = useExam();
+  const { tests, categories, fetchTests, fetchCategories } = useExam();
   const [loading, setLoading] = useState(false);
   const [fetchingTests, setFetchingTests] = useState(true);
 
@@ -67,6 +67,20 @@ export default function RandomTestGeneratorModal({
     );
     setAvailableTests(filtered);
   }, [tests, currentTestId, selectedCategoryIds]);
+
+  useEffect(() => {
+    // Fetch categories if not already loaded
+    if (categories.length === 0 && !fetchingTests) {
+      const loadCategories = async () => {
+        try {
+          await fetchCategories();
+        } catch (error) {
+          console.error("Error fetching categories:", error);
+        }
+      };
+      loadCategories();
+    }
+  }, [categories.length, fetchCategories, fetchingTests]);
 
   // Calculate total available questions
   const totalAvailableQuestions = availableTests
