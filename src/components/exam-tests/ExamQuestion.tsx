@@ -1,8 +1,8 @@
-// src/components/exam-tests/ExamQuestion.tsx - OPTIMIZED VERSION
+// src/components/exam-tests/ExamQuestion.tsx
 
 "use client";
 
-import { memo, useMemo, useCallback } from "react";
+import { memo, useMemo, useCallback, useState, useEffect } from "react";
 import { TestQuestion } from "@/types/exam";
 import { useTranslations } from "next-intl";
 
@@ -27,6 +27,20 @@ const ExamQuestion = memo(
     questionNumber,
   }: ExamQuestionProps) => {
     const t = useTranslations("exam_tests");
+    const [isMobile, setIsMobile] = useState(false);
+    const [expandedOptions, setExpandedOptions] = useState<Set<string>>(
+      new Set()
+    );
+
+    // Check if mobile
+    useEffect(() => {
+      const checkMobile = () => {
+        setIsMobile(window.innerWidth < 768);
+      };
+      checkMobile();
+      window.addEventListener("resize", checkMobile);
+      return () => window.removeEventListener("resize", checkMobile);
+    }, []);
 
     // Memoize expensive calculations
     const hasMultipleCorrect = useMemo(
@@ -75,13 +89,25 @@ const ExamQuestion = memo(
       [onToggleMarkForReview]
     );
 
+    const toggleOptionExpand = useCallback((optionId: string) => {
+      setExpandedOptions((prev) => {
+        const newSet = new Set(prev);
+        if (newSet.has(optionId)) {
+          newSet.delete(optionId);
+        } else {
+          newSet.add(optionId);
+        }
+        return newSet;
+      });
+    }, []);
+
     return (
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         {/* Question Header */}
-        <div className="bg-gradient-to-r from-[#118B50] to-[#5DB996] p-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="flex items-center space-x-3">
+        <div className="bg-gradient-to-r from-[#118B50] to-[#5DB996] p-4 md:p-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
                 <span className="text-white/80 text-sm font-medium">
                   {t("question")} {questionNumber}
                 </span>
@@ -91,21 +117,21 @@ const ExamQuestion = memo(
                 </span>
                 {hasMultipleCorrect && (
                   <>
-                    <span className="text-white/60">•</span>
+                    <span className="text-white/60 hidden sm:inline">•</span>
                     <span className="bg-white/20 text-white text-xs px-2 py-1 rounded-full">
                       {t("multiple_answers_allowed")}
                     </span>
                   </>
                 )}
               </div>
-              <h2 className="text-xl font-semibold text-white mt-2">
+              <h2 className="text-lg md:text-xl font-semibold text-white">
                 {question.question_text}
               </h2>
             </div>
 
             <button
               onClick={handleMarkForReview}
-              className={`p-3 rounded-lg transition-all ${
+              className={`p-2 sm:p-3 rounded-lg transition-all self-end sm:self-auto ${
                 isMarkedForReview
                   ? "bg-yellow-400 text-yellow-900 hover:bg-yellow-300"
                   : "bg-white/20 text-white hover:bg-white/30"
@@ -139,7 +165,7 @@ const ExamQuestion = memo(
         </div>
 
         {/* Question Body */}
-        <div className="p-6">
+        <div className="p-4 md:p-6">
           {/* Options */}
           <div className="space-y-3">
             {question.options.map((option, index) => (
@@ -151,6 +177,9 @@ const ExamQuestion = memo(
                 isCorrect={correctOptionIds.has(option.id)}
                 showCorrectAnswers={showCorrectAnswers}
                 onClick={handleOptionClick(option.id)}
+                isMobile={isMobile}
+                isExpanded={expandedOptions.has(option.id)}
+                onToggleExpand={() => toggleOptionExpand(option.id)}
               />
             ))}
           </div>
@@ -188,6 +217,9 @@ const OptionButton = memo(
     isCorrect,
     showCorrectAnswers,
     onClick,
+    isMobile,
+    isExpanded,
+    onToggleExpand,
   }: {
     option: { id: string; option_text: string };
     index: number;
@@ -195,8 +227,17 @@ const OptionButton = memo(
     isCorrect: boolean;
     showCorrectAnswers: boolean;
     onClick: (e: React.MouseEvent) => void;
+    isMobile: boolean;
+    isExpanded: boolean;
+    onToggleExpand: () => void;
   }) => {
     const t = useTranslations("exam_tests");
+
+    const isLongText = option.option_text.length > 100;
+    const shouldTruncate = isMobile && isLongText && !isExpanded;
+    const displayText = shouldTruncate
+      ? option.option_text.substring(0, 100) + "..."
+      : option.option_text;
 
     // Calculate styles only when dependencies change
     const { containerClass, labelClass, showAsCorrect, showAsIncorrect } =
@@ -205,9 +246,9 @@ const OptionButton = memo(
         const showAsIncorrect = showCorrectAnswers && isSelected && !isCorrect;
 
         let containerClass =
-          "w-full text-left p-4 rounded-xl border-2 transition-all transform hover:scale-[1.01] ";
+          "w-full text-left p-3 md:p-4 rounded-xl border-2 transition-all transform hover:scale-[1.01] ";
         let labelClass =
-          "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-medium ";
+          "flex-shrink-0 w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center font-medium text-sm md:text-base ";
 
         if (isSelected) {
           if (showAsIncorrect) {
@@ -246,15 +287,29 @@ const OptionButton = memo(
             <p
               className={`${
                 isSelected || showAsCorrect ? "font-medium" : ""
-              } text-gray-900`}
+              } text-sm md:text-base text-gray-900`}
             >
-              {option.option_text}
+              {displayText}
             </p>
+
+            {/* Show More/Less for Mobile */}
+            {isMobile && isLongText && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleExpand();
+                }}
+                className="text-sm text-blue-600 hover:text-blue-800 mt-1 underline"
+              >
+                {isExpanded ? t("show_less") : t("show_more")}
+              </button>
+            )}
+
             {/* Only show correct/incorrect indicators when showCorrectAnswers is true */}
             {showCorrectAnswers && (
               <div className="mt-1">
                 {isCorrect && (
-                  <span className="text-green-600 text-sm flex items-center">
+                  <span className="text-green-600 text-xs md:text-sm flex items-center">
                     <svg
                       className="w-4 h-4 mr-1"
                       fill="currentColor"
@@ -270,7 +325,7 @@ const OptionButton = memo(
                   </span>
                 )}
                 {isSelected && !isCorrect && (
-                  <span className="text-red-600 text-sm flex items-center">
+                  <span className="text-red-600 text-xs md:text-sm flex items-center">
                     <svg
                       className="w-4 h-4 mr-1"
                       fill="currentColor"
@@ -299,7 +354,7 @@ const ExplanationBox = memo(({ explanation }: { explanation: string }) => {
   const t = useTranslations("exam_tests");
 
   return (
-    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+    <div className="mt-4 md:mt-6 p-3 md:p-4 bg-blue-50 border border-blue-200 rounded-xl">
       <div className="flex items-start space-x-2">
         <svg
           className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"
@@ -313,8 +368,10 @@ const ExplanationBox = memo(({ explanation }: { explanation: string }) => {
           />
         </svg>
         <div>
-          <h4 className="font-medium text-blue-900 mb-1">{t("explanation")}</h4>
-          <p className="text-blue-800">{explanation}</p>
+          <h4 className="font-medium text-blue-900 mb-1 text-sm md:text-base">
+            {t("explanation")}
+          </h4>
+          <p className="text-blue-800 text-sm md:text-base">{explanation}</p>
         </div>
       </div>
     </div>

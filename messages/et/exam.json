@@ -54,6 +54,9 @@
     "premium_required_message": "See test on saadaval ainult Premium kasutajatele. Uuenda oma kontot, et saada ligipääs kõikidele testidele.",
     "close": "Sulge",
     "upgrade_to_premium": "Uuenda Premium'iks",
+    "show_more": "Näita rohkem",
+    "show_less": "Näita vähem",
+    "jump_to": "Mine küsimusele",
     "subscription": {
       "free": "Tasuta kasutaja",
       "premium": "Premium kasutaja",

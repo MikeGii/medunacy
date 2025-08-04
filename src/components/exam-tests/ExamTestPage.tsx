@@ -1,4 +1,4 @@
-// src/components/exam-tests/ExamTestPage.tsx - REFACTORED
+// src/components/exam-tests/ExamTestPage.tsx
 
 "use client";
 
@@ -142,20 +142,20 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
 
   return (
     <ExamErrorBoundary>
-      <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA]">
+      <div className="min-h-screen bg-gradient-to-br from-[#FBF6E9] via-white to-[#F8F9FA] pb-20 md:pb-0">
         {/* Header Bar */}
         <div className="bg-white shadow-md sticky top-0 z-40">
-          <div className="max-w-6xl mx-auto px-4 py-4">
+          <div className="max-w-6xl mx-auto px-4 py-3 md:py-4">
             <div className="flex items-center justify-between">
               {/* Left Section - Test Info */}
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 md:space-x-4 flex-1">
                 <button
                   onClick={() => setShowExitConfirm(true)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-1.5 md:p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   title={t("exit_exam")}
                 >
                   <svg
-                    className="w-6 h-6 text-gray-600"
+                    className="w-5 h-5 md:w-6 md:h-6 text-gray-600"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -169,13 +169,13 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
                   </svg>
                 </button>
 
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <h1 className="text-lg font-semibold text-gray-900">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                    <h1 className="text-sm md:text-lg font-semibold text-gray-900 truncate">
                       {sessionState.test.title}
                     </h1>
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      className={`px-2 py-0.5 md:py-1 rounded-full text-xs font-medium inline-block mt-1 sm:mt-0 ${
                         mode === "exam"
                           ? "bg-red-100 text-red-800"
                           : "bg-blue-100 text-blue-800"
@@ -184,15 +184,15 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
                       {mode === "exam" ? t("exam_mode") : t("training_mode")}
                     </span>
                   </div>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-xs md:text-sm text-gray-600">
                     {t("question")} {progress.current + 1} {t("of")}{" "}
                     {progress.total}
                   </div>
                 </div>
               </div>
 
-              {/* Center Section - Progress */}
-              <div className="hidden md:block flex-1 max-w-md mx-8">
+              {/* Center Section - Progress (Desktop Only) */}
+              <div className="hidden lg:block flex-1 max-w-md mx-8">
                 <ExamProgress
                   current={progress.current}
                   total={progress.total}
@@ -202,8 +202,8 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
                 />
               </div>
 
-              {/* Right Section - Timer & Submit */}
-              <div className="flex items-center space-x-4">
+              {/* Right Section - Timer & Submit (Desktop) */}
+              <div className="hidden md:flex items-center space-x-4">
                 {mode === "exam" && sessionState.test.time_limit && (
                   <ExamTimer
                     timeElapsed={timeElapsed}
@@ -214,19 +214,41 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
 
                 <button
                   onClick={handleSubmit}
-                  className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-300 shadow-lg"
+                  className="px-4 lg:px-6 py-2 lg:py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-300 shadow-lg text-sm lg:text-base"
                 >
                   {t("submit_exam")}
                 </button>
               </div>
+
+              {/* Mobile Timer */}
+              {mode === "exam" && sessionState.test.time_limit && (
+                <div className="md:hidden">
+                  <ExamTimer
+                    timeElapsed={timeElapsed}
+                    timeLimit={sessionState.test.time_limit * 60}
+                    onTimeUp={submitExam}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Main Content - Two Column Layout */}
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex gap-6">
-            {/* Left Column - Question (80% width) */}
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 py-4 md:py-8">
+          {/* Mobile Question Navigation - Above Question */}
+          <div className="md:hidden mb-4">
+            <QuestionNavigationGrid
+              questions={sessionState.questions}
+              currentIndex={sessionState.currentQuestionIndex}
+              answers={sessionState.answers}
+              markedForReview={sessionState.markedForReview}
+              onQuestionClick={goToQuestion}
+            />
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Left Column - Question */}
             <div className="flex-1">
               {/* Error Display */}
               {error && (
@@ -244,14 +266,14 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
                   showCorrectAnswers={
                     mode === "training" &&
                     sessionState.test.show_correct_answers_in_training &&
-                    selectedAnswer.length > 0 // Only show after answering
+                    selectedAnswer.length > 0
                   }
                   questionNumber={progress.current + 1}
                 />
               )}
 
-              {/* Navigation */}
-              <div className="flex justify-between items-center mt-8">
+              {/* Navigation - Desktop */}
+              <div className="hidden md:flex justify-between items-center mt-8">
                 <button
                   onClick={goToPrevious}
                   disabled={progress.current === 0}
@@ -277,7 +299,7 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
                   <span>{t("previous")}</span>
                 </button>
 
-                {/* Question Navigator */}
+                {/* Question Navigator - Desktop */}
                 <div className="flex items-center space-x-2">
                   {(() => {
                     const totalQuestions = progress.total;
@@ -324,7 +346,7 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
 
                       buttons.push(
                         <button
-                          key={`q-${question.id}`} // Use question ID for unique key
+                          key={`q-${question.id}`}
                           onClick={() => goToQuestion(i)}
                           className={`w-10 h-10 rounded-lg font-medium transition-all ${
                             isCurrent
@@ -379,15 +401,15 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
                 </button>
               </div>
 
-              {/* Keyboard shortcuts hint */}
-              <div className="mt-8 text-center text-sm text-gray-500">
+              {/* Keyboard shortcuts hint - Desktop Only */}
+              <div className="hidden md:block mt-8 text-center text-sm text-gray-500">
                 {t("keyboard_shortcuts")}: ← {t("previous")} | → {t("next")} | M{" "}
                 {t("mark_for_review")}
               </div>
             </div>
 
-            {/* Right Column - Question Grid (20% width) */}
-            <div className="w-64 flex-shrink-0">
+            {/* Right Column - Question Grid (Desktop Only) */}
+            <div className="hidden md:block w-64 flex-shrink-0">
               <div className="sticky top-24">
                 <QuestionNavigationGrid
                   questions={sessionState.questions}
@@ -400,6 +422,75 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
             </div>
           </div>
         </div>
+
+        {/* Mobile Bottom Navigation Bar */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between mb-3">
+              <button
+                onClick={goToPrevious}
+                disabled={progress.current === 0}
+                className={`flex items-center space-x-1 px-3 py-2 rounded-lg font-medium text-sm ${
+                  progress.current === 0
+                    ? "bg-gray-100 text-gray-400"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+                <span>{t("previous")}</span>
+              </button>
+
+              <div className="text-sm text-gray-600 font-medium">
+                {progress.current + 1} / {progress.total}
+              </div>
+
+              <button
+                onClick={goToNext}
+                disabled={progress.current === progress.total - 1}
+                className={`flex items-center space-x-1 px-3 py-2 rounded-lg font-medium text-sm ${
+                  progress.current === progress.total - 1
+                    ? "bg-gray-100 text-gray-400"
+                    : "bg-[#118B50] text-white hover:bg-[#0A6B3B]"
+                }`}
+              >
+                <span>{t("next")}</span>
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <button
+              onClick={handleSubmit}
+              className="w-full px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-semibold text-sm hover:from-red-600 hover:to-red-700 transition-all"
+            >
+              {t("submit_exam")}
+            </button>
+          </div>
+        </div>
+
         {/* Submit Confirmation Modal */}
         <ConfirmationModal
           isOpen={showConfirmSubmit}
@@ -420,6 +511,7 @@ export default function ExamTestPage({ mode, testId }: ExamTestPageProps) {
           }}
           onCancel={() => setShowConfirmSubmit(false)}
         />
+
         {/* Exit Confirmation Modal */}
         <ConfirmationModal
           isOpen={showExitConfirm}
