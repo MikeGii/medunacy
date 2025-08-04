@@ -17,6 +17,7 @@ import { useAuthorization } from "@/hooks/useAuthorization";
 import ExamErrorBoundary from "@/components/exam-tests/common/ExamErrorBoundary";
 import ErrorDisplay from "../common/ErrorDisplay";
 import { QuestionSkeleton } from "../common/ExamSkeleton";
+import RandomTestGeneratorModal from "./RandomTestGeneratorModal";
 
 interface QuestionManagementPageProps {
   testId: string;
@@ -41,6 +42,7 @@ export default function QuestionManagementPage({
     updateQuestion,
     deleteQuestion,
     duplicateQuestion,
+    generateRandomQuestions,
     clearError,
   } = useQuestionEditor({
     testId,
@@ -65,6 +67,8 @@ export default function QuestionManagementPage({
     allowedRoles: ["doctor", "admin"],
     redirectOnUnauthorized: true,
   });
+
+  const [showRandomGenerator, setShowRandomGenerator] = useState(false);
 
   // Handle click outside to cancel delete confirmation
   useEffect(() => {
@@ -130,6 +134,27 @@ export default function QuestionManagementPage({
 
   const handleDuplicateQuestion = async (question: TestQuestion) => {
     await duplicateQuestion(question.id);
+  };
+
+  const handleGenerateRandomTest = async (params: {
+    questionCount: number;
+    allowMultipleCorrect: boolean;
+    sourceTestIds: string[];
+  }) => {
+    const result = await generateRandomQuestions(params);
+
+    if (result.success > 0) {
+      // Success - questions were generated
+      setShowRandomGenerator(false);
+      // You can add a toast notification here if you have one
+      console.log(`Successfully generated ${result.success} questions`);
+      if (result.failed > 0) {
+        console.warn(`Failed to generate ${result.failed} questions`);
+      }
+    } else {
+      // Error - no questions were generated
+      console.error("Failed to generate any questions");
+    }
   };
 
   if (isLoading || (!currentTest && loading)) {
@@ -231,29 +256,55 @@ export default function QuestionManagementPage({
                   </p>
                 </div>
 
-                {/* Create Question Button - moved here for better mobile layout */}
+                {/* Action Buttons - Generate Test and Create Question */}
                 {!isCreating && !editingQuestion && (
-                  <button
-                    onClick={() => setIsCreating(true)}
-                    className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white rounded-xl font-semibold hover:from-[#0A6B3B] hover:to-[#4A9B7E] transition-all duration-300 transform hover:scale-105"
-                  >
-                    <div className="flex items-center justify-center space-x-2">
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                        />
-                      </svg>
-                      <span>{t("create_question")}</span>
-                    </div>
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    {/* Generate Random Test Button */}
+                    <button
+                      onClick={() => setShowRandomGenerator(true)}
+                      className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 transition-all duration-300 transform hover:scale-105"
+                    >
+                      <div className="flex items-center justify-center space-x-2">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
+                        </svg>
+                        <span>{t("generate_random_test")}</span>
+                      </div>
+                    </button>
+
+                    {/* Original Create Question Button */}
+                    <button
+                      onClick={() => setIsCreating(true)}
+                      className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-[#118B50] to-[#5DB996] text-white rounded-xl font-semibold hover:from-[#0A6B3B] hover:to-[#4A9B7E] transition-all duration-300 transform hover:scale-105"
+                    >
+                      <div className="flex items-center justify-center space-x-2">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                          />
+                        </svg>
+                        <span>{t("create_question")}</span>
+                      </div>
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -264,6 +315,17 @@ export default function QuestionManagementPage({
                   onDismiss={clearError}
                   className="mb-6"
                 />
+              )}
+
+              {/* Random Test Generator */}
+              {showRandomGenerator && (
+                <div className="mb-8">
+                  <RandomTestGeneratorModal
+                    currentTestId={testId}
+                    onGenerate={handleGenerateRandomTest}
+                    onCancel={() => setShowRandomGenerator(false)}
+                  />
+                </div>
               )}
 
               {/* Question Editor */}

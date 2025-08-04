@@ -36,6 +36,11 @@ interface UseQuestionEditorReturn {
   importQuestions: (
     questions: QuestionFormData[]
   ) => Promise<{ success: number; failed: number }>;
+  generateRandomQuestions: (params: {
+    questionCount: number;
+    allowMultipleCorrect: boolean;
+    sourceTestIds: string[];
+  }) => Promise<{ success: number; failed: number }>;
   clearError: () => void;
 
   // Selection
@@ -400,7 +405,7 @@ export function useQuestionEditor({
     },
     [user, questions, fetchQuestions]
   );
-  
+
   [
     {
       resource:
@@ -534,6 +539,104 @@ export function useQuestionEditor({
     [createQuestion]
   );
 
+  const generateRandomQuestions = useCallback(
+    async (params: {
+      questionCount: number;
+      allowMultipleCorrect: boolean;
+      sourceTestIds: string[];
+    }): Promise<{ success: number; failed: number }> => {
+      if (!user || !["admin", "doctor"].includes(user.role || "")) {
+        setError("Unauthorized to generate questions");
+        return { success: 0, failed: 0 };
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Step 1: Fetch all questions from source tests
+        const { data: sourceQuestions, error: fetchError } = await supabase
+          .from("test_questions")
+          .select(
+            `
+          id,
+          question_text,
+          explanation,
+          points,
+          question_order,
+          options:question_options!inner (
+            id,
+            option_text,
+            is_correct,
+            option_order
+          )
+        `
+          )
+          .in("test_id", params.sourceTestIds)
+          .order("question_order");
+
+        if (fetchError) throw fetchError;
+
+        if (!sourceQuestions || sourceQuestions.length === 0) {
+          setError("No questions found in selected tests");
+          return { success: 0, failed: 0 };
+        }
+
+        // Step 2: Filter questions if needed (client-side)
+        let eligibleQuestions = sourceQuestions;
+
+        if (!params.allowMultipleCorrect) {
+          eligibleQuestions = sourceQuestions.filter((q) => {
+            const correctCount = q.options.filter(
+              (opt: any) => opt.is_correct
+            ).length;
+            return correctCount === 1;
+          });
+        }
+
+        if (eligibleQuestions.length === 0) {
+          setError("No questions match the criteria");
+          return { success: 0, failed: 0 };
+        }
+
+        // Step 3: Randomly select questions
+        const shuffled = [...eligibleQuestions].sort(() => Math.random() - 0.5);
+        const selectedQuestions = shuffled.slice(
+          0,
+          Math.min(params.questionCount, eligibleQuestions.length)
+        );
+
+        // Step 4: Import selected questions as new questions
+        const questionsToImport: QuestionFormData[] = selectedQuestions.map(
+          (q) => ({
+            question_text: q.question_text,
+            explanation: q.explanation || "",
+            points: q.points,
+            options: q.options
+              .sort((a: any, b: any) => a.option_order - b.option_order)
+              .map((opt: any) => ({
+                option_text: opt.option_text,
+                is_correct: opt.is_correct,
+              })),
+          })
+        );
+
+        // Use the existing importQuestions function
+        const result = await importQuestions(questionsToImport);
+
+        return result;
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to generate random test"
+        );
+        return { success: 0, failed: 0 };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user, importQuestions]
+  );
+
   // Selection handlers
   const toggleQuestionSelection = useCallback((questionId: string) => {
     setSelectedQuestions((prev) => {
@@ -578,6 +681,7 @@ export function useQuestionEditor({
     duplicateQuestion,
     bulkDeleteQuestions,
     importQuestions,
+    generateRandomQuestions,
     clearError,
     toggleQuestionSelection,
     selectAllQuestions,
