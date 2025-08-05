@@ -19,7 +19,7 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const t = useTranslations("navigation");
-  const { user, signOut, loading, isHydrating } = useAuth();
+  const { user, signOut, loading } = useAuth();
   const { openLogin, openRegister } = useAuthModal();
   const { isPremium } = useSubscription();
 
@@ -60,7 +60,7 @@ export default function Header() {
     [pathname, baseUrl, t]
   );
 
-  const shouldShowUserSection = user || loading || isHydrating;
+  const shouldShowUserSection = user || loading ;
 
   return (
     <>
