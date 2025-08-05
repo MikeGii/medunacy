@@ -8,6 +8,7 @@ import { et, uk } from "date-fns/locale";
 import { usePathname } from "next/navigation";
 import CourseDetailsModal from "./CourseDetailsModal";
 import { useSubscription } from "@/hooks/useSubscription";
+import DateFilter from "./DateFilter";
 
 interface CoursesTableViewProps {
   courses: Course[];
@@ -16,7 +17,7 @@ interface CoursesTableViewProps {
   onUnenroll: (
     courseId: string
   ) => Promise<{ success: boolean; error?: string }>;
-  activeTab: "upcoming" | "past" | "my_courses";
+  activeTab: "courses" | "enrollments";
 }
 
 export default function CoursesTableView({
@@ -33,6 +34,9 @@ export default function CoursesTableView({
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [dateFilter, setDateFilter] = useState<"all" | "upcoming" | "past">(
+    "all"
+  );
   const { isPremium } = useSubscription();
 
   const handleCourseClick = (course: Course) => {
@@ -44,16 +48,21 @@ export default function CoursesTableView({
     setShowDetailsModal(true);
   };
 
+  // Filter courses based on date filter
+  const filteredByDate = courses.filter((course) => {
+    if (dateFilter === "all") return true;
+    return course.status === dateFilter;
+  });
+
   // Separate courses into free and premium
-  const freeCourses = courses.filter((course) => !course.is_premium);
-  const premiumCourses = courses.filter((course) => course.is_premium);
+  const freeCourses = filteredByDate.filter((course) => !course.is_premium);
+  const premiumCourses = filteredByDate.filter((course) => course.is_premium);
 
   if (courses.length === 0) {
-    const emptyMessage = {
-      upcoming: t("messages.no_upcoming"),
-      past: t("messages.no_past"),
-      my_courses: t("messages.no_enrolled"),
-    }[activeTab];
+    const emptyMessage =
+      activeTab === "enrollments"
+        ? t("messages.no_enrolled")
+        : t("messages.no_courses");
 
     return (
       <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
@@ -88,9 +97,13 @@ export default function CoursesTableView({
         return nameA.localeCompare(nameB);
       })
       .map((category) => {
-        const categoryCourses = coursesToRender.filter(
-          (course) => course.category_id === category.id
-        );
+        const categoryCourses = coursesToRender
+          .filter((course) => course.category_id === category.id)
+          .sort(
+            (a, b) =>
+              new Date(a.start_date).getTime() -
+              new Date(b.start_date).getTime()
+          );
 
         if (categoryCourses.length === 0) return null;
 
@@ -103,7 +116,7 @@ export default function CoursesTableView({
           >
             {/* Premium blur overlay - updated for mobile */}
             {isPremiumSection && !isPremium && (
-              <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] z-10">
+              <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-10">
                 <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-b border-yellow-200 px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <svg
@@ -399,6 +412,38 @@ export default function CoursesTableView({
 
   return (
     <>
+      {/* Date Filter - only show on courses tab */}
+      {activeTab === "courses" && (
+        <DateFilter
+          selectedFilter={dateFilter}
+          onFilterChange={setDateFilter}
+        />
+      )}
+
+      {/* Informative Notice - only show on courses tab */}
+      {activeTab === "courses" && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg
+                className="h-5 w-5 text-blue-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-blue-800">{t("enrollment_notice")}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-8">
         {/* Free Courses Section */}
         {freeCourses.length > 0 && (
@@ -455,7 +500,7 @@ export default function CoursesTableView({
 
       {/* Premium Modal */}
       {showPremiumModal && (
-        <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl">
             <div className="text-center">
               <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">

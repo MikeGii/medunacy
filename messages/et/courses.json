@@ -9,14 +9,20 @@
     "upgrade_to_premium": "Uuenda Premium'iks",
     "premium_courses_title": "Premium koolitused",
     "premium_courses_subtitle": "Uuenda oma kontot, et pääseda ligi eksklusiivsele sisule",
+    "enrollment_notice": "Koolitusele registreerumine sellel lehel on esialgne huvi väljendamine, mitte lõplik registreerimine. See aitab korraldajatel hinnata huvi määra ning planeerida tulevasi koolitusi vastavalt osalejate arvule ja vajadustele. Lõpliku kinnituse ja täpsema info saate korraldajalt eraldi. Koolitusele tuleb igaühel end ise registreerida, järgides kursuse kirjelduses olevaid juhiseid. Vajadusel võtke ühendust meie juhendajatega, kes aitavad teil edukalt registreeruda ja õpinguid alustada.",
     "tabs": {
       "upcoming": "Tulevased",
       "past": "Toimunud",
-      "my_courses": "Minu koolitused"
+      "my_courses": "Minu koolitused",
+      "courses": "Koolitused",
+      "enrollments": "Registreeringud"
     },
     "filters": {
       "all_categories": "Kõik kategooriad",
-      "search_placeholder": "Otsi koolitusi..."
+      "search_placeholder": "Otsi koolitusi...",
+      "show_upcoming": "Näita tulevasi",
+      "show_past": "Näita toimunud",
+      "show_all": "Näita kõiki"
     },
     "course": {
       "provider": "Korraldaja",

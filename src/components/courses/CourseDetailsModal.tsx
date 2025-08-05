@@ -31,7 +31,7 @@ export default function CourseDetailsModal({
   const modalRef = useRef<HTMLDivElement>(null);
   const [enrollLoading, setEnrollLoading] = useState(false);
 
-  const { course, enrollments, loading, error } = useCourseDetails(
+  const { course, enrollments, loading, error, refetch } = useCourseDetails(
     courseId || ""
   );
   const dateLocale = locale === "ukr" ? uk : et;
@@ -62,9 +62,13 @@ export default function CourseDetailsModal({
       ? await onUnenroll(course.id)
       : await onEnroll(course.id);
 
-    if (!result.success && result.error) {
+    if (result.success) {
+
+      await refetch();
+    } else if (result.error) {
       alert(result.error);
     }
+
     setEnrollLoading(false);
   };
 
@@ -305,7 +309,7 @@ export default function CourseDetailsModal({
                         {t("actions.loading")}
                       </span>
                     ) : course.is_enrolled ? (
-                      t("actions.enrolled")
+                      t("actions.unenroll")
                     ) : (
                       t("actions.enroll")
                     )}

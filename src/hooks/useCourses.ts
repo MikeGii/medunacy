@@ -10,6 +10,7 @@ import {
 } from "@/lib/courses";
 import { Course, CourseCategory, CourseEnrollment } from "@/types/course.types";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 export function useCourses(filters?: {
   status?: "upcoming" | "past";
@@ -231,6 +232,7 @@ export function useUserEnrollments() {
 }
 
 export function useCourseDetails(courseId: string) {
+  const { user } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [enrollments, setEnrollments] = useState<CourseEnrollment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -247,43 +249,54 @@ export function useCourseDetails(courseId: string) {
     };
   }, []);
 
-  useEffect(() => {
-    const fetchCourseDetails = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getCourse(courseId);
+  const fetchCourseDetails = useCallback(async () => {
+    if (!courseId) return;
 
-        // Only update state if component is still mounted
-        if (isMountedRef.current) {
-          setCourse(data);
-          setEnrollments(data.enrollments || []);
-        }
-      } catch (err) {
-        if (isMountedRef.current) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Failed to fetch course details"
-          );
-          console.error("Error fetching course details:", err);
-        }
-      } finally {
-        if (isMountedRef.current) {
-          setLoading(false);
-        }
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getCourse(courseId);
+
+      // Check enrollment status for current user
+      if (user && data) {
+        const { data: enrollment } = await supabase
+          .from("course_enrollments")
+          .select("id")
+          .eq("course_id", courseId)
+          .eq("user_id", user.id)
+          .single();
+
+        data.is_enrolled = !!enrollment;
       }
-    };
 
-    if (courseId) {
-      fetchCourseDetails();
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setCourse(data);
+        setEnrollments(data.enrollments || []);
+      }
+    } catch (err) {
+      if (isMountedRef.current) {
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch course details"
+        );
+        console.error("Error fetching course details:", err);
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
-  }, [courseId]);
+  }, [courseId, user]);
+
+  useEffect(() => {
+    fetchCourseDetails();
+  }, [fetchCourseDetails]);
 
   return {
     course,
     enrollments,
     loading,
     error,
+    refetch: fetchCourseDetails, // Add refetch function
   };
 }

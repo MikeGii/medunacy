@@ -1,23 +1,26 @@
+// src/components/courses/CourseTabs.tsx
 "use client";
 
 import { useTranslations } from "next-intl";
 
 interface CourseTabsProps {
-  activeTab: "upcoming" | "past" | "my_courses";
-  onTabChange: (tab: "upcoming" | "past" | "my_courses") => void;
+  activeTab: "courses" | "enrollments";
+  onTabChange: (tab: "courses" | "enrollments") => void;
 }
 
-export default function CourseTabs({ activeTab, onTabChange }: CourseTabsProps) {
+export default function CourseTabs({
+  activeTab,
+  onTabChange,
+}: CourseTabsProps) {
   const t = useTranslations("courses.tabs");
 
   const tabs = [
-    { id: "upcoming" as const, label: t("upcoming") },
-    { id: "past" as const, label: t("past") },
-    { id: "my_courses" as const, label: t("my_courses") },
+    { id: "courses" as const, label: t("courses") },
+    { id: "enrollments" as const, label: t("enrollments") },
   ];
 
   return (
-    <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+    <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg w-full max-w-md mx-auto">
       {tabs.map((tab) => (
         <button
           key={tab.id}

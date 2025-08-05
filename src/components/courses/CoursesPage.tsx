@@ -22,9 +22,9 @@ import { supabase } from "@/lib/supabase";
 function CoursesPageContent() {
   const t = useTranslations("courses");
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<
-    "upcoming" | "past" | "my_courses"
-  >("upcoming");
+  const [activeTab, setActiveTab] = useState<"courses" | "enrollments">(
+    "courses"
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [courses, setCourses] = useState<Course[]>([]);
@@ -103,7 +103,7 @@ function CoursesPageContent() {
 
       let coursesData: Course[] = [];
 
-      if (activeTab === "my_courses") {
+      if (activeTab === "enrollments") {
         // Fetch user's enrolled courses
         const enrollments = await getUserEnrollments(user.id);
         coursesData = enrollments
@@ -115,9 +115,7 @@ function CoursesPageContent() {
       } else {
         // Fetch all courses and filter by status
         const allCourses = await getCourses({ user_id: user.id });
-        coursesData = allCourses.filter(
-          (course) => course.status === activeTab
-        );
+        coursesData = allCourses;
       }
 
       setCourses(coursesData);
@@ -156,7 +154,7 @@ function CoursesPageContent() {
       );
 
       // If we're on "my_courses" tab, refetch to show the new enrollment
-      if (activeTab === "my_courses") {
+      if (activeTab === "enrollments") {
         fetchCourses();
       }
 
@@ -189,7 +187,7 @@ function CoursesPageContent() {
       );
 
       // If we're on "my_courses" tab, remove the course from the list
-      if (activeTab === "my_courses") {
+      if (activeTab === "enrollments") {
         setCourses(courses.filter((course) => course.id !== courseId));
       }
 
@@ -221,7 +219,7 @@ function CoursesPageContent() {
   });
 
   // Handle tab change
-  const handleTabChange = (tab: "upcoming" | "past" | "my_courses") => {
+  const handleTabChange = (tab: "courses" | "enrollments") => {
     setActiveTab(tab);
     // Reset filters when changing tabs
     setSelectedCategory("");
@@ -245,7 +243,7 @@ function CoursesPageContent() {
         <CourseTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
         {/* Filters - hide on my_courses tab if no courses */}
-        {(activeTab !== "my_courses" || filteredCourses.length > 0) && (
+        {(activeTab === "courses" || filteredCourses.length > 0) && (
           <CoursesFilters
             categories={categories}
             selectedCategory={selectedCategory}
