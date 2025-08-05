@@ -12,11 +12,16 @@
     "tabs": {
       "upcoming": "Майбутні",
       "past": "Завершені",
-      "my_courses": "Мої курси"
+      "my_courses": "Мої курси",
+      "courses": "Навчання",
+      "enrollments": "Реєстрації"
     },
     "filters": {
       "all_categories": "Всі категорії",
-      "search_placeholder": "Пошук курсів..."
+      "search_placeholder": "Пошук курсів...",
+      "show_upcoming": "Показати майбутні",
+      "show_past": "Показати завершені",
+      "show_all": "Показати всі"
     },
     "course": {
       "provider": "Організатор",

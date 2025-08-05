@@ -12,11 +12,16 @@
     "tabs": {
       "upcoming": "Tulevased",
       "past": "Toimunud",
-      "my_courses": "Minu koolitused"
+      "my_courses": "Minu koolitused",
+      "courses": "Koolitused",
+      "enrollments": "Registreeringud"
     },
     "filters": {
       "all_categories": "Kõik kategooriad",
-      "search_placeholder": "Otsi koolitusi..."
+      "search_placeholder": "Otsi koolitusi...",
+      "show_upcoming": "Näita tulevasi",
+      "show_past": "Näita toimunud",
+      "show_all": "Näita kõiki"
     },
     "course": {
       "provider": "Korraldaja",
