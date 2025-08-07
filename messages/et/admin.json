@@ -81,6 +81,16 @@
     "courses_panel": "Koolituste haldus",
     "courses_panel_description": "Halda koolitusi ja vaata registreerunuid",
     "exam_results": "Eksami tulemused",
-    "exam_results_description": "Vaata ja halda eksami tulemusi"
+    "exam_results_description": "Vaata ja halda eksami tulemusi",
+    "this_week_progress": "Selle nädala progress",
+    "view_all": "Vaata kõiki",
+    "average_score": "Keskmine tulemus",
+    "vs_last_week": "vs eelmine nädal",
+    "sessions_this_week": "Seansid sel nädalal",
+    "avg_training_score": "Treeningu keskmine",
+    "avg_exam_score": "Eksami keskmine",
+    "training_progress": "Treeningu progress",
+    "exam_progress": "Eksami progress",
+    "click_for_details": "Vaata detaile"
   }
 }

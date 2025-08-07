@@ -1,0 +1,39 @@
+{
+  "analytics": {
+    "page_title": "Sinu progress, {name}",
+    "page_subtitle": "Jälgi oma õppimise arengut ja tulemusi",
+    "my_progress": "Minu progress",
+    "view_my_progress": "Vaata minu progressi",
+    "progress": {
+      "title": "Progressi ülevaade",
+      "refresh": "Värskenda",
+      "weekly_performance": "Nädalane sooritus",
+      "this_week": "See nädal",
+      "last_week": "Eelmine nädal",
+      "progress_over_time": "Progress ajas",
+      "training_mode": "Treeningrežiim",
+      "exam_mode": "Eksamirežiim",
+      "overall_performance": "Üldine sooritus",
+      "sessions_completed": "Seansid läbitud",
+      "average_score": "Keskmine tulemus",
+      "questions_answered": "Küsimusi vastatud",
+      "exams_taken": "Eksameid sooritatud",
+      "pass_rate": "Läbimise määr",
+      "total_sessions": "Kokku seansid",
+      "overall_average": "Üldine keskmine",
+      "weekly_improvement": "Nädalane paranemine",
+      "no_data": "Andmed puuduvad",
+      "overall_score": "Üldine tulemus",
+      "sessions": "Seansid",
+      "questions": "Küsimused",
+      "accuracy_rate": "Täpsuse määr",
+      "total_questions": "Kokku küsimusi",
+      "total_correct": "Õigeid vastuseid",
+      "training": "Treening",
+      "exam": "Eksam",
+      "score": "Tulemus",
+      "accuracy": "Täpsus",
+      "correct": "Õiged"
+    }
+  }
+}

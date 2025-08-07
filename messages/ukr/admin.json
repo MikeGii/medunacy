@@ -81,6 +81,16 @@
     "courses_panel": "Управління курсами",
     "courses_panel_description": "Керуйте курсами та переглядайте реєстрації",
     "exam_results": "Результати іспитів",
-    "exam_results_description": "Переглядайте та керуйте результатами іспитів"
+    "exam_results_description": "Переглядайте та керуйте результатами іспитів",
+    "this_week_progress": "Прогрес цього тижня",
+    "view_all": "Переглянути все",
+    "average_score": "Середній бал",
+    "vs_last_week": "проти минулого тижня",
+    "sessions_this_week": "Сеанси цього тижня",
+    "avg_training_score": "Середнє тренування",
+    "avg_exam_score": "Середній іспит",
+    "training_progress": "Прогрес тренування",
+    "exam_progress": "Прогрес іспиту",
+    "click_for_details": "Переглянути деталі"
   }
 }

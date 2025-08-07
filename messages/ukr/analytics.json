@@ -1,0 +1,39 @@
+{
+  "analytics": {
+    "page_title": "Твій прогрес, {name}",
+    "page_subtitle": "Відстежуй свій навчальний прогрес та результати",
+    "my_progress": "Мій прогрес",
+    "view_my_progress": "Переглянути мій прогрес",
+    "progress": {
+      "title": "Огляд прогресу",
+      "refresh": "Оновити",
+      "weekly_performance": "Тижнева продуктивність",
+      "this_week": "Цей тиждень",
+      "last_week": "Минулий тиждень",
+      "progress_over_time": "Прогрес з часом",
+      "training_mode": "Режим тренування",
+      "exam_mode": "Режим екзамену",
+      "overall_performance": "Загальна продуктивність",
+      "sessions_completed": "Сеанси завершено",
+      "average_score": "Середній бал",
+      "questions_answered": "Відповіді на питання",
+      "exams_taken": "Складено іспитів",
+      "pass_rate": "Відсоток проходження",
+      "total_sessions": "Всього сеансів",
+      "overall_average": "Загальний середній",
+      "weekly_improvement": "Тижневе покращення",
+      "no_data": "Дані відсутні",
+      "overall_score": "Загальний бал",
+      "sessions": "Сеанси",
+      "questions": "Питання",
+      "accuracy_rate": "Рівень точності",
+      "total_questions": "Всього питань",
+      "total_correct": "Правильних відповідей",
+      "training": "Тренування",
+      "exam": "Іспит",
+      "score": "Результат",
+      "accuracy": "Точність",
+      "correct": "Правильні"
+    }
+  }
+}

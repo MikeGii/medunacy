@@ -251,3 +251,8 @@ html {
 .animation-delay-4000 {
   animation-delay: 4s;
 }
+
+.text-2xs {
+  font-size: 0.625rem; /* 10px */
+  line-height: 0.875rem; /* 14px */
+}

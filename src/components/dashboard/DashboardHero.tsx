@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useEffect, useState } from "react";
+import CompactProgressWidget from "./CompactProgressWidget";
 
 export default function DashboardHero() {
   const t = useTranslations("dashboard");
@@ -76,6 +77,11 @@ export default function DashboardHero() {
               {firstName}!
             </span>
           </h1>
+
+          {/* Compact Progress Widget */}
+          <div className="max-w-2xl mx-auto mt-8">
+            <CompactProgressWidget />
+          </div>
 
           {/* Decorative elements */}
           <div className="flex items-center justify-center space-x-4 mt-6">
