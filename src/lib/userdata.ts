@@ -8,23 +8,16 @@ export async function getUserData(userId: string): Promise<UserData | null> {
       .from("user_data")
       .select("*")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle(); // Use maybeSingle() instead of single()
 
     if (error) {
-      // Handle "no rows returned" as a normal case, not an error
-      if (error.code === "PGRST116") {
-        console.log(
-          `No user_data found for user ${userId} - this is normal for new users`
-        );
+      // Handle 406 or missing table gracefully
+      if (error.code === "PGRST116" || error.code === "42P01" || error.message?.includes("406")) {
+        console.log(`User data not accessible for user ${userId} - table might not exist or no permissions`);
         return null;
       }
 
-      // Log other errors but don't throw for 406 errors
-      if (error.message?.includes("406") || error.code === "406") {
-        console.log(`User data not accessible for user ${userId}`);
-        return null;
-      }
-
+      // For other errors, just log and return null
       console.error("Error fetching user data:", error);
       return null;
     }

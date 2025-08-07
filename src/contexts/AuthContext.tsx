@@ -7,6 +7,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
@@ -42,6 +43,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+
+  const hasInitializedRef = useRef(false);
 
   // Helper function to check for language transitions
   const checkLanguageTransition = useCallback(() => {
@@ -155,6 +158,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
+
+      // Prevent duplicate INITIAL_SESSION handling
+      if (event === "INITIAL_SESSION") {
+        if (hasInitializedRef.current) {
+          return; // Skip if already processed
+        }
+        hasInitializedRef.current = true;
+      }
 
       console.log("Auth event:", event);
 
