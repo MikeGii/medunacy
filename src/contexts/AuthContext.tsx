@@ -1,4 +1,4 @@
-// src/contexts/AuthContext.tsx - Simplified version
+// src/contexts/AuthContext.tsx - Updated version
 "use client";
 
 import {
@@ -37,6 +37,9 @@ const AuthContext = createContext<AuthContextType>({
   isInitialized: false,
 });
 
+// Global flag to prevent multiple provider instances
+let globalAuthInitialized = false;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserWithRole | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,7 +47,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Refs to track initialization and subscription
   const hasInitializedRef = useRef(false);
+  const authSubscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
+  const isFirstMountRef = useRef(true);
 
   // Helper function to check for language transitions
   const checkLanguageTransition = useCallback(() => {
@@ -102,6 +108,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize auth state - runs once on mount
   useEffect(() => {
+    // Prevent multiple initializations
+    if (hasInitializedRef.current || globalAuthInitialized) {
+      return;
+    }
+
+    hasInitializedRef.current = true;
+    globalAuthInitialized = true;
+
     let mounted = true;
 
     const initializeAuth = async () => {
@@ -120,6 +134,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error) {
           console.error("Error getting session:", error);
           setUser(null);
+          setLoading(false);
+          setIsInitialized(true);
           return;
         }
 
@@ -147,10 +163,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (mounted) {
           setLoading(false);
           setIsInitialized(true);
+          isFirstMountRef.current = false;
         }
       }
     };
 
+    // Initialize auth
     initializeAuth();
 
     // Set up auth state listener for login/logout events
@@ -161,23 +179,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       console.log("Auth event:", event);
 
-      // Handle INITIAL_SESSION more robustly
+      // Skip all INITIAL_SESSION events - we handle initial session in initializeAuth
       if (event === "INITIAL_SESSION") {
-        // Don't process if we're already initialized
-        if (isInitialized) {
-          return;
-        }
-        // Don't process multiple INITIAL_SESSION events
-        if (hasInitializedRef.current) {
-          return;
-        }
-        hasInitializedRef.current = true;
-        return; // Let the initializeAuth handle the initial session
+        return;
       }
 
-      // Handle token refresh without triggering loading states
+      // Handle token refresh silently
       if (event === "TOKEN_REFRESHED" && session?.user) {
-        // Only update the session data, don't change loading state
         setUser((current) => {
           if (!current) return null;
           return {
@@ -191,7 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             is_verified: current.is_verified,
           } as UserWithRole;
         });
-        return; // Don't process further
+        return;
       }
 
       if (event === "SIGNED_OUT") {
@@ -201,9 +209,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (event === "SIGNED_IN" && session?.user) {
-        // Check if we already have this user loaded
+        // If we already have the user with the same ID, just update the session
         if (user && user.id === session.user.id) {
-          // Just update the session, don't refetch everything
           setUser((current) => {
             if (!current) return null;
             return {
@@ -220,7 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        // Only fetch user data if we don't have it
+        // Fetch user data for new sign in
         const userData = await fetchUserData(session.user.id);
 
         if (!mounted) return;
@@ -234,7 +241,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         setUser(userWithRole);
 
-        // Handle language redirect only on actual sign in, not token refresh
+        // Handle language redirect only on actual sign in
         if (userData.preferred_language && !checkLanguageTransition()) {
           const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
 
@@ -251,7 +258,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // Don't set loading to false here - let components handle their own loading states
+        setLoading(false);
       }
 
       if (event === "USER_UPDATED" && session?.user) {
@@ -270,11 +277,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
+    // Store subscription reference
+    authSubscriptionRef.current = subscription;
+
+    // Cleanup function
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      if (authSubscriptionRef.current) {
+        authSubscriptionRef.current.unsubscribe();
+        authSubscriptionRef.current = null;
+      }
+      // Reset global flag when unmounting
+      globalAuthInitialized = false;
     };
-  }, [fetchUserData, pathname, router, checkLanguageTransition]);
+  }, []); // Empty dependency array - run only once
 
   const signOut = useCallback(async () => {
     try {
