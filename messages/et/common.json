@@ -34,7 +34,8 @@
     "admin": "Medunacy admin",
     "doctor": "Medunacy arst",
     "member": "Medunacy liige",
-    "premium": "Premium"
+    "premium": "Premium",
+    "my_progress": "Minu progress"
   },
   "footer": {
     "description": "Medunacy - Teie usaldusväärne partner tervishoiutöötajate toetamisel Eestis. Pakume eksamiteste, õppematerjale ja kogukonna tuge.",

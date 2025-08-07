@@ -1,12 +1,14 @@
 // src/components/profile/ProfileHero.tsx
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function ProfileHero() {
   const t = useTranslations("profile");
+  const locale = useLocale();
   const { user } = useAuth();
   const [isVisible, setIsVisible] = useState(false);
 
@@ -17,7 +19,10 @@ export default function ProfileHero() {
   // Get user's full name
   const firstName = user?.user_metadata?.first_name;
   const lastName = user?.user_metadata?.last_name;
-  const fullName = firstName && lastName ? `${firstName} ${lastName}` : firstName || user?.email?.split('@')[0] || 'Kasutaja';
+  const fullName =
+    firstName && lastName
+      ? `${firstName} ${lastName}`
+      : firstName || user?.email?.split("@")[0] || "Kasutaja";
 
   return (
     <section className="relative overflow-hidden py-8 md:py-12">
@@ -43,6 +48,32 @@ export default function ProfileHero() {
           <p className="text-lg md:text-xl text-gray-600 mb-6">
             {t("subtitle", { name: fullName })}
           </p>
+
+          {/* Analytics Link Button */}
+          <div className="flex justify-center mt-8">
+            <Link
+              href={`/${locale}/analytics`}
+              className="inline-flex items-center justify-center px-6 py-3 
+                         bg-gradient-to-r from-purple-500 to-pink-500 text-white 
+                         font-semibold rounded-lg shadow-lg hover:shadow-xl 
+                         transform hover:scale-[1.02] transition-all duration-300"
+            >
+              <svg
+                className="w-5 h-5 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+              {t("view_my_progress")}
+            </Link>
+          </div>
 
           {/* Decorative elements */}
           <div className="flex items-center justify-center space-x-4 mt-6">

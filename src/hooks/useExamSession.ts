@@ -27,6 +27,9 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const sessionRef = useRef<ExamSession | null>(null);
 
+  const initializingRef = useRef(false);
+  const hasInitializedRef = useRef(false);
+
   // Add new refs to prevent circular dependencies
   const sessionStateRef = useRef<ExamSessionState | null>(null);
   const timeElapsedRef = useRef<number>(0);
@@ -172,9 +175,19 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
           time_spent: currentTimeElapsed,
           passed,
         })
-        .eq("id", currentSession.id);
+        .eq("id", currentSession.id)
+        .is("completed_at", null); // Only update if not already completed
 
       if (updateError) {
+        // Check if it's because the session was already completed
+        if (
+          updateError.code === "23505" ||
+          updateError.message.includes("duplicate")
+        ) {
+          console.warn("Session already completed, redirecting to results");
+          router.push(`/${locale}/exam-tests/results/${currentSession.id}`);
+          return;
+        }
         throw new Error(`Failed to update session: ${updateError.message}`);
       }
 
@@ -243,18 +256,47 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
     try {
       setLoading(true);
 
-      // Fetch test with questions and options using Supabase
+      // First, check if there's an existing incomplete session for this test
+      const { data: existingSession, error: checkError } = await supabase
+        .from("exam_sessions")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("test_id", testId)
+        .eq("mode", mode)
+        .is("completed_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!isMounted()) return;
+
+      // If there's an incomplete session less than 24 hours old, delete it
+      if (existingSession && !checkError) {
+        const sessionAge =
+          new Date().getTime() - new Date(existingSession.created_at).getTime();
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+
+        if (sessionAge < twentyFourHours) {
+          // Delete the incomplete session
+          await supabase
+            .from("exam_sessions")
+            .delete()
+            .eq("id", existingSession.id);
+        }
+      }
+
+      // Fetch test with questions and options
       const { data: test, error: testError } = await supabase
         .from("tests")
         .select(
           `
+        *,
+        category:test_categories(*),
+        questions:test_questions(
           *,
-          category:test_categories(*),
-          questions:test_questions(
-            *,
-            options:question_options(*)
-          )
-        `
+          options:question_options(*)
+        )
+      `
         )
         .eq("id", testId)
         .eq("is_published", true)
@@ -281,10 +323,9 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
           ),
         }));
 
-      // Check if still mounted before creating session
       if (!isMounted()) return;
 
-      // Create session in database using Supabase
+      // Create NEW session in database
       const { data: session, error: sessionError } = await supabase
         .from("exam_sessions")
         .insert({
@@ -292,6 +333,7 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
           test_id: testId,
           mode: mode,
           total_questions: questions.length,
+          started_at: new Date().toISOString(), // Explicitly set started_at
         })
         .select()
         .single();
@@ -332,10 +374,14 @@ export function useExamSession({ mode, testId, userId }: UseExamSessionProps) {
 
   // Initialize on mount
   useEffect(() => {
-    if (userId) {
-      initializeSession();
+    if (userId && !hasInitializedRef.current && !initializingRef.current) {
+      initializingRef.current = true;
+      initializeSession().finally(() => {
+        initializingRef.current = false;
+        hasInitializedRef.current = true;
+      });
     }
-  }, [initializeSession, userId]);
+  }, [userId]);
 
   // Timer management with cleanup
   useEffect(() => {

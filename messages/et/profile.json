@@ -2,6 +2,7 @@
   "profile": {
     "title": "Minu profiil",
     "subtitle": "Tere, {name}! Siin saad hallata oma profiili andmeid.",
+    "view_my_progress": "Vaata minu progressi",
     "tabs": {
       "professional": "Lisainformatsioon",
       "personal": "Isikuandmed"

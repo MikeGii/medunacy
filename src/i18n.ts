@@ -26,6 +26,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
       "privacy",
       "premium",
       "subscription",
+      "analytics",
     ];
     const messages: Record<string, any> = {};
 

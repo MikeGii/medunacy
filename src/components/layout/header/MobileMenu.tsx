@@ -175,6 +175,30 @@ export default function MobileMenu({
               <span className="font-medium">{dashboardT("my_data")}</span>
             </Link>
 
+            {/* Analytics Link */}
+            <Link
+              href={`${baseUrl}/analytics`}
+              onClick={onClose}
+              className="flex items-center space-x-3 w-full px-6 py-3 text-[#118B50] hover:text-[#5DB996] 
+             bg-white/30 hover:bg-white/50 rounded-full transition-all duration-300 
+             border border-[#118B50]/10 hover:border-[#5DB996]/20"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+              <span className="font-medium">{t("my_progress")}</span>
+            </Link>
+
             {/* Exam Tests Link */}
             <Link
               href={`${baseUrl}/exam-tests`}
