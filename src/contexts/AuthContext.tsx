@@ -1,4 +1,4 @@
-// src/contexts/AuthContext.tsx - Simplified version
+// src/contexts/AuthContext.tsx - Fixed version
 "use client";
 
 import {
@@ -44,30 +44,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const hasInitializedRef = useRef(false);
+  // Track if we've already fetched user data
+  const userDataFetchedRef = useRef(false);
+  const lastUserIdRef = useRef<string | null>(null);
 
-  // Helper function to check for language transitions
-  const checkLanguageTransition = useCallback(() => {
-    if (typeof window === "undefined") return null;
-
-    const transitionData = sessionStorage.getItem("medunacy_lang_transition");
-    if (!transitionData) return null;
-
-    try {
-      const data = JSON.parse(transitionData);
-      // Check if transition is recent (within 5 seconds)
-      if (Date.now() - data.timestamp < 5000) {
-        return data;
-      }
-    } catch {
-      // Invalid data
-    }
-
-    sessionStorage.removeItem("medunacy_lang_transition");
-    return null;
-  }, []);
-
-  // Fetch user data and cache it in memory
+  // Fetch user data
   const fetchUserData = useCallback(async (userId: string) => {
     try {
       const { data: userData, error } = await supabase
@@ -100,16 +81,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Initialize auth state - runs once on mount
   useEffect(() => {
     let mounted = true;
 
+    // Get initial session
     const initializeAuth = async () => {
       try {
-        // Check if we're in a language transition
-        const transition = checkLanguageTransition();
-
-        // Get initial session
         const {
           data: { session },
           error,
@@ -120,6 +97,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error) {
           console.error("Error getting session:", error);
           setUser(null);
+          setLoading(false);
+          setIsInitialized(true);
           return;
         }
 
@@ -135,16 +114,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           };
 
           setUser(userWithRole);
+          userDataFetchedRef.current = true;
+          lastUserIdRef.current = session.user.id;
         } else {
           setUser(null);
         }
+
+        setLoading(false);
+        setIsInitialized(true);
       } catch (error) {
         console.error("Error in initializeAuth:", error);
         if (mounted) {
           setUser(null);
-        }
-      } finally {
-        if (mounted) {
           setLoading(false);
           setIsInitialized(true);
         }
@@ -153,7 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth();
 
-    // Set up auth state listener for login/logout events
+    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -161,23 +142,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       console.log("Auth event:", event);
 
-      // Handle INITIAL_SESSION more robustly
+      // Ignore INITIAL_SESSION - we handle this in initializeAuth
       if (event === "INITIAL_SESSION") {
-        // Don't process if we're already initialized
-        if (isInitialized) {
-          return;
-        }
-        // Don't process multiple INITIAL_SESSION events
-        if (hasInitializedRef.current) {
-          return;
-        }
-        hasInitializedRef.current = true;
-        return; // Let the initializeAuth handle the initial session
+        return;
       }
 
-      // Handle token refresh without triggering loading states
-      if (event === "TOKEN_REFRESHED" && session?.user) {
-        // Only update the session data, don't change loading state
+      // Handle token refresh
+      if (event === "TOKEN_REFRESHED" && session) {
+        // Just update the session without refetching user data
         setUser((current) => {
           if (!current) return null;
           return {
@@ -185,25 +157,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role: current.role,
             subscription_status: current.subscription_status,
             preferred_language: current.preferred_language,
-            first_name: current.first_name,
-            last_name: current.last_name,
-            phone: current.phone,
-            is_verified: current.is_verified,
           } as UserWithRole;
         });
-        return; // Don't process further
-      }
-
-      if (event === "SIGNED_OUT") {
-        setUser(null);
-        setLoading(false);
         return;
       }
 
-      if (event === "SIGNED_IN" && session?.user) {
-        // Check if we already have this user loaded
-        if (user && user.id === session.user.id) {
-          // Just update the session, don't refetch everything
+      // Handle sign in
+      if (event === "SIGNED_IN" && session) {
+        // Check if this is the same user (token refresh scenario)
+        if (
+          lastUserIdRef.current === session.user.id &&
+          userDataFetchedRef.current
+        ) {
+          // Same user, just update the session
           setUser((current) => {
             if (!current) return null;
             return {
@@ -211,20 +177,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               role: current.role,
               subscription_status: current.subscription_status,
               preferred_language: current.preferred_language,
-              first_name: current.first_name,
-              last_name: current.last_name,
-              phone: current.phone,
-              is_verified: current.is_verified,
             } as UserWithRole;
           });
           return;
         }
 
-        // Only fetch user data if we don't have it
+        // New sign in - fetch user data
         const userData = await fetchUserData(session.user.id);
-
-        if (!mounted) return;
-
         const userWithRole: UserWithRole = {
           ...session.user,
           role: userData.role,
@@ -233,16 +192,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
 
         setUser(userWithRole);
+        userDataFetchedRef.current = true;
+        lastUserIdRef.current = session.user.id;
 
-        // Handle language redirect only on actual sign in, not token refresh
-        if (userData.preferred_language && !checkLanguageTransition()) {
+        // Handle language redirect for new sign ins
+        if (userData.preferred_language) {
           const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
-
           if (userData.preferred_language !== currentLocale) {
             const pathWithoutLocale =
               pathname.replace(/^\/(et|ukr)/, "") || "/dashboard";
             const newPath = `/${userData.preferred_language}${pathWithoutLocale}`;
-
             setTimeout(() => {
               if (mounted) {
                 router.push(newPath);
@@ -250,22 +209,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }, 500);
           }
         }
-
-        // Don't set loading to false here - let components handle their own loading states
-      }
-
-      if (event === "USER_UPDATED" && session?.user) {
+      } else if (event === "SIGNED_OUT") {
+        setUser(null);
+        userDataFetchedRef.current = false;
+        lastUserIdRef.current = null;
+      } else if (event === "USER_UPDATED" && session) {
+        // User data was updated - refetch
         const userData = await fetchUserData(session.user.id);
-
-        if (!mounted) return;
-
         const userWithRole: UserWithRole = {
           ...session.user,
           role: userData.role,
           subscription_status: userData.subscription_status,
           preferred_language: userData.preferred_language,
         };
-
         setUser(userWithRole);
       }
     });
@@ -274,28 +230,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [fetchUserData, pathname, router, checkLanguageTransition]);
+  }, [fetchUserData, pathname, router]);
 
   const signOut = useCallback(async () => {
     try {
       setLoading(true);
-
-      // Clear user state immediately
+      await supabase.auth.signOut();
       setUser(null);
-
-      // Sign out from Supabase
-      const { error } = await supabase.auth.signOut();
-
-      if (error) {
-        console.error("Error signing out:", error);
-      }
-
-      // Clear any session storage
-      if (typeof window !== "undefined") {
-        sessionStorage.clear();
-      }
-
-      // Redirect to home
+      userDataFetchedRef.current = false;
+      lastUserIdRef.current = null;
       const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
       router.push(`/${currentLocale}`);
     } catch (error) {
