@@ -5,8 +5,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { useOptimizedQuery } from "./useOptimizedQuery";
-import { dataFetcher } from "@/utils/dataFetcher";
 
 interface UserInfo {
   user_id: string;

@@ -1,5 +1,4 @@
-// src/contexts/ExamContext.tsx - COMPLETE MEMORY LEAK FIXED VERSION
-
+// src/contexts/ExamContext.tsx - Cache-free version
 "use client";
 
 import React, {
@@ -15,15 +14,6 @@ import { Test, TestCategory, TestCreate, TestUpdate } from "@/types/exam";
 import { RealtimeChannel } from "@supabase/realtime-js";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCleanup } from "@/hooks/useCleanup";
-
-// Cache configuration
-const MAX_CACHE_SIZE = 50;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-interface CachedTest {
-  data: Test;
-  timestamp: number;
-}
 
 interface ExamContextType {
   // State
@@ -48,7 +38,6 @@ interface ExamContextType {
   publishTest: (id: string) => Promise<void>;
   unpublishTest: (id: string) => Promise<void>;
   clearError: () => void;
-  clearCache: () => void;
 
   // Collaborative features
   subscribeToTestUpdates: (testId: string) => () => void;
@@ -67,107 +56,11 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Cache with TTL and size limit
-  const testCache = useRef<Map<string, CachedTest>>(new Map());
-  const cacheCleanupTimer = useRef<NodeJS.Timeout | null>(null);
-
   const categoriesSubscription = useRef<RealtimeChannel | null>(null);
   const testsSubscription = useRef<RealtimeChannel | null>(null);
   const testUpdateSubscriptions = useRef<Map<string, RealtimeChannel>>(
     new Map()
   );
-
-  // Cache management functions
-  const addToCache = useCallback((test: Test) => {
-    const cache = testCache.current;
-
-    // Remove expired entries first
-    const now = Date.now();
-    for (const [key, value] of cache.entries()) {
-      if (now - value.timestamp > CACHE_TTL) {
-        cache.delete(key);
-      }
-    }
-
-    // Implement LRU: Remove oldest if at capacity
-    if (cache.size >= MAX_CACHE_SIZE) {
-      let oldestKey = "";
-      let oldestTime = Infinity;
-
-      for (const [key, value] of cache.entries()) {
-        if (value.timestamp < oldestTime) {
-          oldestTime = value.timestamp;
-          oldestKey = key;
-        }
-      }
-
-      if (oldestKey) {
-        cache.delete(oldestKey);
-      }
-    }
-
-    // Add new entry
-    cache.set(test.id, {
-      data: test,
-      timestamp: Date.now(),
-    });
-  }, []);
-
-  const getFromCache = useCallback((testId: string): Test | null => {
-    const cached = testCache.current.get(testId);
-
-    if (!cached) return null;
-
-    // Check if expired
-    if (Date.now() - cached.timestamp > CACHE_TTL) {
-      testCache.current.delete(testId);
-      return null;
-    }
-
-    return cached.data;
-  }, []);
-
-  const clearCache = useCallback(() => {
-    testCache.current.clear();
-  }, []);
-
-  // Periodic cache cleanup with mount check
-  useEffect(() => {
-    const timerId = setInterval(() => {
-      if (!isMounted()) {
-        if (cacheCleanupTimer.current) {
-          clearInterval(cacheCleanupTimer.current);
-        }
-        return;
-      }
-
-      const now = Date.now();
-      const cache = testCache.current;
-
-      for (const [key, value] of cache.entries()) {
-        if (now - value.timestamp > CACHE_TTL) {
-          cache.delete(key);
-        }
-      }
-    }, 60000); // Run every minute
-
-    cacheCleanupTimer.current = timerId;
-
-    // Add to cleanup registry
-    addCleanup(() => {
-      if (cacheCleanupTimer.current) {
-        clearInterval(cacheCleanupTimer.current);
-        cacheCleanupTimer.current = null;
-      }
-    });
-
-    return () => {
-      if (cacheCleanupTimer.current) {
-        clearInterval(cacheCleanupTimer.current);
-        cacheCleanupTimer.current = null;
-      }
-    };
-  }, [isMounted, addCleanup]);
 
   // Fetch categories with mount check
   const fetchCategories = useCallback(async () => {
@@ -177,7 +70,6 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
-      // ADD THIS BLOCK: Wait for auth session
       const {
         data: { session },
         error: sessionError,
@@ -190,12 +82,10 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
 
       if (!session) {
         console.log("No session in fetchCategories - waiting for auth");
-        // Don't throw error, just return - this prevents endless loading
         setLoading(false);
         return;
       }
 
-      // EXISTING CODE continues here
       const { data, error: fetchError } = await supabase
         .from("test_categories")
         .select("*")
@@ -230,7 +120,6 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         setLoading(true);
         setError(null);
 
-        // ADD THIS BLOCK: Wait for auth session
         const {
           data: { session },
           error: sessionError,
@@ -243,20 +132,18 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
 
         if (!session) {
           console.log("No session in fetchTests - waiting for auth");
-          // Don't throw error, just return - this prevents endless loading
           setLoading(false);
           return;
         }
 
-        // EXISTING CODE continues here
         let query = supabase
           .from("tests")
           .select(
             `
-          *,
-          category:test_categories(*),
-          questions:test_questions(id)
-        `
+            *,
+            category:test_categories(*),
+            questions:test_questions(id)
+          `
           )
           .order("created_at", { ascending: false });
 
@@ -279,10 +166,6 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
 
         if (isMounted()) {
           setTests(enrichedTests);
-          // Update cache with new tests
-          enrichedTests.forEach((test) => {
-            addToCache(test);
-          });
         }
       } catch (err) {
         if (isMounted()) {
@@ -296,7 +179,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         }
       }
     },
-    [addToCache, isMounted]
+    [isMounted]
   );
 
   // Fetch single test with mount check
@@ -305,59 +188,50 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
       if (!isMounted()) return null;
 
       try {
-        // Check cache first
-        const cached = getFromCache(testId);
-        if (cached && isMounted()) {
-          setCurrentTest(cached);
-          return cached;
-        }
-
-        setLoading(true);
-        setError(null);
-
-        const { data, error: fetchError } = await supabase
+        const { data, error } = await supabase
           .from("tests")
           .select(
             `
-        *,
-        category:test_categories(*),
-        test_questions(
-          *,
-          question_options(*)
-        )
-      `
+            *,
+            test_categories (
+              id,
+              name
+            ),
+            questions (
+              id,
+              question_text,
+              question_type,
+              points,
+              order_index,
+              explanation,
+              options (
+                id,
+                option_text,
+                is_correct,
+                order_index
+              )
+            )
+          `
           )
           .eq("id", testId)
           .single();
 
-        if (!isMounted()) return null;
+        if (error) throw error;
 
-        if (fetchError) throw fetchError;
-
-        const enrichedTest = {
-          ...data,
-          question_count: data.test_questions?.length || 0,
-          questions: data.test_questions || [],
-        };
-
-        if (isMounted()) {
-          setCurrentTest(enrichedTest);
-          addToCache(enrichedTest);
+        if (isMounted() && data) {
+          setCurrentTest(data);
+          return data;
         }
 
-        return enrichedTest;
+        return null;
       } catch (err) {
         if (isMounted()) {
-          setError(err instanceof Error ? err.message : "Failed to fetch test");
+          console.error("Error fetching test:", err);
         }
         return null;
-      } finally {
-        if (isMounted()) {
-          setLoading(false);
-        }
       }
     },
-    [getFromCache, addToCache, isMounted]
+    [isMounted]
   );
 
   // Create category with mount check
@@ -512,7 +386,6 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
 
         if (isMounted()) {
           setTests((prev) => [enrichedTest, ...prev]);
-          addToCache(enrichedTest);
         }
 
         return enrichedTest;
@@ -529,7 +402,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
         }
       }
     },
-    [user, addToCache, isMounted]
+    [user, isMounted]
   );
 
   // Update test with mount check
@@ -554,9 +427,6 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
           setTests((prev) =>
             prev.map((test) => (test.id === id ? { ...test, ...data } : test))
           );
-
-          // Invalidate cache
-          testCache.current.delete(id);
 
           if (currentTest?.id === id) {
             setCurrentTest((prev) => (prev ? { ...prev, ...data } : null));
@@ -597,7 +467,6 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
 
         if (isMounted()) {
           setTests((prev) => prev.filter((test) => test.id !== id));
-          testCache.current.delete(id);
 
           if (currentTest?.id === id) {
             setCurrentTest(null);
@@ -659,8 +528,6 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
                 )
               );
 
-              testCache.current.delete(testId);
-
               if (currentTest?.id === testId) {
                 setCurrentTest((prev) =>
                   prev ? { ...prev, ...updatedTest } : null
@@ -687,7 +554,6 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
       if (!isMounted()) return;
 
       const channel = supabase.channel(`test-editors-${testId}`);
-
       await channel.send({
         type: "broadcast",
         event: "user_editing",
@@ -739,7 +605,7 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
           if (!isMounted()) return;
 
           if (payload.eventType === "INSERT") {
-            testCache.current.delete(payload.new.id);
+            // Just let normal fetch handle new tests
           } else if (payload.eventType === "UPDATE") {
             setTests((prev) =>
               prev.map((test) =>
@@ -748,12 +614,10 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
                   : test
               )
             );
-            testCache.current.delete(payload.old.id);
           } else if (payload.eventType === "DELETE") {
             setTests((prev) =>
               prev.filter((test) => test.id !== payload.old.id)
             );
-            testCache.current.delete(payload.old.id);
           }
         }
       )
@@ -804,15 +668,6 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     });
     testUpdateSubscriptions.current.clear();
-
-    // Clear cache timer
-    if (cacheCleanupTimer.current) {
-      clearInterval(cacheCleanupTimer.current);
-      cacheCleanupTimer.current = null;
-    }
-
-    // Clear cache
-    testCache.current.clear();
   }, []);
 
   // Cleanup on unmount
@@ -847,7 +702,6 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
     publishTest,
     unpublishTest,
     clearError,
-    clearCache,
     subscribeToTestUpdates,
     notifyTestEdit,
   };
