@@ -159,25 +159,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
-      // Prevent duplicate INITIAL_SESSION handling
-      if (event === "INITIAL_SESSION") {
-        if (hasInitializedRef.current) {
-          return; // Skip if already processed
-        }
-        hasInitializedRef.current = true;
-      }
-
       console.log("Auth event:", event);
 
+      // Handle INITIAL_SESSION more robustly
+      if (event === "INITIAL_SESSION") {
+        // Don't process if we're already initialized
+        if (isInitialized) {
+          return;
+        }
+        // Don't process multiple INITIAL_SESSION events
+        if (hasInitializedRef.current) {
+          return;
+        }
+        hasInitializedRef.current = true;
+        return; // Let the initializeAuth handle the initial session
+      }
+
+      // Handle token refresh without triggering loading states
+      if (event === "TOKEN_REFRESHED" && session?.user) {
+        // Only update the session data, don't change loading state
+        setUser((current) => {
+          if (!current) return null;
+          return {
+            ...session.user,
+            role: current.role,
+            subscription_status: current.subscription_status,
+            preferred_language: current.preferred_language,
+            first_name: current.first_name,
+            last_name: current.last_name,
+            phone: current.phone,
+            is_verified: current.is_verified,
+          } as UserWithRole;
+        });
+        return; // Don't process further
+      }
+
       if (event === "SIGNED_OUT") {
-        // User signed out - clear everything
         setUser(null);
         setLoading(false);
         return;
       }
 
       if (event === "SIGNED_IN" && session?.user) {
-        // User signed in - fetch and cache user data
+        // Check if we already have this user loaded
+        if (user && user.id === session.user.id) {
+          // Just update the session, don't refetch everything
+          setUser((current) => {
+            if (!current) return null;
+            return {
+              ...session.user,
+              role: current.role,
+              subscription_status: current.subscription_status,
+              preferred_language: current.preferred_language,
+              first_name: current.first_name,
+              last_name: current.last_name,
+              phone: current.phone,
+              is_verified: current.is_verified,
+            } as UserWithRole;
+          });
+          return;
+        }
+
+        // Only fetch user data if we don't have it
         const userData = await fetchUserData(session.user.id);
 
         if (!mounted) return;
@@ -191,8 +234,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         setUser(userWithRole);
 
-        // Handle language redirect on sign in
-        if (userData.preferred_language) {
+        // Handle language redirect only on actual sign in, not token refresh
+        if (userData.preferred_language && !checkLanguageTransition()) {
           const currentLocale = pathname.startsWith("/ukr") ? "ukr" : "et";
 
           if (userData.preferred_language !== currentLocale) {
@@ -208,29 +251,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        setLoading(false);
-      }
-
-      if (event === "TOKEN_REFRESHED" && session?.user) {
-        // Token was refreshed - keep cached user data with updated session info
-        setUser((current) => {
-          if (!current) return null;
-          // Only update base User properties, keep our custom properties
-          return {
-            ...session.user,
-            role: current.role,
-            subscription_status: current.subscription_status,
-            preferred_language: current.preferred_language,
-            first_name: current.first_name,
-            last_name: current.last_name,
-            phone: current.phone,
-            is_verified: current.is_verified,
-          } as UserWithRole;
-        });
+        // Don't set loading to false here - let components handle their own loading states
       }
 
       if (event === "USER_UPDATED" && session?.user) {
-        // User data was updated - refetch to get latest data
         const userData = await fetchUserData(session.user.id);
 
         if (!mounted) return;
