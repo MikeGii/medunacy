@@ -183,56 +183,55 @@ export function ExamProvider({ children }: { children: React.ReactNode }) {
   );
 
   // Fetch single test with mount check
-  const fetchTestById = useCallback(
-    async (testId: string): Promise<Test | null> => {
-      if (!isMounted()) return null;
+const fetchTestById = useCallback(
+  async (testId: string): Promise<Test | null> => {
+    if (!isMounted()) return null;
 
-      try {
-        const { data, error } = await supabase
-          .from("tests")
-          .select(
-            `
-            *,
-            test_categories (
-              id,
-              name
-            ),
-            questions (
-              id,
-              question_text,
-              question_type,
-              points,
-              order_index,
-              explanation,
-              options (
-                id,
-                option_text,
-                is_correct,
-                order_index
-              )
-            )
+    try {
+      const { data, error } = await supabase
+        .from("tests")
+        .select(
           `
+          *,
+          test_categories (
+            id,
+            name
+          ),
+          test_questions (
+            id,
+            question_text,
+            points,
+            question_order,
+            explanation,
+            question_options (
+              id,
+              option_text,
+              is_correct,
+              option_order
+            )
           )
-          .eq("id", testId)
-          .single();
+        `
+        )
+        .eq("id", testId)
+        .single();
 
-        if (error) throw error;
+      if (error) throw error;
 
-        if (isMounted() && data) {
-          setCurrentTest(data);
-          return data;
-        }
-
-        return null;
-      } catch (err) {
-        if (isMounted()) {
-          console.error("Error fetching test:", err);
-        }
-        return null;
+      if (isMounted() && data) {
+        setCurrentTest(data);
+        return data;
       }
-    },
-    [isMounted]
-  );
+
+      return null;
+    } catch (err) {
+      if (isMounted()) {
+        console.error("Error fetching test:", err);
+      }
+      return null;
+    }
+  },
+  [isMounted]
+);
 
   // Create category with mount check
   const createCategory = useCallback(
